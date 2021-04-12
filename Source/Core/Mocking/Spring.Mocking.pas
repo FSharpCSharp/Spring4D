@@ -232,7 +232,8 @@ type
     function Received(const match: TArgMatch): T; overload;
     function Received(const times: Times; const match: TArgMatch): T; overload;
 
-    function AsType<TInterface: IInterface>: Mock<TInterface>;
+    function AsType<TInterface: IInterface>(
+      behavior: TMockBehavior = DefaultMockBehavior): Mock<TInterface>;
 
     property Behavior: TMockBehavior read GetBehavior write SetBehavior;
     property CallBase: Boolean read GetCallBase write SetCallBase;
@@ -374,7 +375,7 @@ begin
     fMock := TMock<T>.Create(DefaultMockBehavior, [])
 end;
 
-function Mock<T>.AsType<TInterface>: Mock<TInterface>;
+function Mock<T>.AsType<TInterface>(behavior: TMockBehavior): Mock<TInterface>;
 var
   typeData: PTypeData;
   source: T;
@@ -388,7 +389,8 @@ begin
   source := fMock.Instance;
   if not Supports(PInterface(@source)^, IDynamicProxy, proxy) then
     raise EMockException.Create('fatal error');
-  proxy.AddAdditionalInterface(TypeInfo(TInterface), TProxyGenerationOptions.Default);
+  proxy.AddAdditionalInterface(TypeInfo(TInterface), TProxyGenerationOptions.Default,
+    [TMockInterceptor.Create(behavior)]);
   PInterface(@source)^.QueryInterface(typeData.Guid, target);
   Result.fMock := Mock.From<TInterface>(target).fMock;
 end;

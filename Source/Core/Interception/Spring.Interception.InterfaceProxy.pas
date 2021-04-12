@@ -54,7 +54,8 @@ type
     fTarget: TValue;
     fTypeInfo: PTypeInfo;
     procedure AddAdditionalInterface(typeInfo: PTypeInfo;
-      const options: TProxyGenerationOptions);
+      const options: TProxyGenerationOptions;
+      const interceptors: array of IInterceptor);
     function GetInterceptors: IEnumerable<IInterceptor>;
     function GetTarget: TValue;
   protected
@@ -121,7 +122,8 @@ begin
 end;
 
 procedure TInterfaceProxy.AddAdditionalInterface(typeInfo: PTypeInfo;
-  const options: TProxyGenerationOptions);
+  const options: TProxyGenerationOptions;
+  const interceptors: array of IInterceptor);
 begin
   if not fAdditionalInterfaces.Any(
     function(const proxy: TAggregatedInterfaceProxy): Boolean
@@ -129,7 +131,7 @@ begin
       Result := proxy.fTypeInfo = typeInfo;
     end) then
     fAdditionalInterfaces.Add(TAggregatedInterfaceProxy.Create(
-      typeInfo, [], options, nil, fInterceptors.ToArray, Self));
+      typeInfo, [], options, nil, interceptors, Self));
 end;
 
 procedure TInterfaceProxy.GenerateInterfaces(

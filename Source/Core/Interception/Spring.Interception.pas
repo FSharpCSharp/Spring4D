@@ -111,7 +111,8 @@ type
   IDynamicProxy = interface
     ['{7DDA3562-3F82-4FA0-9869-9FB27E0CF89D}']
     procedure AddAdditionalInterface(typeInfo: PTypeInfo;
-      const options: TProxyGenerationOptions);
+      const options: TProxyGenerationOptions;
+      const interceptors: array of IInterceptor);
   end;
 
   TProxyGenerator = record
