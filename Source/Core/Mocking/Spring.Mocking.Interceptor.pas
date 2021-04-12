@@ -276,7 +276,7 @@ begin
         // create results for params
         if invocation.Method.HasExtendedInfo
           and (invocation.Method.MethodKind = mkFunction)
-          and (invocation.Method.ReturnType.TypeKind = tkInterface) then
+          and HasMethodInfo(invocation.Method.ReturnType.Handle) then
         begin
           methodCall := TMethodCall.Create(CreateMock(invocation),
             CreateArgMatch(invocation.Arguments, invocation.Method.GetParameters), nil);
