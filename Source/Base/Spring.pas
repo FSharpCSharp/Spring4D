@@ -12533,43 +12533,12 @@ class procedure TArray.IntroSort<T>(var values: array of T;
   {$IFDEF SUPPORTS_CONSTREF}[ref]{$ENDIF}const compare: TCompareMethod<T>; depthLimit: Integer);
 var
   partitionSize, pivot: Integer;
-  arr: Pointer;
-  temp: T;
 begin
   partitionSize := Length(values);
   while partitionSize > 1 do
   begin
     if partitionSize <= IntrosortSizeThreshold then
     begin
-      if partitionSize <= 3 then
-      begin
-        arr := @values[0];
-        if compare(TSlice<T>(arr^)[0], TSlice<T>(arr^)[1]) > 0 then
-        begin
-          temp := TSlice<T>(arr^)[0];
-          TSlice<T>(arr^)[0] := TSlice<T>(arr^)[1];
-          TSlice<T>(arr^)[1] := temp;
-        end;
-
-        if partitionSize = 2 then Exit;
-
-        if compare(TSlice<T>(arr^)[0], TSlice<T>(arr^)[2]) > 0 then
-        begin
-          temp := TSlice<T>(arr^)[0];
-          TSlice<T>(arr^)[0] := TSlice<T>(arr^)[2];
-          TSlice<T>(arr^)[2] := temp;
-        end;
-
-        if compare(TSlice<T>(arr^)[1], TSlice<T>(arr^)[2]) > 0 then
-        begin
-          temp := TSlice<T>(arr^)[1];
-          TSlice<T>(arr^)[1] := TSlice<T>(arr^)[2];
-          TSlice<T>(arr^)[2] := temp;
-        end;
-
-        Exit;
-      end;
-
       InsertionSort<T>(Slice(values, partitionSize), compare);
       Exit;
     end
@@ -12698,21 +12667,6 @@ begin
   begin
     if partitionSize <= IntrosortSizeThreshold then
     begin
-      if partitionSize <= 3 then
-      begin
-        if compare(values[0], values[size]) > 0 then
-          BinarySwap(@values[0], @values[size], size);
-
-        if partitionSize = 2 then Exit;
-
-        if compare(values[0], values[2*size]) > 0 then
-          BinarySwap(@values[0], @values[2*size], size);
-
-        if compare(values[size], values[2*size]) > 0 then
-          BinarySwap(@values[size], @values[2*size], size);
-
-        Exit;
-      end;
       InsertionSort_Ref(values, partitionSize - 1, compare, size);
       Exit;
     end
