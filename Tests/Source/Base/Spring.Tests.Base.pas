@@ -4479,7 +4479,4 @@ end;
 {$ENDREGION}
 
 
-initialization
-  RegisterTest(TSortTest.Suite);
-
 end.

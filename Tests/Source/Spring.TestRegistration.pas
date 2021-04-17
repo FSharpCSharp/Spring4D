@@ -101,7 +101,8 @@ begin
       TTestVirtualClass.Suite,
       TTestEnum.Suite,
       TTestBaseRoutines.Suite,
-      TTestManagedObject.Suite
+      TTestManagedObject.Suite,
+      TSortTest.Suite
     ]);
   end;
 
