@@ -56,8 +56,8 @@ uses
   Posix.Pthread,
 {$ENDIF}
   SyncObjs,
-  Spring,
-  System.SysUtils;
+  SysUtils,
+  Spring;
 
 
 type

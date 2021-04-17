@@ -3099,6 +3099,7 @@ function AtomicIncrement(var target: Int64; increment: Int64 = 1): Int64; overlo
 function AtomicDecrement(var target: Integer): Integer; overload;
 function AtomicDecrement(var target: NativeInt; decrement: NativeInt): NativeInt; overload;
 function AtomicExchange(var target: Integer; value: Integer): Integer; overload;
+function AtomicExchange(var target: NativeInt; value: NativeInt): NativeInt; overload;
 function AtomicExchange(var target: Pointer; value: Pointer): Pointer; overload;
 function AtomicCmpExchange(var target: Integer; newValue, comparand: Integer): Integer; overload;
 function AtomicCmpExchange(var target: NativeInt; newValue, comparand: NativeInt): NativeInt; overload;
@@ -3994,6 +3995,18 @@ asm
 end;
 
 function AtomicExchange(var target: Integer; value: Integer): Integer;
+asm
+{$IFDEF CPUX86}
+  lock xchg [eax],edx
+  mov eax,edx
+{$ENDIF}
+{$IFDEF CPUX64}
+  lock xchg [rcx],rdx
+  mov rax,rdx
+{$ENDIF}
+end;
+
+function AtomicExchange(var target: NativeInt; value: NativeInt): NativeInt;
 asm
 {$IFDEF CPUX86}
   lock xchg [eax],edx
