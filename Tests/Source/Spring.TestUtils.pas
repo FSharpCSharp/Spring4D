@@ -68,12 +68,12 @@ uses
   Math,
   StrUtils;
 
-{$IFNDEF DELPHIXE2_UP}
+{$IF not declared(ReturnAddress)}
 function ReturnAddress: Pointer; inline;
 begin
   Result := CallerAddr;
 end;
-{$ENDIF}
+{$IFEND}
 
 
 {$REGION 'TAbstractTestHelper'}
