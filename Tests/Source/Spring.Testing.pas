@@ -508,9 +508,8 @@ end;
 
 procedure TTestSuite.AddTests(testClass: TTestCaseClass);
 
-  procedure InternalInvoke(const suite: ITestSuite; const method: TRttiMethod;
-    const parameters: TArray<TRttiParameter>; const arguments: TArray<TValue>;
-    argIndex: Integer = 0; paramIndex: Integer = 0);
+  procedure InternalInvoke(const method: TRttiMethod; const parameters: TArray<TRttiParameter>;
+    const arguments: TArray<TValue>; argIndex: Integer = 0; paramIndex: Integer = 0);
   var
     attribute: TTestingAttribute;
     i: Integer;
@@ -532,25 +531,24 @@ procedure TTestSuite.AddTests(testClass: TTestCaseClass);
           attribute.Values[i].TryConvert(
             parameters[paramIndex].ParamType.Handle, arguments[paramIndex], ISO8601FormatSettings);
           if paramIndex = Length(parameters) - 1 then
-            suite.AddTest(testClass.Create(method, arguments) as ITest)
+            AddTest(testClass.Create(method, arguments) as ITest)
           else
-            InternalInvoke(suite, method, parameters, arguments, i, paramIndex + 1);
+            InternalInvoke(method, parameters, arguments, i, paramIndex + 1);
         end
       else
       begin
         attribute.Values[argIndex].TryConvert(
           parameters[paramIndex].ParamType.Handle, arguments[paramIndex], ISO8601FormatSettings);
         if paramIndex = Length(parameters) - 1 then
-          suite.AddTest(testClass.Create(method, arguments) as ITest)
+          AddTest(testClass.Create(method, arguments) as ITest)
         else
-          InternalInvoke(suite, method, parameters, arguments, argIndex, paramIndex + 1);
+          InternalInvoke(method, parameters, arguments, argIndex, paramIndex + 1);
       end;
     end;
   end;
 
-  procedure HandleSourceAttribute(const suite: ITestSuite;
-    const method: TRttiMethod; const parameters: TArray<TRttiParameter>;
-    const arguments: TArray<TValue>);
+  procedure HandleSourceAttribute(const method: TRttiMethod;
+    const parameters: TArray<TRttiParameter>; const arguments: TArray<TValue>);
   var
     sourceAttribute: TestCaseSourceAttribute;
     sourceMethod: TRttiMethod;
@@ -579,18 +577,18 @@ procedure TTestSuite.AddTests(testClass: TTestCaseClass);
             end;
             if data.fName <> '' then
               testCase.Name := data.fName;
-            suite.AddTest(testCase as ITest);
+            AddTest(testCase as ITest);
             Continue;
           end;
 
           if Length(parameters) > 1 then
           begin
             method.ConvertValues(values.GetArray, arguments);
-            suite.AddTest(testClass.Create(method, arguments) as ITest);
+            AddTest(testClass.Create(method, arguments) as ITest);
           end
           else
             if values.TryConvert(parameters[0].ParamType.Handle, arguments[0], ISO8601FormatSettings) then
-              suite.AddTest(testClass.Create(method, arguments) as ITest);
+              AddTest(testClass.Create(method, arguments) as ITest);
         end;
       end;
     end;
@@ -601,7 +599,6 @@ var
   parameters: TArray<TRttiParameter>;
   i: Integer;
   arguments: TArray<TValue>;
-  suite: ITestSuite;
   attribute: TestCaseAttribute;
 begin
   for method in TType.GetType(testClass).GetMethods do
@@ -622,21 +619,18 @@ begin
     else
       SetLength(arguments, Length(parameters) + 1);
 
-    suite := TTestSuite.Create(method.Name);
-    AddTest(suite);
-
     for attribute in method.GetCustomAttributes<TestCaseAttribute> do
     begin
       method.ConvertValues(attribute.fValues, arguments);
-      suite.AddTest(testClass.Create(method, arguments) as ITest);
+      AddTest(testClass.Create(method, arguments) as ITest);
     end;
 
-    HandleSourceAttribute(suite, method, parameters, arguments);
+    HandleSourceAttribute(method, parameters, arguments);
 
     if parameters = nil then
-      suite.AddTest(testClass.Create(method, nil) as ITest)
+      AddTest(testClass.Create(method, nil) as ITest)
     else if IsTestMethod(method, parameters) then
-      InternalInvoke(suite, method, parameters, arguments);
+      InternalInvoke(method, parameters, arguments);
   end;
 end;
 
