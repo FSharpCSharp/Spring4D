@@ -495,7 +495,8 @@ end;
 
 procedure Mock<T>.Reset;
 begin
-  fMock.Reset;
+  if Assigned(fMock) then
+    fMock.Reset;
 end;
 
 {$ENDREGION}
