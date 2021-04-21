@@ -180,6 +180,7 @@ end;
 
 destructor TMock.Destroy;
 begin
+  fInterceptor.Reset;
   if fTypeInfo.Kind = tkClass then
     fProxy.AsObject.Free;
   inherited Destroy;

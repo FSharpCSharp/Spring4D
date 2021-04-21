@@ -69,6 +69,7 @@ type
 
   MockDynamicallySupportsOtherInterfaces = class(TTestCase)
   published
+    procedure SetupAsResultOfFunction;
     procedure WhenAsFunctionIsCalled;
   end;
 
@@ -117,6 +118,7 @@ type
   end;
 
   IParent = interface
+    ['{CAEAF1BD-3145-4CF5-A1E4-CAA137B0AF3E}']
     function GetChild: IChild;
   end;
 
@@ -492,6 +494,18 @@ end;
 
 
 {$REGION 'MockDynamicallySupportsOtherInterfaces'}
+
+procedure MockDynamicallySupportsOtherInterfaces.SetupAsResultOfFunction;
+var
+  parentMock: Mock<IParent>;
+  childMock: Mock<IChild>;
+begin
+  childMock := parentMock.AsType<IChild>;
+  parentMock.Setup.Returns(parentMock.AsType<IChild>.Instance).When.GetChild;
+
+  CheckSame(parentMock.Instance as IChild, parentMock.Instance.GetChild);
+  CheckSame(parentMock.Instance, parentMock.Instance.GetChild as IParent);
+end;
 
 procedure MockDynamicallySupportsOtherInterfaces.WhenAsFunctionIsCalled;
 var

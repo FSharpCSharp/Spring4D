@@ -389,9 +389,12 @@ begin
   source := fMock.Instance;
   if not Supports(PInterface(@source)^, IDynamicProxy, proxy) then
     raise EMockException.Create('fatal error');
-  proxy.AddAdditionalInterface(TypeInfo(TInterface), TProxyGenerationOptions.Default,
-    [TMockInterceptor.Create(behavior)]);
-  PInterface(@source)^.QueryInterface(typeData.Guid, target);
+  if PInterface(@source)^.QueryInterface(typeData.Guid, target) <> S_OK then
+  begin
+    proxy.AddAdditionalInterface(TypeInfo(TInterface), TProxyGenerationOptions.Default,
+      [TMockInterceptor.Create(behavior)]);
+    PInterface(@source)^.QueryInterface(typeData.Guid, target);
+  end;
   Result.fMock := Mock.From<TInterface>(target).fMock;
 end;
 
@@ -517,7 +520,7 @@ begin
   mock.Create(TypeInfo(T), accessor.GetInterceptors.First(
     function(const interceptor: IInterceptor): Boolean
     begin
-      Result := (interceptor as TObject) is TMockInterceptor
+      Result := interceptor is TMockInterceptor;
     end) as TMockInterceptor, proxy);
   Result.fMock := mock as IMock<T>;
 end;
