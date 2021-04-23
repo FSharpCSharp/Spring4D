@@ -3145,6 +3145,10 @@ procedure BinarySwap(left, right: Pointer; size: Cardinal);
 
 function _LookupVtableInfo(intf: TDefaultGenericInterface; info: TypInfo.PTypeInfo; size: Integer): Pointer; {$IFDEF DELPHIX_SEATTLE_UP}inline;{$ENDIF}
 
+{$IFNDEF MSWINDOWS}
+function RegisterExpectedMemoryLeak(P: Pointer): Boolean;
+{$ENDIF}
+
   {$ENDREGION}
 
 
@@ -4435,6 +4439,16 @@ begin
   Result := Generics.Defaults._LookupVtableInfo(intf, info, size);
 {$ENDIF}
 end;
+
+{$IFNDEF MSWINDOWS}
+function RegisterExpectedMemoryLeak(P: Pointer): Boolean;
+var
+  MemoryManager: TMemoryManagerEx;
+begin
+  GetMemoryManager(MemoryManager);
+  Result := MemoryManager.RegisterExpectedMemoryLeak(P);
+end;
+{$ENDIF}
 
 {$ENDREGION}
 

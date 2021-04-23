@@ -147,6 +147,9 @@ function IsVirtualMethodOverride(baseClass, classType: TClass; method: Pointer):
 
 implementation
 
+uses
+  Spring;
+
 
 {$REGION 'Routines'}
 
