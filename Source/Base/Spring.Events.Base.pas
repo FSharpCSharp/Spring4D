@@ -95,13 +95,13 @@ uses
 {$ENDIF}
   TypInfo;
 
-function IsValidObj(p: PPointer): Boolean;
+function IsValidObject(p: PPointer): Boolean;
 {$IFDEF MSWINDOWS}
 var
   memInfo: TMemoryBasicInformation;
 {$ENDIF}
 
-  function IsValidPtr(address: Pointer): Boolean;
+  function IsValidAddress(address: Pointer): Boolean;
   begin
     // Must be above 64k and 4 byte aligned
     if (UIntPtr(address) > $FFFF) and (UIntPtr(address) and 3 = 0) then
@@ -116,18 +116,16 @@ var
         VirtualQuery(address, memInfo, SizeOf(memInfo));
       end;
       // check the readability of the memory address
-      Result := (memInfo.RegionSize >= SizeOf(Pointer))
+     if (memInfo.RegionSize >= SizeOf(Pointer))
         and (memInfo.State = MEM_COMMIT)
         and (memInfo.Protect and (PAGE_READONLY or PAGE_READWRITE
           or PAGE_WRITECOPY or PAGE_EXECUTE or PAGE_EXECUTE_READ
           or PAGE_EXECUTE_READWRITE or PAGE_EXECUTE_WRITECOPY) <> 0)
-        and (memInfo.Protect and PAGE_GUARD = 0);
-{$ELSE}
-      Result := True;
+        and (memInfo.Protect and PAGE_GUARD = 0) then
 {$ENDIF}
-    end
-    else
-      Result := False;
+      Exit(True);
+    end;
+    Result := False;
   end;
 
 begin
@@ -137,20 +135,16 @@ begin
 {$IFDEF MSWINDOWS}
     memInfo.RegionSize := 0;
 {$ENDIF}
-    if IsValidPtr(PByte(p) + vmtSelfPtr)
+    if IsValidAddress(p)
       // not a class pointer - they point to themselves in the vmtSelfPtr slot
-      and (p <> PPointer(PByte(p) + vmtSelfPtr)^) then
-      if IsValidPtr(p) and IsValidPtr(PByte(p^) + vmtSelfPtr)
+      and not (IsValidAddress(PByte(p) + vmtSelfPtr)
+      and (p = PPointer(PByte(p) + vmtSelfPtr)^)) then
+      if IsValidAddress(p^) and IsValidAddress(PByte(p^) + vmtSelfPtr)
         // looks to be an object, it points to a valid class pointer
         and (p^ = PPointer(PByte(p^) + vmtSelfPtr)^) then
         Result := True;
   except
   end; //FI:W501
-end;
-
-function SafeIsClass(p: Pointer; cls: TClass): Boolean; inline;
-begin
-  Result := IsValidObj(p) and (TObject(p) is cls);
 end;
 
 
@@ -276,7 +270,8 @@ var
   data: Pointer;
 begin
   data := item.Data;
-  if UseFreeNotification and SafeIsClass(data, TComponent) then
+  if UseFreeNotification
+    and IsValidObject(data) and TObject(data).InheritsFrom(TComponent) then
     case action of //FI:W535
       cnAdded:
       begin
@@ -411,7 +406,7 @@ begin
             if Assigned(handler) and Assigned(handler.Code) then
             repeat
               data := handler.Data;
-              if SafeIsClass(data, TComponent) then
+              if IsValidObject(data) and TObject(data).InheritsFrom(TComponent) then
               begin
                 EnsureNotificationHandler;
                 fNotificationHandler.FreeNotification(TComponent(data));
