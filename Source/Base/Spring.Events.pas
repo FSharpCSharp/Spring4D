@@ -613,6 +613,7 @@ procedure TEvent.InternalInvokeMethod(UserData: Pointer;
   const Args: TArray<TValue>; out Result: TValue);
 var
   argsWithoutSelf: TArray<TValue>;
+  guard: GuardedPointer;
   handlers: PMethodArray;
   i: Integer;
   value: TValue;
@@ -620,7 +621,8 @@ begin
   if CanInvoke then
   begin
     argsWithoutSelf := Copy(Args, 1);
-    handlers := AcquireGuard(fHandlers);
+    guard := AcquireGuard(fHandlers);
+    handlers := guard;
     try
       for i := 0 to DynArrayHigh(handlers) do
       begin
@@ -628,7 +630,7 @@ begin
         TRttiInvokableType(UserData).Invoke(value, argsWithoutSelf);
       end;
     finally
-      ReleaseGuard;
+      guard.Release;
     end;
   end;
 end;
@@ -637,6 +639,7 @@ procedure TEvent.InternalInvokeDelegate(Method: TRttiMethod;
   const Args: TArray<TValue>; out Result: TValue);
 var
   argsWithoutSelf: TArray<TValue>;
+  guard: GuardedPointer;
   handlers: PMethodArray;
   i: Integer;
   reference: IInterface;
@@ -645,7 +648,8 @@ begin
   if CanInvoke then
   begin
     argsWithoutSelf := Copy(Args, 1);
-    handlers := AcquireGuard(fHandlers);
+    guard := AcquireGuard(fHandlers);
+    handlers := guard;
     try
       for i := 0 to DynArrayHigh(handlers) do
       begin
@@ -654,7 +658,7 @@ begin
         method.Invoke(value, argsWithoutSelf);
       end;
     finally
-      ReleaseGuard;
+      guard.Release;
     end;
   end;
 end;
