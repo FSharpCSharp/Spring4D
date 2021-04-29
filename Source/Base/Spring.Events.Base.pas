@@ -61,7 +61,7 @@ type
     procedure SetOnChanged(const value: TNotifyEvent);
     procedure SetUseFreeNotification(const value: Boolean);
   {$ENDREGION}
-    procedure EnsureNotificationHandler; inline;
+    procedure EnsureNotificationHandler;
     procedure HandleNotification(component: TComponent; operation: TOperation);
   protected
     fInvoke: TMethodPointer;
@@ -166,11 +166,15 @@ begin
 end;
 
 procedure TEventBase.EnsureNotificationHandler;
+var
+  notificationHandler: TNotificationHandler;
 begin
   if fNotificationHandler = nil then
   begin
-    fNotificationHandler := TNotificationHandler.Create(nil);
-    fNotificationHandler.OnNotification := HandleNotification;
+    notificationHandler := TNotificationHandler.Create(nil);
+    notificationHandler.OnNotification := HandleNotification;;
+    if AtomicCmpExchange(Pointer(fNotificationHandler), Pointer(notificationHandler), nil) <> nil then
+      notificationHandler.Free;
   end;
 end;
 
