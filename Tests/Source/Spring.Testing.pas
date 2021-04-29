@@ -433,7 +433,9 @@ procedure TTestCase.Invoke(AMethod: TTestMethod);
 var
   expected, actual: TValue;
 begin
+  {$IF declared(FTestMethodInvoked)}
   FTestMethodInvoked := True;
+  {$IFEND}
   if Assigned(fExpectedException) then
     StartExpectingException(fExpectedException);
   if Assigned(fMethod) and (fMethod.CodeAddress = TMethod(AMethod).Code) then

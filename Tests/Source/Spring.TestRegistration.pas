@@ -34,7 +34,6 @@ implementation
 
 uses
   TestFramework,
-  TestExtensions,
   Spring.TestUtils,
   Spring.Tests.Base,
   Spring.Tests.Collections,
@@ -78,7 +77,7 @@ begin
   if BaseCommon in TestKinds then
   begin
     RegisterTests('Spring.Base', [
-      TRepeatedTest.Create(TTestNullableInteger.Suite, 3),
+      TTestNullableInteger.Suite,
       TTestNullableBoolean.Suite,
       TTestNullableDateTime.Suite,
       TTestNullableInt64.Suite,
