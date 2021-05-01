@@ -1169,6 +1169,7 @@ begin
   fSet2 := TCollections.CreateSet<Integer>(10);
   fSet1.AddRange([1, 2, 3]);
   fSet2.AddRange([3, 1, 4, 5]);
+  fChangeCount := 0;
 end;
 
 procedure TTestNormalHashSet.TearDown;
@@ -1308,6 +1309,7 @@ procedure TTestIntegerList.SetUp;
 begin
   inherited;
   SUT := TCollections.CreateList<Integer>;
+  ChangeCount := 0;
 end;
 
 procedure TTestIntegerList.TearDown;
