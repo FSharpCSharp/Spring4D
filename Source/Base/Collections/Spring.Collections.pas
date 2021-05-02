@@ -2720,7 +2720,7 @@ type
   ///    .
   /// </summary>
   TCollections = class
-  strict protected
+  protected
     const FoldedTypeKinds = [tkInteger, tkChar, tkEnumeration, tkWChar, tkInt64, tkUString, tkClass, tkClassRef, tkPointer, tkProcedure, tkInterface];
 
     class procedure CreateDictionary_Int8_Int8(capacity: Integer;
@@ -3533,7 +3533,6 @@ type
   end;
 
 function GetElementType(typeInfo: PTypeInfo): PTypeInfo;
-function _LookupVtableInfo(intf: TDefaultGenericInterface; info: PTypeInfo; size: Integer): Pointer;
 
 const
   IEnumerableGuid: TGUID = '{6BC97F33-C0A8-4770-8E1C-C2017527B7E7}';
@@ -3593,44 +3592,6 @@ begin
     Result := nil;
   end;
 end;
-
-
-{$REGION 'Instance comparer'}
-
-function Compare_Instance(Inst: Pointer; const Left, Right: TObject): Integer; //FI:O804
-var
-  comparable: IComparable;
-begin
-  if Supports(Left, IComparable, comparable) then
-    Result := comparable.CompareTo(Right)
-  else
-    if NativeUInt(Left) < NativeUInt(Right) then
-      Result := -1
-    else if NativeUInt(Left) > NativeUInt(Right) then
-      Result := 1
-    else
-      Result := 0;
-end;
-
-const
-  InstanceComparer_VTable: TComparerVtable =
-  (
-    @NopQueryInterface,
-    @NopAddRef,
-    @NopRelease,
-    @Compare_Instance
-  );
-  InstanceComparer: Pointer = @InstanceComparer_VTable;
-
-function _LookupVtableInfo(intf: TDefaultGenericInterface; info: PTypeInfo; size: Integer): Pointer;
-begin
-  if (info <> nil) and (info.Kind = tkClass) and (intf = giComparer) then
-    Result := @InstanceComparer
-  else
-    Result := Generics.Defaults._LookupVtableInfo(intf, info, size);
-end;
-
-{$ENDREGION}
 
 
 {$REGION 'TPair<TKey, TValue>'}

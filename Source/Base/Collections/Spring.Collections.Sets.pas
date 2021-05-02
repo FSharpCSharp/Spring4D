@@ -92,7 +92,6 @@ type
   {$ENDREGION}
   private
     fHashTable: THashTable;
-    fKeyComparer: IEqualityComparer<T>;
   {$REGION 'Property Accessors'}
     function GetCapacity: Integer; inline;
     function GetCount: Integer;
@@ -195,6 +194,7 @@ implementation
 
 uses
   TypInfo,
+  Spring.Comparers,
   Spring.Events.Base,
   Spring.ResourceStrings;
 
@@ -354,7 +354,7 @@ end;
 
 constructor THashSet<T>.Create(capacity: Integer; const comparer: IEqualityComparer<T>);
 begin
-  fKeyComparer := comparer;
+  fHashTable.Comparer := comparer;
   fHashTable.ItemsInfo := TypeInfo(TItems);
   SetCapacity(capacity);
 end;
@@ -363,9 +363,13 @@ procedure THashSet<T>.AfterConstruction;
 begin
   inherited AfterConstruction;
 
-  if not Assigned(fKeyComparer) then
-    fKeyComparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
-  fHashTable.Initialize(@TComparerThunks<T>.Equals, @TComparerThunks<T>.GetHashCode, fKeyComparer);
+  THashTable(fHashTable).Initialize(@TComparerThunks<T>.Equals, @TComparerThunks<T>.GetHashCode, TypeInfo(T));
+  {$IFDEF DELPHIXE7_UP}
+  if fHashTable.DefaultComparer then
+    fHashTable.Find := @THashTable<T>.FindWithoutComparer
+  else
+  {$ENDIF}
+    fHashTable.Find := @THashTable<T>.FindWithComparer;
 end;
 
 procedure THashSet<T>.BeforeDestruction;
@@ -376,24 +380,24 @@ end;
 
 function THashSet<T>.CreateSet: ISet<T>;
 begin
-  Result := THashSet<T>.Create(0, fKeyComparer);
+  Result := THashSet<T>.Create(0, IEqualityComparer<T>(fHashTable.Comparer));
 end;
 
 procedure THashSet<T>.SetCapacity(value: Integer);
 begin
-  fHashTable.Capacity := value;
+  THashTable(fHashTable).Capacity := value;
 end;
 
 procedure THashSet<T>.TrimExcess;
 begin
-  fHashTable.Capacity := fHashTable.Count;
+  THashTable(fHashTable).Capacity := THashTable(fHashTable).Count;
 end;
 
 function THashSet<T>.TryGetElementAt(var item: T; index: Integer): Boolean;
 begin
   if Cardinal(index) < Cardinal(fHashTable.Count) then
   begin
-    fHashTable.EnsureCompact;
+    THashTable(fHashTable).EnsureCompact;
     item := TItems(fHashTable.Items)[index].Item;
     Exit(True);
   end;
@@ -405,7 +409,7 @@ function THashSet<T>.Add(const item: T): Boolean;
 var
   entry: PItem;
 begin
-  entry := fHashTable.Add(item);
+  entry := IHashTable<T>(@fHashTable).Find(item, IgnoreExisting or InsertNonExisting);
   if Assigned(entry) then
   begin
     entry.Item := item;
@@ -422,26 +426,29 @@ var
 begin
   if Assigned(Notify) then
   begin
-    fHashTable.ClearCount;
+    THashTable(fHashTable).ClearCount;
     item := PItem(fHashTable.Items);
     for i := 1 to fHashTable.ItemCount do
       if item.HashCode >= 0 then
         Notify(Self, item.Item, caRemoved);
   end;
 
-  fHashTable.Clear;
+  THashTable(fHashTable).Clear;
 end;
 
 function THashSet<T>.Contains(const item: T): Boolean;
+var
+  entry: PItem;
 begin
-  Result := fHashTable.Find(item) <> nil;
+  entry := IHashTable<T>(@fHashTable).Find(item);
+  Result := Assigned(entry);
 end;
 
 function THashSet<T>.Extract(const item: T): T;
 var
   entry: PItem;
 begin
-  entry := fHashTable.Delete(item);
+  entry := IHashTable<T>(@fHashTable).Find(item, DeleteExisting);
   if Assigned(entry) then
   begin
     DoNotify(entry.Item, caExtracted);
@@ -465,7 +472,7 @@ end;
 
 function THashSet<T>.GetCapacity: Integer;
 begin
-  Result := fHashTable.Capacity;
+  Result := THashTable(fHashTable).Capacity;
 end;
 
 function THashSet<T>.GetCount: Integer;
@@ -482,7 +489,7 @@ function THashSet<T>.Remove(const item: T): Boolean;
 var
   entry: PItem;
 begin
-  entry := fHashTable.Delete(item);
+  entry := IHashTable<T>(@fHashTable).Find(item, DeleteExisting);
   if Assigned(entry) then
   begin
     DoNotify(entry.Item, caRemoved);
@@ -732,8 +739,8 @@ end;
 constructor TFoldedHashSet<T>.Create(elementType: PTypeInfo; capacity: Integer;
   const comparer: IEqualityComparer<T>);
 begin
-  fKeyComparer := comparer;
-  fHashTable.ItemsInfo := TypeInfo(TItems);
+  fHashTable.Comparer := comparer;
+  THashTable(fHashTable).ItemsInfo := TypeInfo(TItems);
   SetCapacity(capacity);
   fElementType := elementType;
 end;

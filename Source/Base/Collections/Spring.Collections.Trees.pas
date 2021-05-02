@@ -515,7 +515,9 @@ type
 implementation
 
 uses
-  Math;
+  Math,
+  Spring.Comparers;
+
 
 {$REGION 'TBlockAllocatedArray<T>'}
 
@@ -1499,8 +1501,11 @@ begin
 end;
 
 function TRedBlackTree<T>.Exists(const key: T): Boolean;
+var
+  node: PNode;
 begin
-  Result := (fCount > 0) and Assigned(FindNode(key));
+  node := FindNode(key);
+  Result := Assigned(node);
 end;
 
 function TRedBlackTree<T>.Find(const key: T; var value: T): Boolean;
@@ -1709,8 +1714,11 @@ begin
 end;
 
 function TRedBlackTree<TKey, TValue>.Exists(const key: TKey): Boolean;
+var
+  node: PNode;
 begin
-  Result := (fCount > 0) and Assigned(FindNode(key));
+  node := FindNode(key);
+  Result := Assigned(node);
 end;
 
 function TRedBlackTree<TKey, TValue>.Find(const key: TKey;

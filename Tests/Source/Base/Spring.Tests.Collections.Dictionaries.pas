@@ -1632,16 +1632,20 @@ begin
   SUT.Add(2, 'b');
   AddEventHandlers;
   SUT[2] := 'c';
+  SUT[3] := 'd';
 
-  CheckEquals(2, fChangedEvents.Count);
+  CheckEquals(3, fChangedEvents.Count);
   CheckChanged(0, 2, 'b', caRemoved);
   CheckChanged(1, 2, 'c', caAdded);
+  CheckChanged(2, 3, 'd', caAdded);
 
-  CheckEquals(0, fKeyChangedEvents.Count);
+  CheckEquals(1, fKeyChangedEvents.Count);
+  CheckKeyChanged(0, 3, caAdded);
 
-  CheckEquals(2, fValueChangedEvents.Count);
+  CheckEquals(3, fValueChangedEvents.Count);
   CheckValueChanged(0, 'b', caRemoved);
   CheckValueChanged(1, 'c', caAdded);
+  CheckValueChanged(2, 'd', caAdded);
 end;
 
 procedure TTestDictionaryChangedEventBase.TestTryAdd;

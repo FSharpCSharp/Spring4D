@@ -850,6 +850,7 @@ implementation
 uses
   Rtti,
   TypInfo,
+  Spring.Comparers,
   Spring.ResourceStrings;
 
 

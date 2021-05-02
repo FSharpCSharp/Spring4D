@@ -408,6 +408,7 @@ uses
   Rtti, // suppress hint about inlining
 {$ENDIF}
   Spring.Collections.Extensions,
+  Spring.Comparers,
   Spring.Events.Base,
   Spring.ResourceStrings;
 

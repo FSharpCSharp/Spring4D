@@ -33,6 +33,7 @@ unit Spring;
 {$IFDEF DELPHIXE4_UP}
   {$ZEROBASEDSTRINGS OFF}
 {$ENDIF}
+{$DEFINE FIELD_RTTI}
 
 interface
 
@@ -3163,8 +3164,6 @@ procedure CheckRange(index, count, size: Integer); inline;
 
 procedure BinarySwap(left, right: Pointer; size: Cardinal);
 
-function _LookupVtableInfo(intf: TDefaultGenericInterface; info: TypInfo.PTypeInfo; size: Integer): Pointer; {$IFDEF DELPHIX_SEATTLE_UP}inline;{$ENDIF}
-
 {$IFNDEF MSWINDOWS}
 function RegisterExpectedMemoryLeak(P: Pointer): Boolean;
 {$ENDIF}
@@ -3180,7 +3179,7 @@ const
 
   ObjCastGUID: TGUID = '{CEDF24DE-80A4-447D-8C75-EB871DC121FD}';
 
-  FieldVisibility = [{vcPrivate..vcProtected}];
+  FieldVisibility = [{$IFDEF FIELD_RTTI}vcPrivate..vcProtected{$ENDIF}];
 
 {$IFNDEF DELPHIXE3_UP}
 {$IF SizeOf(Pointer) = 4}
@@ -3224,6 +3223,7 @@ uses
 {$IFDEF POSIX}
   Posix.Pthread,
 {$ENDIF}
+  Spring.Comparers,
   Spring.Events,
   Spring.ResourceStrings,
   Spring.VirtualClass;
@@ -4335,143 +4335,6 @@ begin
   {$Q-}
   if (count < 0) or (index > size - count) then RaiseHelper.ArgumentOutOfRange_Count;
   {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
-end;
-
-{$IFNDEF DELPHIX_SEATTLE_UP}
-function Compare_I3(instance: Pointer; const left, right: Int24): Integer;
-begin
-  Result := left.Bytes[0] - right.Bytes[0];
-  if Result <> 0 then Exit;
-  Result := left.Bytes[1] - right.Bytes[1];
-  if Result <> 0 then Exit;
-  Result := left.Bytes[2] - right.Bytes[2];
-end;
-
-function Equals_I3(instance: Pointer; const left, right: Int24): Boolean;
-begin
-  Result := (left.Low = right.Low) and (left.High = right.High);
-end;
-
-function GetHashCode_I3(instance: Pointer; const value: Int24): Integer;
-begin
-{$IFDEF DELPHIXE8_UP}
-  Result := THashBobJenkins.GetHashValue(value, 3, 0);
-{$ELSE}
-  Result := BobJenkinsHash(value, 3, 0);
-{$ENDIF}
-end;
-
-const
-  Comparer_Vtable_I3: array[0..3] of Pointer =
-  (
-    @NopQueryInterface,
-    @NopAddref,
-    @NopRelease,
-    @Compare_I3
-  );
-  Comparer_Instance_I3: Pointer = @Comparer_Vtable_I3;
-
-  EqualityComparer_Vtable_I3: array[0..4] of Pointer =
-  (
-    @NopQueryInterface,
-    @NopAddref,
-    @NopRelease,
-    @Equals_I3,
-    @GetHashCode_I3
-  );
-  EqualityComparer_Instance_I3: Pointer = @EqualityComparer_Vtable_I3;
-{$ENDIF}
-
-{$IFDEF ASSEMBLER}
-function Compare_I4(instance: Pointer; const left, right: Int32): Integer;
-asm
-  xor eax,eax
-  cmp left,right
-  mov edx,-1
-  setg al
-  cmovl eax,edx
-end;
-
-function Compare_U4(instance: Pointer; const left, right: UInt32): Integer;
-asm
-  xor eax,eax
-  cmp left,right
-  mov edx,-1
-  seta al
-  cmovb eax,edx
-end;
-
-{$IFDEF CPUX64}
-function Compare_I8(instance: Pointer; const left, right: Int64): Integer;
-asm
-  xor eax,eax
-  cmp left,right
-  mov edx,-1
-  setg al
-  cmovl eax,edx
-end;
-
-function Compare_U8(instance: Pointer; const left, right: UInt32): Integer;
-asm
-  xor eax,eax
-  cmp left,right
-  mov edx,-1
-  seta al
-  cmovb eax,edx
-end;
-{$ENDIF}
-
-const
-  Comparer_Vtable_I4: array[0..3] of Pointer =
-  (
-    @NopQueryInterface,
-    @NopAddref,
-    @NopRelease,
-    @Compare_I4
-  );
-  Comparer_Vtable_U4: array[0..3] of Pointer =
-  (
-    @NopQueryInterface,
-    @NopAddref,
-    @NopRelease,
-    @Compare_U4
-  );
-  Comparer_Instance_I4: Pointer = @Comparer_Vtable_I4;
-  Comparer_Instance_U4: Pointer = @Comparer_Vtable_U4;
-
-{$IFDEF CPUX64}
-  Comparer_Vtable_I8: array[0..3] of Pointer =
-  (
-    @NopQueryInterface,
-    @NopAddref,
-    @NopRelease,
-    @Compare_I8
-  );
-  Comparer_Vtable_U8: array[0..3] of Pointer =
-  (
-    @NopQueryInterface,
-    @NopAddref,
-    @NopRelease,
-    @Compare_U8
-  );
-  Comparer_Instance_I8: Pointer = @Comparer_Vtable_I8;
-  Comparer_Instance_U8: Pointer = @Comparer_Vtable_U8;
-{$ENDIF}
-{$ENDIF}
-
-function _LookupVtableInfo(intf: TDefaultGenericInterface; info: PTypeInfo; size: Integer): Pointer;
-begin
-{$IFNDEF DELPHIX_SEATTLE_UP}
-  if not ((info.Kind in [tkArray, tkRecord]) and (size = 3)) then
-    Result := Generics.Defaults._LookupVtableInfo(intf, info, size)
-  else
-    if intf = giComparer then
-      Result := @Comparer_Instance_I3
-    else
-      Result := @EqualityComparer_Instance_I3;
-{$ELSE}
-  Result := Generics.Defaults._LookupVtableInfo(intf, info, size);
-{$ENDIF}
 end;
 
 {$IFNDEF MSWINDOWS}
@@ -13954,32 +13817,10 @@ end;
 
 
 procedure Init;
-{$IFDEF MSWINDOWS}
-var
-  comparer, buffer: Pointer;
-  n: SIZE_T;
-{$ENDIF}
 begin
   Nop_Instance := Pointer(TValueData(TValue.Empty).FValueData);
 
   TValue.UpdateFormatSettings;
-
-{$IFDEF MSWINDOWS}
-  comparer := _LookupVtableInfo(giComparer, TypeInfo(Integer), 4);
-  buffer := @Comparer_Vtable_I4;
-  WriteProcessMemory(GetCurrentProcess, comparer, @buffer, SizeOf(Pointer), n);
-  comparer := _LookupVtableInfo(giComparer, TypeInfo(Cardinal), 4);
-  buffer := @Comparer_Vtable_U4;
-  WriteProcessMemory(GetCurrentProcess, comparer, @buffer, SizeOf(Pointer), n);
-{$IFDEF CPUX64}
-  comparer := _LookupVtableInfo(giComparer, TypeInfo(Int64), 8);
-  buffer := @Comparer_Vtable_I8;
-  WriteProcessMemory(GetCurrentProcess, comparer, @buffer, SizeOf(Pointer), n);
-  comparer := _LookupVtableInfo(giComparer, TypeInfo(UInt64), 8);
-  buffer := @Comparer_Vtable_U8;
-  WriteProcessMemory(GetCurrentProcess, comparer, @buffer, SizeOf(Pointer), n);
-{$ENDIF}
-{$ENDIF}
 end;
 
 

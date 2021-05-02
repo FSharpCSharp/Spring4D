@@ -130,7 +130,6 @@ type
   {$ENDREGION}
   private
     fHashTable: THashTable;
-    fComparer: IEqualityComparer<T>;
     fItems: TItemCollection;
     fEntries: TEntryCollection;
   {$REGION 'Property Accessors'}
@@ -301,6 +300,7 @@ type
 implementation
 
 uses
+  Spring.Comparers,
   Spring.Events.Base,
   Spring.ResourceStrings;
 
@@ -374,7 +374,7 @@ end;
 
 constructor THashMultiSet<T>.Create(const comparer: IEqualityComparer<T>);
 begin
-  fComparer := comparer;
+  fHashTable.Comparer := comparer;
 end;
 
 procedure THashMultiSet<T>.AfterConstruction;
@@ -384,12 +384,16 @@ begin
   inherited AfterConstruction;
 
   elementType := GetElementType;
-  if not Assigned(fComparer) then
-    fComparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, elementType, SizeOf(T)));
   fHashTable.ItemsInfo := TypeInfo(TItems);
-  fHashTable.Initialize(@TComparerThunks<T>.Equals, @TComparerThunks<T>.GetHashCode, fComparer);
+  fHashTable.Initialize(@TComparerThunks<T>.Equals, @TComparerThunks<T>.GetHashCode, elementType);
+  {$IFDEF DELPHIXE7_UP}
+  if fHashTable.DefaultComparer then
+    fHashTable.Find := @THashTable<T>.FindWithoutComparer
+  else
+  {$ENDIF}
+    fHashTable.Find := @THashTable<T>.FindWithComparer;
 
-  fItems := TItemCollection.Create(Self, @fHashTable, fComparer, elementType, 0);
+  fItems := TItemCollection.Create(Self, @fHashTable, IEqualityComparer<T>(fHashTable.Comparer), elementType, 0);
   fEntries := TEntryCollection.Create(Self);
 end;
 
@@ -403,7 +407,7 @@ end;
 
 function THashMultiSet<T>.CreateMultiSet: IMultiSet<T>;
 begin
-  Result := THashMultiSet<T>.Create(fComparer);
+  Result := THashMultiSet<T>.Create(IEqualityComparer<T>(fHashTable.Comparer));
 end;
 
 function THashMultiSet<T>.Add(const item: T): Boolean;
@@ -414,18 +418,16 @@ end;
 
 function THashMultiSet<T>.Add(const item: T; count: Integer): Integer;
 var
-  entry: ^TItem;
-  overrideExisting: Boolean;
+  entry: PItem;
   i: Integer;
 begin
   if count < 0 then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
 
-  overrideExisting := True;
-  entry := fHashTable.AddOrSet(item, overrideExisting);
-
+  entry := IHashTable<T>(@fHashTable).Find(item, OverwriteExisting or InsertNonExisting);
   entry.Item := item;
-  if overrideExisting then
+  if entry.HashCode < 0 then
   begin
+    entry.HashCode := entry.HashCode and not RemovedFlag;
     Result := entry.Count;
     Inc(entry.Count, count);
   end
@@ -444,7 +446,7 @@ end;
 procedure THashMultiSet<T>.Clear;
 begin
   if not Assigned(Notify) then
-    fHashTable.Clear
+    THashTable(fHashTable).Clear
   else
     ClearWithNotify;
 end;
@@ -457,7 +459,7 @@ begin
   oldItemCount := fHashTable.ItemCount;
   oldItems := TItems(fHashTable.Items);
 
-  fHashTable.Clear;
+  THashTable(fHashTable).Clear;
 
   for i := 0 to oldItemCount - 1 do
     if oldItems[i].HashCode >= 0 then
@@ -466,8 +468,11 @@ begin
 end;
 
 function THashMultiSet<T>.Contains(const item: T): Boolean;
+var
+  entry: PItem;
 begin
-  Result := fHashTable.Find(item) <> nil;
+  entry := IHashTable<T>(@fHashTable).Find(item);
+  Result := Assigned(entry);
 end;
 
 function THashMultiSet<T>.Extract(const item: T): T;
@@ -503,35 +508,37 @@ function THashMultiSet<T>.GetItemCount(const item: T): Integer;
 var
   entry: PItem;
 begin
-  entry := fHashTable.Find(item);
-  if Assigned(entry) then
-    Result := entry.Count
-  else
-    Result := 0;
+  entry := IHashTable<T>(@fHashTable).Find(item);
+  if not Assigned(entry) then Exit(Integer(Pointer(entry)));
+  Result := entry.Count;
 end;
 
 function THashMultiSet<T>.Remove(const item: T): Boolean;
+var
+  remaining: Integer;
 begin
-  Result := Remove(item, 1) > 0;
+  remaining := Remove(item, 1);
+  Result := remaining > 0;
 end;
 
 function THashMultiSet<T>.Remove(const item: T; count: Integer): Integer;
 var
   entry: THashTableEntry;
   tableItem: PItem;
-  i: Integer;
+  remaining, i: Integer;
 begin
   if count < 0 then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
 
-  entry.HashCode := fComparer.GetHashCode(item);
-  if fHashTable.Find(item, entry) then
+  entry.HashCode := IEqualityComparer<T>(fHashTable.Comparer).GetHashCode(item);
+  Result := Ord(THashTable(fHashTable).FindEntry(item, entry));
+  if Result > 0 then
   begin
     tableItem := @TItems(fHashTable.Items)[entry.ItemIndex];
-    Result := tableItem.Count;
-    if Result <= count then
+    remaining := tableItem.Count;
+    if remaining <= count then
     begin
-      fHashTable.Delete(entry);
-      count := Result;
+      THashTable(fHashTable).DeleteEntry(entry);
+      count := remaining;
     end
     else
       Dec(tableItem.Count, count);
@@ -540,9 +547,8 @@ begin
     if Assigned(Notify) then
       for i := 1 to count  do
         Notify(Self, item, caRemoved);
-  end
-  else
-    Result := 0;
+    Result := remaining;
+  end;
 end;
 
 procedure THashMultiSet<T>.SetItemCount(const item: T; count: Integer);
@@ -555,7 +561,7 @@ begin
 
   if count = 0 then
   begin
-    entry := fHashTable.Delete(item);
+    entry := IHashTable<T>(@fHashTable).Find(item, DeleteExisting);
     if Assigned(entry) then
     begin
       Dec(fCount, entry.Count);
@@ -566,13 +572,9 @@ begin
   end
   else
   begin
-    overrideExisting := True;
-    entry := fHashTable.AddOrSet(item, overrideExisting);
-    if not overrideExisting then
-    begin
-      entry.Item := item;
-      entry.Count := 0;
-    end;
+    entry := IHashTable<T>(@fHashTable).Find(item, InsertNonExisting);
+    entry.Item := item;
+//    entry.Count := 0;
     Inc(fCount, count - entry.Count);
     i := entry.Count;
     entry.Count := count;
@@ -659,13 +661,13 @@ begin
   fSource := source;
 end;
 
-function THashMultiSet<T>.TEntryCollection.Contains(
-  const value: TEntry): Boolean;
+function THashMultiSet<T>.TEntryCollection.Contains(const value: TEntry): Boolean;
 var
   item: PItem;
 begin
-  item := fSource.fHashTable.Find(value.Item);
-  Result := Assigned(item) and (value.Count = item.Count);
+  item := IHashTable<T>(@fSource.fHashTable).Find(value.Item);
+  if not Assigned(item) then Exit(Boolean(Pointer(item)));
+  Result := value.Count = item.Count;
 end;
 
 function THashMultiSet<T>.TEntryCollection.GetCount: Integer;
@@ -916,23 +918,20 @@ begin
   Inc(fVersion);
   {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   node := fTree.FindNode(item);
-  if Assigned(node) then
+  if not Assigned(node) then Exit(Integer(Pointer(node)));
+
+  Result := node.Value;
+  if Result <= count then
   begin
-    Result := node.Value;
-    if Result <= count then
-    begin
-      fTree.DeleteNode(node);
-      count := Result;
-    end
-    else
-      node.Value := Result - count;
-    Dec(fCount, count);
-    if Assigned(Notify) then
-      for i := 1 to count do
-        Notify(Self, item, caRemoved);
+    fTree.DeleteNode(node);
+    count := Result;
   end
   else
-    Result := 0;
+    node.Value := Result - count;
+  Dec(fCount, count);
+  if Assigned(Notify) then
+    for i := 1 to count do
+      Notify(Self, item, caRemoved);
 end;
 
 procedure TTreeMultiSet<T>.SetItemCount(const item: T; count: Integer);

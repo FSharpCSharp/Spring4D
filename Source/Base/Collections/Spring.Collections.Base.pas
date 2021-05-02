@@ -89,8 +89,6 @@ type
     class function Default: IComparer<TPair<TKey, TValue>>; static;
   end;
 
-  TEqualsMethod<T> = function(const left, right: T): Boolean of object;
-  TGetHashCodeMethod<T> = function(const value: T): Integer of object;
   TComparerThunks<T> = record
     class function Equals(instance: Pointer; const left, right): Boolean; static;
     class function GetHashCode(instance: Pointer; const value): Integer; static;
@@ -519,6 +517,7 @@ type
   private type
   {$REGION 'Nested Types'}
     PT = ^T;
+
     PEnumerator = ^TEnumerator;
     TEnumerator = record
       Vtable: Pointer;
@@ -671,13 +670,6 @@ const
   OwnsObjectsMask     = 1 shl OwnsObjectsBitIndex;
   CountMask           = not OwnsObjectsMask;
 
-  // use the MSB of the HashCode to note removed items
-  RemovedFlag        = Integer($80000000);
-  MinCapacity        = 6; // 75% load factor leads to min bucket count of 8
-  BucketSentinelFlag = RemovedFlag; // note: the same as RemovedFlag
-  EmptyBucket        = -1; // must be negative, note choice of BucketSentinelFlag
-  UsedBucket         = -2; // likewise
-
 procedure AssignComparer(var comparer; const source: IInterface);
 procedure EnsureEventInstance(var event: TEventBase; var result;
   eventClass: TEventBaseClass; eventChanged: TNotifyEvent);
@@ -696,6 +688,7 @@ uses
   Posix.Pthread,
 {$ENDIF}
   Spring.Collections.Lists,
+  Spring.Comparers,
   Spring.ResourceStrings;
 
 procedure AssignComparer(var comparer; const source: IInterface);
@@ -875,12 +868,14 @@ end;
 
 class function TComparerThunks<T>.Equals(instance: Pointer; const left, right): Boolean;
 begin
-  Result := TEqualsMethod<T>(instance^)(T(left), T(right));
+  Result := IEqualityComparer<T>(instance).Equals(T(left), T(right));
+//  Result := TEqualsMethod<T>(instance^)(T(left), T(right));
 end;
 
 class function TComparerThunks<T>.GetHashCode(instance: Pointer; const value): Integer;
 begin
-  Result := TGetHashCodeMethod<T>(instance^)(T(value));
+  Result := IEqualityComparer<T>(instance).GetHashCode(T(value));
+//  Result := TGetHashCodeMethod<T>(instance^)(T(value));
 end;
 
 {$ENDREGION}
@@ -2373,16 +2368,40 @@ begin
   Result.fHashTable := hashTable;
   Result.fElementType := elementType;
   Result.fComparer := comparer;
-  Result.fOffset := THashTable.KeyOffset + offset;
+  Result.fOffset := KeyOffset + offset;
   Result.AfterConstruction;
 end;
 
 function TInnerCollection<T>.Contains(const value: T): Boolean;
+var
+  hashTable: PHashTable;
+  item: PByte;
+  itemCount, itemSize, targetIndex, offset: Integer;
+  comparer: Pointer;
 begin
-  if fOffset = THashTable.KeyOffset then // means this is for the key
-    Result := fHashTable.Find(value) <> nil
+  if fOffset = KeyOffset then // means this is for the key
+  begin
+    item := IHashTable<T>(fHashTable).Find(value);
+    Result := Assigned(item);
+  end
   else
-    Result := inherited Contains(value, fComparer);
+  begin
+    offset := fOffset;
+    hashTable := fHashTable;
+    item := hashTable.Items;
+    itemCount := hashTable.ItemCount;
+    itemSize := hashTable.ItemSize;
+    comparer := Pointer(fComparer);
+    while itemCount > 0 do
+    begin
+      if PInteger(item)^ >= 0 then
+        if IEqualityComparer<T>(comparer).Equals(PT(item + offset)^, value) then
+          Exit(True);
+      Inc(item, itemSize);
+      Dec(itemCount);
+    end;
+    Result := False;
+  end;
 end;
 
 function TInnerCollection<T>.GetCount: Integer;
