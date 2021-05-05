@@ -6658,6 +6658,8 @@ begin
         Exit(False);
       end;
   Result := TValueHack(Self).TryCast(ATypeInfo, AResult);
+  if Result then
+    TValueData(AResult).FTypeInfo := ATypeInfo;
 end;
 
 
