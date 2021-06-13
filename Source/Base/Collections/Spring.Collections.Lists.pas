@@ -2270,12 +2270,12 @@ end;
 function TAnonymousReadOnlyList<T>.IndexOf(const item: T; index,
   count: Integer): Integer;
 var
-  comparer: IEqualityComparer<T>;
+  comparer: Pointer;
   i: Integer;
 begin
-  comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
+  comparer := _LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T));
   for i := index to index + count - 1 do
-    if Comparer.Equals(fItems(i), item) then
+    if IEqualityComparer<T>(comparer).Equals(fItems(i), item) then
       Exit(i);
   Result := -1;
 end;

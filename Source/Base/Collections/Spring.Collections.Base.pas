@@ -1087,10 +1087,10 @@ end;
 
 function TEnumerableBase<T>.Contains(const value: T): Boolean;
 var
-  comparer: IEqualityComparer<T>;
+  comparer: Pointer;
 begin
-  comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, GetElementType, SizeOf(T)));
-  Result := IEnumerable<T>(this).Contains(value, comparer);
+  comparer := _LookupVtableInfo(giEqualityComparer, GetElementType, SizeOf(T));
+  Result := IEnumerable<T>(this).Contains(value, IEqualityComparer<T>(comparer));
 end;
 
 function TEnumerableBase<T>.Contains(const value: T;
@@ -1165,7 +1165,7 @@ label
   ExitFalse;
 var
   enumerator: IEnumerator<T>;
-  comparer: IEqualityComparer<T>;
+  comparer: Pointer;
   i: Integer;
   {$IFDEF RSP31615}
   item: T;
@@ -1173,7 +1173,7 @@ var
 begin
   i := 0;
   enumerator := IEnumerable<T>(this).GetEnumerator;
-  comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, GetElementType, SizeOf(T)));
+  comparer := _LookupVtableInfo(giEqualityComparer, GetElementType, SizeOf(T));
   while enumerator.MoveNext do
   begin
     {$IFDEF RSP31615}
@@ -1187,7 +1187,7 @@ begin
     end
     else
     {$ENDIF}
-    if (i > High(values)) or not comparer.Equals(enumerator.Current, values[i]) then
+    if (i > High(values)) or not IEqualityComparer<T>(comparer).Equals(enumerator.Current, values[i]) then
       goto ExitFalse;
     Inc(i);
   end;
@@ -1198,13 +1198,13 @@ end;
 
 function TEnumerableBase<T>.EqualsTo(const values: IEnumerable<T>): Boolean;
 var
-  comparer: IEqualityComparer<T>;
+  comparer: Pointer;
 begin
   Result := IInterface(this) = values;
   if not Result then
   begin
-    comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, GetElementType, SizeOf(T)));
-    Result := IEnumerable<T>(this).EqualsTo(values, comparer);
+    comparer := _LookupVtableInfo(giEqualityComparer, GetElementType, SizeOf(T));
+    Result := IEnumerable<T>(this).EqualsTo(values, IEqualityComparer<T>(comparer));
   end;
 end;
 
@@ -3844,14 +3844,14 @@ end;
 
 function TArrayIterator<T>.IndexOf(const item: T; index, count: Integer): Integer;
 var
-  comparer: IEqualityComparer<T>;
+  comparer: Pointer;
   i: Integer;
 begin
   CheckRange(index, count, fCount);
 
-  comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, GetElementType, SizeOf(T)));
+  comparer := _LookupVtableInfo(giEqualityComparer, GetElementType, SizeOf(T));
   for i := index to index + count - 1 do
-    if comparer.Equals(fItems[i], item) then
+    if IEqualityComparer<T>(comparer).Equals(fItems[i], item) then
       Exit(i);
   Result := -1;
 end;

@@ -1573,7 +1573,7 @@ type
     fValue: T;
     fHasValue: string;
     class var
-      fComparer: IEqualityComparer<T>;
+      fComparer: Pointer;
       fEquals: function(const left, right: T): Boolean;
     class function EqualsComparer(const left, right: T): Boolean; static;
     class function EqualsInternal(const left, right: T): Boolean; static; inline;
@@ -2832,10 +2832,6 @@ type
 {$ENDIF}
   end;
 
-  TComparer<T> = class(Generics.Defaults.TComparer<T>)
-    class function Default: IComparer<T>; static;
-  end;
-
   {$ENDREGION}
 
 
@@ -3709,15 +3705,11 @@ begin
 end;
 
 function MethodReferenceToMethod(const methodRef): TMethod;
-type
-  TVtable = array[0..3] of Pointer;
-  PVtable = ^TVtable;
-  PPVtable = ^PVtable;
 begin
   if Pointer(methodRef) = nil then
     Exit(Default(TMethod));
   // 3 is offset of Invoke, after QI, AddRef, Release
-  Result.Code := PPVtable(methodRef)^^[3];
+  Result.Code := PPVtable(methodRef)^[3];
   Result.Data := Pointer(methodRef);
 end;
 
@@ -8332,14 +8324,14 @@ begin
     fEquals := method.CodeAddress;
   if not Assigned(fEquals) then
   begin
-    fComparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
+    fComparer := _LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T));
     fEquals := Nullable<T>.EqualsComparer;
   end;
 end;
 
 class function Nullable<T>.EqualsComparer(const left, right: T): Boolean;
 begin
-  Result := fComparer.Equals(left, right);
+  Result := IEqualityComparer<T>(fComparer).Equals(left, right);
 end;
 
 class function Nullable<T>.EqualsInternal(const left, right: T): Boolean;
@@ -10192,13 +10184,12 @@ end;
 
 function Tuple<T1, T2>.Equals(const value: Tuple<T1, T2>): Boolean;
 var
-  comparer1: IEqualityComparer<T1>;
-  comparer2: IEqualityComparer<T2>;
+  comparer1, comparer2: Pointer;
 begin
-  comparer1 := IEqualityComparer<T1>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T1), SizeOf(T1)));
-  comparer2 := IEqualityComparer<T2>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T2), SizeOf(T2)));
-  Result := comparer1.Equals(fValue1, value.Value1)
-    and comparer2.Equals(fValue2, value.Value2);
+  comparer1 := _LookupVtableInfo(giEqualityComparer, TypeInfo(T1), SizeOf(T1));
+  comparer2 := _LookupVtableInfo(giEqualityComparer, TypeInfo(T2), SizeOf(T2));
+  Result := IEqualityComparer<T1>(comparer1).Equals(fValue1, value.Value1)
+    and IEqualityComparer<T2>(comparer2).Equals(fValue2, value.Value2);
 end;
 
 class operator Tuple<T1, T2>.Equal(const left, right: Tuple<T1, T2>): Boolean;
@@ -10259,16 +10250,14 @@ end;
 
 function Tuple<T1, T2, T3>.Equals(const value: Tuple<T1, T2, T3>): Boolean;
 var
-  comparer1: IEqualityComparer<T1>;
-  comparer2: IEqualityComparer<T2>;
-  comparer3: IEqualityComparer<T3>;
+  comparer1, comparer2, comparer3: Pointer;
 begin
-  comparer1 := IEqualityComparer<T1>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T1), SizeOf(T1)));
-  comparer2 := IEqualityComparer<T2>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T2), SizeOf(T2)));
-  comparer3 := IEqualityComparer<T3>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T3), SizeOf(T3)));
-  Result := comparer1.Equals(fValue1, value.Value1)
-    and comparer2.Equals(fValue2, value.Value2)
-    and comparer3.Equals(fValue3, value.Value3);
+  comparer1 := _LookupVtableInfo(giEqualityComparer, TypeInfo(T1), SizeOf(T1));
+  comparer2 := _LookupVtableInfo(giEqualityComparer, TypeInfo(T2), SizeOf(T2));
+  comparer3 := _LookupVtableInfo(giEqualityComparer, TypeInfo(T3), SizeOf(T3));
+  Result := IEqualityComparer<T1>(comparer1).Equals(fValue1, value.Value1)
+    and IEqualityComparer<T2>(comparer2).Equals(fValue2, value.Value2)
+    and IEqualityComparer<T3>(comparer3).Equals(fValue3, value.Value3);
 end;
 
 class operator Tuple<T1, T2, T3>.Equal(const left,
@@ -10351,19 +10340,16 @@ end;
 function Tuple<T1, T2, T3, T4>.Equals(
   const value: Tuple<T1, T2, T3, T4>): Boolean;
 var
-  comparer1: IEqualityComparer<T1>;
-  comparer2: IEqualityComparer<T2>;
-  comparer3: IEqualityComparer<T3>;
-  comparer4: IEqualityComparer<T4>;
+  comparer1, comparer2, comparer3, comparer4: Pointer;
 begin
-  comparer1 := IEqualityComparer<T1>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T1), SizeOf(T1)));
-  comparer2 := IEqualityComparer<T2>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T2), SizeOf(T2)));
-  comparer3 := IEqualityComparer<T3>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T3), SizeOf(T3)));
-  comparer4 := IEqualityComparer<T4>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T4), SizeOf(T4)));
-  Result := comparer1.Equals(fValue1, value.Value1)
-    and comparer2.Equals(fValue2, value.Value2)
-    and comparer3.Equals(fValue3, value.Value3)
-    and comparer4.Equals(fValue4, value.Value4);
+  comparer1 := _LookupVtableInfo(giEqualityComparer, TypeInfo(T1), SizeOf(T1));
+  comparer2 := _LookupVtableInfo(giEqualityComparer, TypeInfo(T2), SizeOf(T2));
+  comparer3 := _LookupVtableInfo(giEqualityComparer, TypeInfo(T3), SizeOf(T3));
+  comparer4 := _LookupVtableInfo(giEqualityComparer, TypeInfo(T4), SizeOf(T4));
+  Result := IEqualityComparer<T1>(comparer1).Equals(fValue1, value.Value1)
+    and IEqualityComparer<T2>(comparer2).Equals(fValue2, value.Value2)
+    and IEqualityComparer<T3>(comparer3).Equals(fValue3, value.Value3)
+    and IEqualityComparer<T4>(comparer4).Equals(fValue4, value.Value4);
 end;
 
 class operator Tuple<T1, T2, T3, T4>.Equal(const left,
@@ -11305,10 +11291,10 @@ end;
 class function TArray.BinarySearch<T>(const values: array of T; const item: T;
   out foundIndex: Integer): Boolean;
 var
-  comparer: IComparer<T>;
+  comparer: Pointer;
 begin
-  comparer := IComparer<T>(_LookupVtableInfo(giComparer, TypeInfo(T), SizeOf(T)));
-  Result := BinarySearch<T>(values, item, foundIndex, comparer,
+  comparer := _LookupVtableInfo(giComparer, TypeInfo(T), SizeOf(T));
+  Result := BinarySearch<T>(values, item, foundIndex, IComparer<T>(comparer),
     Low(values), Length(values));
 end;
 
@@ -11375,11 +11361,11 @@ end;
 class function TArray.BinarySearchUpperBound<T>(const values: array of T;
   const item: T; out foundIndex: Integer): Boolean;
 var
-  comparer: IComparer<T>;
+  comparer: Pointer;
 begin
-  comparer := IComparer<T>(_LookupVtableInfo(giComparer, TypeInfo(T), SizeOf(T)));
+  comparer := _LookupVtableInfo(giComparer, TypeInfo(T), SizeOf(T));
   Result := BinarySearchUpperBound<T>(values, item, foundIndex,
-    comparer, Low(values), Length(values));
+    IComparer<T>(comparer), Low(values), Length(values));
 end;
 
 class function TArray.BinarySearchUpperBound<T>(const values: array of T;
@@ -11418,12 +11404,12 @@ end;
 class function TArray.Contains<T>(const values: array of T;
   const item: T): Boolean;
 var
-  comparer: IEqualityComparer<T>;
+  comparer: Pointer;
   i: Integer;
 begin
-  comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
+  comparer := _LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T));
   for i := Low(Values) to High(Values) do
-    if comparer.Equals(values[i], item) then
+    if IEqualityComparer<T>(comparer).Equals(values[i], item) then
       Exit(True);
   Result := False;
 end;
@@ -11476,28 +11462,28 @@ end;
 
 class function TArray.IndexOf<T>(const values: array of T; const item: T): Integer;
 var
-  comparer: IEqualityComparer<T>;
+  comparer: Pointer;
 begin
-  comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
-  Result := IndexOf<T>(values, item, 0, Length(values), comparer);
+  comparer := _LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T));
+  Result := IndexOf<T>(values, item, 0, Length(values), IEqualityComparer<T>(comparer));
 end;
 
 class function TArray.IndexOf<T>(const values: array of T; const item: T;
   index: Integer): Integer;
 var
-  comparer: IEqualityComparer<T>;
+  comparer: Pointer;
 begin
-  comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
-  Result := IndexOf<T>(values, item, index, Length(values) - index, comparer);
+  comparer := _LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T));
+  Result := IndexOf<T>(values, item, index, Length(values) - index, IEqualityComparer<T>(comparer));
 end;
 
 class function TArray.IndexOf<T>(const values: array of T; const item: T;
   index, count: Integer): Integer;
 var
-  comparer: IEqualityComparer<T>;
+  comparer: Pointer;
 begin
-  comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
-  Result := IndexOf<T>(values, item, index, count, comparer);
+  comparer := _LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T));
+  Result := IndexOf<T>(values, item, index, count, IEqualityComparer<T>(comparer));
 end;
 
 class function TArray.IndexOf<T>(const values: array of T; const item: T;
@@ -11520,28 +11506,28 @@ end;
 class function TArray.LastIndexOf<T>(const values: array of T;
   const item: T): Integer;
 var
-  comparer: IEqualityComparer<T>;
+  comparer: Pointer;
 begin
-  comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
-  Result := LastIndexOf<T>(values, item, High(values), Length(values), comparer);
+  comparer := _LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T));
+  Result := LastIndexOf<T>(values, item, High(values), Length(values), IEqualityComparer<T>(comparer));
 end;
 
 class function TArray.LastIndexOf<T>(const values: array of T; const item: T;
   index: Integer): Integer;
 var
-  comparer: IEqualityComparer<T>;
+  comparer: Pointer;
 begin
-  comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
-  Result := LastIndexOf<T>(values, item, index, Length(values) - index, comparer);
+  comparer := _LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T));
+  Result := LastIndexOf<T>(values, item, index, Length(values) - index, IEqualityComparer<T>(comparer));
 end;
 
 class function TArray.LastIndexOf<T>(const values: array of T; const item: T;
   index, count: Integer): Integer;
 var
-  comparer: IEqualityComparer<T>;
+  comparer: Pointer;
 begin
-  comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
-  Result := LastIndexOf<T>(values, item, index, count, comparer);
+  comparer := _LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T));
+  Result := LastIndexOf<T>(values, item, index, count, IEqualityComparer<T>(comparer));
 end;
 
 class function TArray.LastIndexOf<T>(const values: array of T; const item: T;
@@ -12307,28 +12293,28 @@ end;
 {$IFDEF DELPHIXE7_UP}
 class procedure TArray.StableSort<T>(var values: array of T);
 var
-  comparer: IComparer<T>;
+  comparer: Pointer;
 begin
-  comparer := IComparer<T>(_LookupVtableInfo(giComparer, TypeInfo(T), SizeOf(T)));
+  comparer := _LookupVtableInfo(giComparer, TypeInfo(T), SizeOf(T));
   if ((GetTypeKind(T) in ManagedPointerTypeKinds) and UnsafeStableSort)
     or (GetTypeKind(T) in UnmanagedPointerTypeKinds) then
     TTimSort.Sort(@values, IComparer<Pointer>(comparer), 0, Length(values))
   else
-    TTimSort.Sort<T>(@values, comparer, 0, Length(values));
+    TTimSort.Sort<T>(@values, IComparer<T>(comparer), 0, Length(values));
 end;
 
 class procedure TArray.StableSort<T>(var values: array of T; index, count: Integer);
 var
-  comparer: IComparer<T>;
+  comparer: Pointer;
 begin
   CheckRange(index, count, Length(values));
 
-  comparer := IComparer<T>(_LookupVtableInfo(giComparer, TypeInfo(T), SizeOf(T)));
+  comparer := _LookupVtableInfo(giComparer, TypeInfo(T), SizeOf(T));
   if ((GetTypeKind(T) in ManagedPointerTypeKinds) and UnsafeStableSort)
     or (GetTypeKind(T) in UnmanagedPointerTypeKinds) then
     TTimSort.Sort(@values, IComparer<Pointer>(comparer), index, count)
   else
-    TTimSort.Sort<T>(@values, comparer, index, count);
+    TTimSort.Sort<T>(@values, IComparer<T>(comparer), index, count);
 end;
 
 class procedure TArray.StableSort<T>(var values: array of T; const comparer: IComparer<T>);
@@ -13164,11 +13150,6 @@ begin
   end;
 end;
 
-class function TComparer<T>.Default: IComparer<T>;
-begin
-  Result := IComparer<T>(_LookupVtableInfo(giComparer, TypeInfo(T), SizeOf(T)));
-end;
-
 {$ENDREGION}
 
 
@@ -13604,23 +13585,23 @@ end;
 
 function Vector<T>.InternalEquals(const items: array of T): Boolean;
 var
-  comparer: IEqualityComparer<T>;
+  comparer: Pointer;
   i: Integer;
 begin
-  comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
+  comparer := _LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T));
   for i := 0 to System.Length(fData) - 1 do
-    if not comparer.Equals(fData[i], items[i]) then
+    if not IEqualityComparer<T>(comparer).Equals(fData[i], items[i]) then
       Exit(False);
   Result := True;
 end;
 
 function Vector<T>.InternalIndexOf(const item: T): Integer;
 var
-  comparer: IEqualityComparer<T>;
+  comparer: Pointer;
 begin
-  comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
+  comparer := _LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T));
   for Result := 0 to High(fData) do
-    if comparer.Equals(fData[Result], item) then
+    if IEqualityComparer<T>(comparer).Equals(fData[Result], item) then
       Exit;
   Result := -1;
 end;

@@ -720,6 +720,7 @@ uses
   StrUtils,
   TimeSpan,
   Types,
+  Spring.Comparers,
   Spring.VirtualClass;
 
 
