@@ -72,6 +72,7 @@ type
     fReceivedCalls: IMultiMap<TRttiMethod,TArray<TValue>>;
     fState: TMockState;
     fSequence: IMockSequence;
+    fMockCount: Integer;
     class function CreateArgMatch(const arguments: TArray<TValue>;
       const parameters: TArray<TRttiParameter>): TArgMatch; static;
     function CreateMethodCalls: TArray<TMethodCall>;
@@ -84,6 +85,9 @@ type
     procedure Intercept(const invocation: IInvocation);
   public
     constructor Create(behavior: TMockBehavior = DefaultMockBehavior);
+
+    procedure IncMockCount;
+    procedure DecMockCount;
 
     procedure Executes(const action: TMockAction);
 
@@ -230,6 +234,17 @@ begin
       end;
       Result := True;
     end;
+end;
+
+procedure TMockInterceptor.IncMockCount;
+begin
+  AtomicIncrement(fMockCount);
+end;
+
+procedure TMockInterceptor.DecMockCount;
+begin
+  if AtomicDecrement(fMockCount) = 0 then
+    Reset;
 end;
 
 procedure TMockInterceptor.Executes(const action: TMockAction);

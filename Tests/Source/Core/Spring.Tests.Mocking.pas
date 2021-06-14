@@ -69,6 +69,7 @@ type
 
   MockDynamicallySupportsOtherInterfaces = class(TTestCase)
   published
+    procedure ResultOfAsFunctionHasLifetimeScope;
     procedure SetupAsResultOfFunction;
     procedure WhenAsFunctionIsCalled;
   end;
@@ -494,6 +495,37 @@ end;
 
 
 {$REGION 'MockDynamicallySupportsOtherInterfaces'}
+
+procedure MockDynamicallySupportsOtherInterfaces.ResultOfAsFunctionHasLifetimeScope;
+var
+  childMock: Mock<IChild>;
+
+  procedure SpecifyExpectation(const mock: Mock<IParent>); overload;
+  begin
+    mock.AsType<IChild>.Setup.Returns(42).When.GetNumber;
+    CheckEquals(42, mock.AsType<IChild>.Instance.GetNumber);
+    mock.AsType<IChild>.AsType<IParent>;
+  end;
+
+  procedure SpecifyExpectation2(const mock: Mock<IParent>); overload;
+  begin
+    childMock := mock.AsType<IChild>;
+    childMock.Setup.Returns(42).When.GetNumber;
+    CheckEquals(42, mock.AsType<IChild>.Instance.GetNumber);
+    mock.AsType<IChild>.AsType<IParent>;
+  end;
+
+var
+  mock: Mock<IParent>;
+begin
+  SpecifyExpectation(mock);
+  // result of AsType<IChild> was cleared at the end of SpecifyExpectation
+  CheckEquals(0, mock.AsType<IChild>.Instance.GetNumber);
+
+  SpecifyExpectation2(mock);
+  // result of AsType<IChild> was stored and thus subsequent calls to it remember the setup
+  CheckEquals(42, mock.AsType<IChild>.Instance.GetNumber);
+end;
 
 procedure MockDynamicallySupportsOtherInterfaces.SetupAsResultOfFunction;
 var
