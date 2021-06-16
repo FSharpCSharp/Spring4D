@@ -539,7 +539,7 @@ type
   {$REGION 'TValueHelper'}
 
   TValueConverterCallback = function (const value: TValue;
-    const targetTypeInfo: PTypeInfo; out targetValue: TValue;
+    const targetTypeInfo: PTypeInfo; var targetValue: TValue;
     const parameter: TValue): Boolean;
 
   TValueHelper = record helper for TValue
@@ -548,9 +548,7 @@ type
     fValueConverterCallback: TValueConverterCallback;
   private
     procedure Init(typeInfo: Pointer);
-{$IFNDEF DELPHIXE8_UP}
-    function GetTypeKind: TTypeKind; inline;
-{$ENDIF}
+    function GetTypeKind: TTypeKind;
     function GetValueType: TRttiType;
     function TryAsInterface(typeInfo: PTypeInfo; out Intf): Boolean;
     class procedure RaiseConversionError(source, target: PTypeInfo); static;
@@ -703,13 +701,13 @@ type
     ///   Tries to convert the stored value. Returns false when the conversion
     ///   is not possible.
     /// </summary>
-    function TryConvert(targetType: PTypeInfo; out targetValue: TValue): Boolean; overload;
+    function TryConvert(targetType: PTypeInfo; var targetValue: TValue): Boolean; overload;
 
     /// <summary>
     ///   Tries to convert the stored value using the specified format
     ///   settings. Returns false when the conversion is not possible.
     /// </summary>
-    function TryConvert(targetType: PTypeInfo; out targetValue: TValue;
+    function TryConvert(targetType: PTypeInfo; var targetValue: TValue;
       const formatSettings: TFormatSettings): Boolean; overload;
 
     /// <summary>
@@ -784,9 +782,7 @@ type
     ///   This fixes the issue with returning <c>tkUnknown</c> when the stored
     ///   value is an empty reference type (RSP-10071).
     /// </remarks>
-{$IFNDEF DELPHIXE8_UP}
     property Kind: TTypeKind read GetTypeKind;
-{$ENDIF}
 
     /// <summary>
     ///   Returns the TRttiType of the stored value.
@@ -6097,7 +6093,7 @@ end;
 
 class function TValueHelper.FromVariant(const value: Variant): TValue;
 
-  procedure FromCustomVariant(const value: Variant; out result: TValue);
+  procedure FromCustomVariant(const value: Variant; var result: TValue);
   type
     PCustomVariantTypeInfo = ^TCustomVariantTypeInfo;
     TCustomVariantTypeInfo = record
@@ -6286,15 +6282,13 @@ begin
     Result := TValue.Empty;
 end;
 
-{$IFNDEF DELPHIXE8_UP}
 function TValueHelper.GetTypeKind: TTypeKind;
 begin
-  if (TValueData(Self).FTypeInfo = nil) or (TValueData(Self).FValueData = nil) then
-    Result := tkUnknown
+  if (TValueData(Self).FTypeInfo <> nil) and (TValueData(Self).FValueData <> nil) then
+    Result := TValueData(Self).FTypeInfo.Kind
   else
-    Result := TValueData(Self).FTypeInfo.Kind;
+    Result := tkUnknown;
 end;
-{$ENDIF}
 
 function TValueHelper.GetValueType: TRttiType;
 begin
@@ -6666,22 +6660,22 @@ end;
 {$REGION 'Conversion functions'}
 type
   TConvertFunc = function(const source: TValue; target: PTypeInfo;
-    out value: TValue; const formatSettings: TFormatSettings): Boolean;
+    var value: TValue; const formatSettings: TFormatSettings): Boolean;
 
-function ConvFail(const source: TValue; target: PTypeInfo; out value: TValue;
+function ConvFail(const source: TValue; target: PTypeInfo; var value: TValue;
   const formatSettings: TFormatSettings): Boolean; //FI:O804
 begin
   Result := False;
 end;
 
 function ConvClass2Class(const source: TValue; target: PTypeInfo;
-  out value: TValue; const formatSettings: TFormatSettings): Boolean;
+  var value: TValue; const formatSettings: TFormatSettings): Boolean;
 begin
   Result := source.TryCast(target, value);
 end;
 
 function ConvClass2Enum(const source: TValue; target: PTypeInfo;
-  out value: TValue; const formatSettings: TFormatSettings): Boolean;
+  var value: TValue; const formatSettings: TFormatSettings): Boolean;
 begin
   Result := target = TypeInfo(Boolean);
   if Result then
@@ -6689,7 +6683,7 @@ begin
 end;
 
 function ConvFloat2Ord(const source: TValue; target: PTypeInfo;
-  out value: TValue; const formatSettings: TFormatSettings): Boolean;
+  var value: TValue; const formatSettings: TFormatSettings): Boolean;
 begin
   Result := Frac(source.AsExtended) = 0;
   if Result then
@@ -6697,7 +6691,7 @@ begin
 end;
 
 function ConvFloat2Str(const source: TValue; target: PTypeInfo;
-  out value: TValue; const formatSettings: TFormatSettings): Boolean;
+  var value: TValue; const formatSettings: TFormatSettings): Boolean;
 var
   temp: TValue;
 begin
@@ -6713,13 +6707,13 @@ begin
 end;
 
 function ConvIntf2Class(const source: TValue; target: PTypeInfo;
-  out value: TValue; const formatSettings: TFormatSettings): Boolean;
+  var value: TValue; const formatSettings: TFormatSettings): Boolean;
 begin
   Result := ConvClass2Class(source.AsInterface as TObject, target, value, formatSettings);
 end;
 
 function ConvIntf2Intf(const source: TValue; target: PTypeInfo;
-  out value: TValue; const formatSettings: TFormatSettings): Boolean;
+  var value: TValue; const formatSettings: TFormatSettings): Boolean;
 var
   intf: IInterface;
 begin
@@ -6731,14 +6725,14 @@ begin
 end;
 
 function ConvOrd2Float(const source: TValue; target: PTypeInfo;
-  out value: TValue; const formatSettings: TFormatSettings): Boolean;
+  var value: TValue; const formatSettings: TFormatSettings): Boolean;
 begin
   value := TValue.FromFloat(target, source.AsOrdinal);
   Result := True;
 end;
 
 function ConvOrd2Ord(const source: TValue; target: PTypeInfo;
-  out value: TValue; const formatSettings: TFormatSettings): Boolean;
+  var value: TValue; const formatSettings: TFormatSettings): Boolean;
 var
   i: Int64;
 begin
@@ -6751,7 +6745,7 @@ begin
 end;
 
 function ConvOrd2Str(const source: TValue; target: PTypeInfo;
-  out value: TValue; const formatSettings: TFormatSettings): Boolean;
+  var value: TValue; const formatSettings: TFormatSettings): Boolean;
 var
   temp: TValue;
 begin
@@ -6760,7 +6754,7 @@ begin
 end;
 
 function ConvRec2Meth(const source: TValue; target: PTypeInfo;
-  out value: TValue; const formatSettings: TFormatSettings): Boolean;
+  var value: TValue; const formatSettings: TFormatSettings): Boolean;
 begin
   Result := source.TypeInfo = TypeInfo(TMethod);
   if Result then
@@ -6771,7 +6765,7 @@ begin
 end;
 
 function ConvStr2Enum(const source: TValue; target: PTypeInfo;
-  out value: TValue; const formatSettings: TFormatSettings): Boolean;
+  var value: TValue; const formatSettings: TFormatSettings): Boolean;
 var
   temp: Integer;
 begin
@@ -6782,7 +6776,7 @@ begin
 end;
 
 function ConvStr2Float(const source: TValue; target: PTypeInfo;
-  out value: TValue; const formatSettings: TFormatSettings): Boolean;
+  var value: TValue; const formatSettings: TFormatSettings): Boolean;
 var
   s: string;
   d: TDateTime;
@@ -6815,7 +6809,7 @@ begin
 end;
 
 function ConvStr2Ord(const source: TValue; target: PTypeInfo;
-  out value: TValue; const formatSettings: TFormatSettings): Boolean;
+  var value: TValue; const formatSettings: TFormatSettings): Boolean;
 var
   s: string;
   i: Int64;
@@ -6880,7 +6874,7 @@ begin
 end;
 
 function ConvStr2DynArray(const source: TValue; target: PTypeInfo;
-  out value: TValue; const formatSettings: TFormatSettings): Boolean;
+  var value: TValue; const formatSettings: TFormatSettings): Boolean;
 var
   s: string;
   values: TStringDynArray;
@@ -6915,7 +6909,7 @@ begin
 end;
 
 function ConvStr2Array(const source: TValue; target: PTypeInfo;
-  out value: TValue; const formatSettings: TFormatSettings): Boolean;
+  var value: TValue; const formatSettings: TFormatSettings): Boolean;
 var
   s: string;
   values: TStringDynArray;
@@ -6957,7 +6951,7 @@ begin
 end;
 
 function ConvVariant2Enum(const source: TValue; target: PTypeInfo;
-  out value: TValue; const formatSettings: TFormatSettings): Boolean;
+  var value: TValue; const formatSettings: TFormatSettings): Boolean;
 var
   v: Variant;
   temp: TValue;
@@ -6972,7 +6966,7 @@ begin
 end;
 
 function ConvDynArray2DynArray(const source: TValue; target: PTypeInfo;
-  out value: TValue; const formatSettings: TFormatSettings): Boolean;
+  var value: TValue; const formatSettings: TFormatSettings): Boolean;
 var
   len, i: Integer;
   res, v1, v2: TValue;
@@ -7260,13 +7254,13 @@ const
 
 
 function TValueHelper.TryConvert(targetType: PTypeInfo;
-  out targetValue: TValue): Boolean;
+  var targetValue: TValue): Boolean;
 begin
   Result := TryConvert(targetType, targetValue, ConvertSettings);
 end;
 
 function TValueHelper.TryConvert(targetType: PTypeInfo;
-  out targetValue: TValue; const formatSettings: TFormatSettings): Boolean;
+  var targetValue: TValue; const formatSettings: TFormatSettings): Boolean;
 var
   value: TValue;
 begin
@@ -7317,6 +7311,8 @@ begin
 
     Result := Assigned(fValueConverterCallback)
       and fValueConverterCallback(Self, targetType, targetValue, TValue.From(@formatSettings, System.TypeInfo(TFormatSettings)));
+    if not Result then
+      Finalize(targetValue);
   end;
 end;
 

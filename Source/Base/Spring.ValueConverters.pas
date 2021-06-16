@@ -80,14 +80,14 @@ type
     ///   Target Rtti.PTypeInfo structure
     /// </param>
     /// <param name="targetValue">
-    ///   Target Rtti.TValue out parameter
+    ///   Target Rtti.TValue var parameter
     /// </param>
     /// <returns>
     ///   Returns System.Boolean, True if converting with success
     /// </returns>
     function TryConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
-      out targetValue: TValue): Boolean; overload;
+      var targetValue: TValue): Boolean; overload;
 
     /// <param name="value">
     ///   Rtti.TValue to convert
@@ -96,7 +96,7 @@ type
     ///   Target Rtti.PTypeInfo structure
     /// </param>
     /// <param name="targetValue">
-    ///   Target Rtti.TValue out parameter
+    ///   Target Rtti.TValue var parameter
     /// </param>
     /// <param name="parameter">
     ///   Additional Rtti.TValue formatting parameter, use when possible
@@ -106,7 +106,7 @@ type
     /// </returns>
     function TryConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
-      out targetValue: TValue;
+      var targetValue: TValue;
       const parameter: TValue): Boolean; overload;
   end;
 
@@ -128,10 +128,10 @@ type
       const parameter: TValue): TValue; overload;
     function TryConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
-      out targetValue: TValue): Boolean; overload;
+      var targetValue: TValue): Boolean; overload;
     function TryConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
-      out targetValue: TValue;
+      var targetValue: TValue;
       const parameter: TValue): Boolean; overload;
   protected
     function DoConvertTo(const value: TValue;
@@ -890,10 +890,10 @@ type
       const parameter: TValue): TValue;
     function TryConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
-      out targetValue: TValue): Boolean;
+      var targetValue: TValue): Boolean;
     function TryConvertToParam(const value: TValue;
       const targetTypeInfo: PTypeInfo;
-      out targetValue: TValue;
+      var targetValue: TValue;
       const parameter: TValue): Boolean;
   private const
     Vtable: array[0..6] of Pointer =
@@ -941,7 +941,7 @@ end;
 
 function TDefaultConverter.TryConvertToParam(const value: TValue;
   const targetTypeInfo: PTypeInfo;
-  out targetValue: TValue;
+  var targetValue: TValue;
   const parameter: TValue): Boolean;
 var
   converter: IValueConverter;
@@ -960,7 +960,7 @@ end;
 
 function TDefaultConverter.TryConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo;
-  out targetValue: TValue): Boolean;
+  var targetValue: TValue): Boolean;
 begin
   Result := TryConvertToParam(value, targetTypeInfo, targetValue, EmptyValue);
 end;
@@ -994,13 +994,13 @@ begin
 end;
 
 function TValueConverter.TryConvertTo(const value: TValue;
-  const targetTypeInfo: PTypeInfo; out targetValue: TValue): Boolean;
+  const targetTypeInfo: PTypeInfo; var targetValue: TValue): Boolean;
 begin
   Result := TryConvertTo(value, targetTypeInfo, targetValue, EmptyValue);
 end;
 
 function TValueConverter.TryConvertTo(const value: TValue;
-  const targetTypeInfo: PTypeInfo; out targetValue: TValue;
+  const targetTypeInfo: PTypeInfo; var targetValue: TValue;
   const parameter: TValue): Boolean;
 begin
   try
@@ -1738,7 +1738,7 @@ function TInterfaceToInterfaceConverter.DoConvertTo(const value: TValue;
   ///     then
   ///   </note>
   /// </remarks>
-  function TryGetInterface(const instance: TValue; const guid: TGuid; out intf): Boolean;
+  function TryGetInterface(const instance: TValue; const guid: TGuid; var intf): Boolean;
   var
     localInterface: IInterface;
   begin

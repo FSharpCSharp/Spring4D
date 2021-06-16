@@ -101,7 +101,7 @@ begin
 end;
 
 function TryConvertTo(const value: TValue; const targetTypeInfo: PTypeInfo;
-  out targetValue: TValue; const parameter: TValue): Boolean;
+  var targetValue: TValue; const parameter: TValue): Boolean;
 begin
   Result := TValueConverter.Default.TryConvertTo(value, targetTypeInfo, targetValue, parameter);
 end;
