@@ -95,6 +95,7 @@ type
   {$ENDREGION}
 
     property Instance: TValue read GetInstance;
+    property Interceptor: TMockInterceptor read fInterceptor;
     property TypeInfo: PTypeInfo read GetTypeInfo;
   end;
 
@@ -165,7 +166,7 @@ constructor TMock.Create(typeInfo: PTypeInfo; behavior: TMockBehavior;
 begin
   inherited Create;
   fTypeInfo := typeInfo;
-  fInterceptor := TMockInterceptor.Create(behavior);
+  fInterceptor := TMockInterceptor.Create(behavior, nil);
   fInterceptor.IncMockCount;
   fProxy := CreateProxy(typeInfo, fInterceptor, args);
 end;

@@ -392,7 +392,7 @@ begin
   if PInterface(@source)^.QueryInterface(typeData.Guid, target) <> S_OK then
   begin
     proxy.AddAdditionalInterface(TypeInfo(TInterface), TProxyGenerationOptions.Default,
-      [TMockInterceptor.Create(behavior)]);
+      [TMockInterceptor.Create(behavior, (fMock as TMock).Interceptor)]);
     PInterface(@source)^.QueryInterface(typeData.Guid, target);
   end;
   Result.fMock := Mock.From<TInterface>(target).fMock;
