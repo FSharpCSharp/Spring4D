@@ -72,6 +72,7 @@ type
     procedure ResultOfAsFunctionSurvivesScope;
     procedure SetupAsResultOfFunction;
     procedure WhenAsFunctionIsCalled;
+    procedure MockCastToInterface;
   end;
 
   MockSequenceTest = class(TTestCase)
@@ -85,8 +86,9 @@ type
 implementation
 
 uses
-  Spring.Mocking,
-  Spring;
+  SysUtils,
+  Spring,
+  Spring.Mocking;
 
 type
   TTestEnum = (One, Two, Three);
@@ -383,6 +385,12 @@ begin
     begin
       mock.Received.Test1(Arg.IsIn<Integer>([3, 5]), Arg.IsAny<string>);
     end);
+
+  CheckException(EConvertError,
+    procedure
+    begin
+      mock.Setup.Returns<string>('foobar').When.GetNext;
+    end);
 end;
 
 {$ENDREGION}
@@ -510,6 +518,20 @@ var
 begin
   SpecifyExpectation(mock);
   CheckEquals(42, mock.AsType<IChild>.Instance.GetNumber);
+end;
+
+procedure MockDynamicallySupportsOtherInterfaces.MockCastToInterface;
+var
+  mock: Mock<IParent>;
+  childMock: Mock<IChild>;
+begin
+  mock.Setup.Returns(mock.AsType<IChild>).When.GetChild;
+  CheckSame(mock.Instance as IChild, mock.Instance.GetChild);
+
+  childMock := mock.AsType<IChild>;
+  mock.Setup.Returns<Mock<IChild>>([childMock, childMock]).When.GetChild;
+  CheckSame(mock.Instance as IChild, mock.Instance.GetChild);
+  CheckSame(mock.Instance as IChild, mock.Instance.GetChild);
 end;
 
 procedure MockDynamicallySupportsOtherInterfaces.SetupAsResultOfFunction;

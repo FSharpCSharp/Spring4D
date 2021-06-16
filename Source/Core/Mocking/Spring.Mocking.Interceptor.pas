@@ -77,7 +77,7 @@ type
     fMockCount: Integer;
     class function CreateArgMatch(const arguments: TArray<TValue>;
       const parameters: TArray<TRttiParameter>): TArgMatch; static;
-    function CreateMethodCalls: TArray<TMethodCall>;
+    function CreateMethodCalls(const method: TRttiMethod): TArray<TMethodCall>;
     class function CreateMock(const invocation: IInvocation): TMockAction; static;
     procedure InterceptArrange(const invocation: IInvocation);
     procedure InterceptAct(const invocation: IInvocation);
@@ -99,7 +99,7 @@ type
 
     procedure Reset;
 
-    procedure Returns(const values: TArray<TValue>);
+    procedure Returns(const values: array of TValue);
 
     procedure When; overload;
     procedure When(const match: TArgMatch); overload;
@@ -116,6 +116,7 @@ uses
   TypInfo,
   Spring,
   Spring.Mocking.Core,
+  Spring.Reflection,
   Spring.Times;
 
 resourcestring
@@ -143,6 +144,15 @@ begin
   end;
 end;
 
+type
+  TResultsMockAction = class(TInterfacedObject, TMockAction)
+  private
+    fValues: TArray<TValue>;
+    fBehavior: ^TMockBehavior;
+    function Invoke(const callInfo: TCallInfo): TValue;
+    constructor Create(const values: TArray<TValue>; var behavior: TMockBehavior);
+  end;
+
 
 {$REGION 'TMockInterceptor'}
 
@@ -162,48 +172,64 @@ begin
   fReceivedCalls := TCollections.CreateMultiMap<TRttiMethod,TArray<TValue>>();
 end;
 
-function TMockInterceptor.CreateMethodCalls: TArray<TMethodCall>;
+function TMockInterceptor.CreateMethodCalls(const method: TRttiMethod): TArray<TMethodCall>;
 
-  function CreateMethodCall(const value: TValue): TMethodCall;
+  function CastToReturnType(const value: TValue; const method: TRttiMethod): TValue;
   var
-    capturedValue: TValue;
+    rttiType, returnType: TRttiType;
+    mock: TMock;
   begin
-    capturedValue := value;
-    Result := TMethodCall.Create(
-      function(const callInfo: TCallInfo): TValue
+    Result := value;
+    if Assigned(value.TypeInfo) and method.HasExtendedInfo then
+    begin
+      returnType := method.ReturnType;
+      if Assigned(returnType) and (value.TypeInfo <> returnType.Handle) then
       begin
-        Result := capturedValue;
-      end, fMatch, fSequence);
+        rttiType := value.TypeInfo.RttiType;
+        if rttiType.IsGenericTypeOf('Mock<>') then
+        begin
+          mock := IMock(value.GetReferenceToRawData^) as TMock;
+          Result := mock.Instance;
+        end;
+        Result := Result.Convert(returnType.Handle);
+      end;
+    end;
   end;
 
 var
   i: Integer;
   values: TArray<TValue>;
+  action: TResultMockAction;
 begin
   SetLength(Result, 1);
   if Assigned(fCurrentAction) then
+  begin
+    if PInterface(@fCurrentAction)^ is TResultMockAction then
+    begin
+      action := PInterface(@fCurrentAction)^ as TResultMockAction;
+      action.Value := CastToReturnType(action.Value, method);
+    end;
     Result[0] := TMethodCall.Create(fCurrentAction, fMatch, fSequence)
+  end
   else
   begin
     values := fCurrentValues;
     if Assigned(fSequence) then
     begin
       SetLength(Result, Length(fCurrentValues));
-      for i := 0 to High(fCurrentValues) do
-        Result[i] := CreateMethodCall(values[i]);
+      for i := 0 to High(values) do
+      begin
+        action := TResultMockAction.Create;
+        action.Value := CastToReturnType(values[i], method);
+        Result[i] := TMethodCall.Create(action, fMatch, fSequence);
+      end;
     end
     else
     begin
+      for i := 0 to High(values) do
+        values[i] := CastToReturnType(values[i], method);
       Result[0] := TMethodCall.Create(
-        function(const callInfo: TCallInfo): TValue
-        begin
-          if callInfo.CallCount <= Length(values) then
-            Result := values[callInfo.CallCount - 1]
-          else
-            if Behavior = TMockBehavior.Strict then
-              raise EMockException.CreateResFmt(@SCallCountExceeded, [
-                Times.AtMost(Length(values)).ToString(callInfo.CallCount)]);
-        end, fMatch, fSequence);
+        TResultsMockAction.Create(values, fBehavior), fMatch, fSequence);
     end;
   end;
 
@@ -341,7 +367,7 @@ begin
       TMatcherFactory.ClearConditionStack;
     if not Assigned(fMatch) then
       fMatch := CreateArgMatch(invocation.Arguments, invocation.Method.GetParameters);
-    fExpectedCalls.AddRange(invocation.Method, CreateMethodCalls);
+    fExpectedCalls.AddRange(invocation.Method, CreateMethodCalls(invocation.Method));
   finally
     fState := TMockState.Act;
     fMatch := nil;
@@ -397,10 +423,10 @@ begin
   fReceivedCalls.Clear;
 end;
 
-procedure TMockInterceptor.Returns(const values: TArray<TValue>);
+procedure TMockInterceptor.Returns(const values: array of TValue);
 begin
   fCurrentAction := nil;
-  fCurrentValues := values;
+  fCurrentValues := TArray.Copy<TValue>(values);
 end;
 
 procedure TMockInterceptor.SetSequence(const value: IMockSequence);
@@ -481,6 +507,28 @@ begin
       for k := 0 to High(fRefArgs) do
         if parameters[i].ParamType.Handle = fRefArgs[k].TypeInfo then
           invocation.Arguments[i] := fRefArgs[k];
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TResultsMockAction'}
+
+constructor TResultsMockAction.Create(const values: TArray<TValue>;
+  var behavior: TMockBehavior);
+begin
+  fValues := values;
+  fBehavior := @behavior;
+end;
+
+function TResultsMockAction.Invoke(const callInfo: TCallInfo): TValue;
+begin
+  if callInfo.CallCount <= Length(fValues) then
+    Result := fValues[callInfo.CallCount - 1]
+  else
+    if fBehavior^ = TMockBehavior.Strict then
+      raise EMockException.CreateResFmt(@SCallCountExceeded, [
+        Times.AtMost(Length(fValues)).ToString(callInfo.CallCount)]);
 end;
 
 {$ENDREGION}
