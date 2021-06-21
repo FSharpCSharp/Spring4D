@@ -319,7 +319,7 @@ type
   end;
 
   TAnonymousReadOnlyList<T> = class(TEnumerableBase<T>, IInterface,
-    IReadOnlyCollection<T>, IReadOnlyList<T>)
+    IEnumerable<T>, IReadOnlyCollection<T>, IReadOnlyList<T>)
   private
     fCount: Func<Integer>;
     fItems: Func<Integer, T>;
