@@ -3456,6 +3456,14 @@ type
     class function Union<T>(const first, second: IEnumerable<T>): IEnumerable<T>; overload; static;
     class function Union<T>(const first, second: IEnumerable<T>;
       const comparer: IEqualityComparer<T>): IEnumerable<T>; overload; static;
+
+    class function Zip<TFirst, TSecond>(
+      const first: IEnumerable<TFirst>;
+      const second: IEnumerable<TSecond>): IEnumerable<Tuple<TFirst,TSecond>>; overload; static;
+    class function Zip<TFirst, TSecond, TResult>(
+      const first: IEnumerable<TFirst>;
+      const second: IEnumerable<TSecond>;
+      const resultSelector: Func<TFirst, TSecond, TResult>): IEnumerable<TResult>; overload; static;
   end;
 
   TStringComparer = class(TCustomComparer<string>)
@@ -7530,14 +7538,34 @@ begin
     source, keySelector, elementSelector, comparer);
 end;
 
-class function TEnumerable.Union<T>(const first, second: IEnumerable<T>; const comparer: IEqualityComparer<T>): IEnumerable<T>;
+class function TEnumerable.Union<T>(const first, second: IEnumerable<T>): IEnumerable<T>;
+begin
+  Result := TUnionIterator<T>.Create(first, second);
+end;
+
+class function TEnumerable.Union<T>(const first, second: IEnumerable<T>;
+  const comparer: IEqualityComparer<T>): IEnumerable<T>;
 begin
   Result := TUnionIterator<T>.Create(first, second, comparer);
 end;
 
-class function TEnumerable.Union<T>(const first, second: IEnumerable<T>): IEnumerable<T>;
+class function TEnumerable.Zip<TFirst, TSecond>(
+  const first: IEnumerable<TFirst>;
+  const second: IEnumerable<TSecond>): IEnumerable<Tuple<TFirst, TSecond>>;
 begin
-  Result := TUnionIterator<T>.Create(first, second);
+  Result := TZipIterator<TFirst, TSecond, Tuple<TFirst, TSecond>>.Create(
+    first, second,
+    function(const first: TFirst; const second: TSecond): Tuple<TFirst, TSecond>
+    begin
+      Result := Tuple<TFirst, TSecond>.Create(first, second);
+    end);
+end;
+
+class function TEnumerable.Zip<TFirst, TSecond, TResult>(
+  const first: IEnumerable<TFirst>; const second: IEnumerable<TSecond>;
+  const resultSelector: Func<TFirst, TSecond, TResult>): IEnumerable<TResult>;
+begin
+  Result := TZipIterator<TFirst, TSecond, TResult>.Create(first, second, resultSelector);
 end;
 
 {$ENDREGION}
