@@ -532,6 +532,8 @@ begin
   mock.Setup.Returns<Mock<IChild>>([childMock, childMock]).When.GetChild;
   CheckSame(mock.Instance as IChild, mock.Instance.GetChild);
   CheckSame(mock.Instance as IChild, mock.Instance.GetChild);
+
+  mock.Reset;
 end;
 
 procedure MockDynamicallySupportsOtherInterfaces.SetupAsResultOfFunction;
@@ -544,6 +546,8 @@ begin
 
   CheckSame(parentMock.Instance as IChild, parentMock.Instance.GetChild);
   CheckSame(parentMock.Instance, parentMock.Instance.GetChild as IParent);
+
+  parentMock.Reset;
 end;
 
 procedure MockDynamicallySupportsOtherInterfaces.WhenAsFunctionIsCalled;

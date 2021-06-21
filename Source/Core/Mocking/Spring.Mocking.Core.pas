@@ -184,8 +184,7 @@ constructor TMock.Create(typeInfo: PTypeInfo; behavior: TMockBehavior;
 begin
   inherited Create;
   fTypeInfo := typeInfo;
-  fInterceptor := TMockInterceptor.Create(behavior, nil);
-  fInterceptor.IncMockCount;
+  fInterceptor := TMockInterceptor.Create(behavior);
   fProxy := CreateProxy(typeInfo, fInterceptor, args);
 end;
 
@@ -195,13 +194,11 @@ begin
   inherited Create;
   fTypeInfo := typeInfo;
   fInterceptor := interceptor;
-  fInterceptor.IncMockCount;
   fProxy := proxy;
 end;
 
 destructor TMock.Destroy;
 begin
-  fInterceptor.DecMockCount;
   if fTypeInfo.Kind = tkClass then
     fProxy.AsObject.Free;
   inherited Destroy;

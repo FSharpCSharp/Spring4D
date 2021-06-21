@@ -72,9 +72,6 @@ type
     fReceivedCalls: IMultiMap<TRttiMethod,TArray<TValue>>;
     fState: TMockState;
     fSequence: IMockSequence;
-    fRoot: TMockInterceptor;
-    fAggregations: IList<TMockInterceptor>;
-    fMockCount: Integer;
     class function CreateArgMatch(const arguments: TArray<TValue>;
       const parameters: TArray<TRttiParameter>): TArgMatch; static;
     function CreateMethodCalls(const method: TRttiMethod): TArray<TMethodCall>;
@@ -83,14 +80,10 @@ type
     procedure InterceptAct(const invocation: IInvocation);
     procedure InterceptAssert(const invocation: IInvocation);
     procedure SetSequence(const value: IMockSequence);
-    procedure AddAggregation(aggregation: TMockInterceptor);
   protected
     procedure Intercept(const invocation: IInvocation);
   public
-    constructor Create(behavior: TMockBehavior; root: TMockInterceptor);
-
-    procedure IncMockCount;
-    procedure DecMockCount;
+    constructor Create(behavior: TMockBehavior);
 
     procedure Executes(const action: TMockAction);
 
@@ -156,18 +149,11 @@ type
 
 {$REGION 'TMockInterceptor'}
 
-constructor TMockInterceptor.Create(behavior: TMockBehavior; root: TMockInterceptor);
+constructor TMockInterceptor.Create(behavior: TMockBehavior);
 begin
   inherited Create;
   fBehavior := behavior;
   fState := TMockState.Act;
-  if Assigned(root) then
-  begin
-    fRoot := root;
-    fRoot.AddAggregation(Self);
-  end
-  else
-    fAggregations := TCollections.CreateObjectList<TMockInterceptor>(False);
   fExpectedCalls := TCollections.CreateMultiMap<TRttiMethod,TMethodCall>([doOwnsValues]);
   fReceivedCalls := TCollections.CreateMultiMap<TRttiMethod,TArray<TValue>>();
 end;
@@ -270,36 +256,6 @@ begin
       end;
       Result := True;
     end;
-end;
-
-procedure TMockInterceptor.AddAggregation(aggregation: TMockInterceptor);
-begin
-  if Assigned(fRoot) then
-    fRoot.AddAggregation(aggregation)
-  else
-    fAggregations.Add(aggregation);
-end;
-
-procedure TMockInterceptor.IncMockCount;
-begin
-  if Assigned(fRoot) then
-    fRoot.IncMockCount
-  else
-    AtomicIncrement(fMockCount);
-end;
-
-procedure TMockInterceptor.DecMockCount;
-var
-  i: Integer;
-begin
-  if Assigned(fRoot) then
-    fRoot.DecMockCount
-  else if AtomicDecrement(fMockCount) = 0 then
-  begin
-    for i := fAggregations.Count - 1 downto 0 do
-      fAggregations[i].Reset;
-    Reset;
-  end;
 end;
 
 procedure TMockInterceptor.Executes(const action: TMockAction);
