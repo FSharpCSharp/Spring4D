@@ -3037,6 +3037,10 @@ function GetSetSize(typeInfo: PTypeInfo): Integer;
 /// <summary>
 ///   Compares two TValue instances.
 /// </summary>
+/// <remarks>
+///   A value that returns <c>True</c> from <see cref="IsEmpty" />
+///   it is considered greater than a non empty value.
+/// </remarks>
 function CompareValue(const left, right: TValue): Integer; overload;
 
 /// <summary>
