@@ -98,9 +98,11 @@
         <DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.Sets.pas"/>
         <DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.Stacks.pas"/>
         <DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.Trees.pas"/>
+        <DCCReference Include="..\..\Source\Base\Spring.Comparers.pas"/>
         <DCCReference Include="..\..\Source\Base\Spring.DesignPatterns.pas"/>
         <DCCReference Include="..\..\Source\Base\Spring.Events.pas"/>
         <DCCReference Include="..\..\Source\Base\Spring.Events.Base.pas"/>
+        <DCCReference Include="..\..\Source\Base\Spring.Hash.pas"/>
         <DCCReference Include="..\..\Source\Base\Spring.HashTable.pas"/>
         <DCCReference Include="..\..\Source\Base\Spring.HazardEra.pas"/>
         <DCCReference Include="..\..\Source\Base\Spring.Helpers.pas"/>
