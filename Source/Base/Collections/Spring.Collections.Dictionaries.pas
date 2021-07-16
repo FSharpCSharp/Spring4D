@@ -213,6 +213,8 @@ type
         function TryAdd(const value: TValue; const key: TKey): Boolean;
         function Remove(const value: TValue): Boolean; overload;
         function Remove(const value: TValue; const key: TKey): Boolean; overload;
+        function RemoveRange(const values: array of TValue): Integer; overload;
+        function RemoveRange(const values: IEnumerable<TValue>): Integer; overload;
         function Extract(const value: TValue; const key: TKey): TValueKeyPair; overload;
         function Contains(const value: TValue; const key: TKey): Boolean; overload;
         function ContainsKey(const value: TValue): Boolean;
@@ -2046,6 +2048,26 @@ function TBidiDictionary<TKey, TValue>.TInverse.Remove(
   const item: TValueKeyPair): Boolean;
 begin
   Result := Remove(item.Key, item.Value);
+end;
+
+function TBidiDictionary<TKey, TValue>.TInverse.RemoveRange(
+  const values: array of TValue): Integer;
+var
+  i: Integer;
+begin
+  Result := 0;
+  for i := 0 to High(values) do
+    Inc(Result, Integer(Remove(values[i])));
+end;
+
+function TBidiDictionary<TKey, TValue>.TInverse.RemoveRange(
+  const values: IEnumerable<TValue>): Integer;
+var
+  value: TValue;
+begin
+  Result := 0;
+  for value in values do
+    Inc(Result, Integer(Remove(value)));
 end;
 
 procedure TBidiDictionary<TKey, TValue>.TInverse.SetCapacity(value: Integer);

@@ -639,6 +639,8 @@ type
     procedure Add(const key: TKey; const value: TValue); overload;
 
     function Remove(const item: TKeyValuePair): Boolean;
+    function RemoveRange(const keys: array of TKey): Integer; overload;
+    function RemoveRange(const keys: IEnumerable<TKey>): Integer; overload;
 
     function Extract(const item: TKeyValuePair): TKeyValuePair;
 
@@ -2666,6 +2668,24 @@ end;
 function TMapBase<TKey, TValue>.Remove(const item: TKeyValuePair): Boolean;
 begin
   Result := IMap<TKey, TValue>(this).Remove(item.Key, item.Value);
+end;
+
+function TMapBase<TKey, TValue>.RemoveRange(const keys: array of TKey): Integer;
+var
+  i: Integer;
+begin
+  Result := 0;
+  for i := 0 to High(keys) do
+    Inc(Result, Integer(IMap<TKey, TValue>(this).Remove(keys[i])));
+end;
+
+function TMapBase<TKey, TValue>.RemoveRange(const keys: IEnumerable<TKey>): Integer;
+var
+  key: TKey;
+begin
+  Result := 0;
+  for key in keys do
+    Inc(Result, Integer(IMap<TKey, TValue>(this).Remove(key)));
 end;
 
 {$ENDREGION}

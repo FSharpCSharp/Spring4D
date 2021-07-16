@@ -1715,6 +1715,30 @@ type
     /// </returns>
     function Remove(const key: TKey; const value: TValue): Boolean; overload;
 
+    /// <summary>
+    ///   Removes the specified range of keys from the IMap&lt;TKey,
+    ///   TValue&gt;.
+    /// </summary>
+    /// <param name="keys">
+    ///   The keys of the elements to remove.
+    /// </param>
+    /// <returns>
+    ///   The number of elements that were actually removed.
+    /// </returns>
+    function RemoveRange(const keys: array of TKey): Integer; overload;
+
+    /// <summary>
+    ///   Removes the specified range of keys from the IMap&lt;TKey,
+    ///   TValue&gt;.
+    /// </summary>
+    /// <param name="keys">
+    ///   The keys of the elements to remove.
+    /// </param>
+    /// <returns>
+    ///   The number of elements that were actually removed.
+    /// </returns>
+    function RemoveRange(const keys: IEnumerable<TKey>): Integer; overload;
+
     function Extract(const key: TKey; const value: TValue): TPair<TKey, TValue>;
 
     /// <summary>
