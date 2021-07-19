@@ -1557,7 +1557,7 @@ type
     class function EqualsComparer(const left, right: T): Boolean; static;
     class function EqualsInternal(const left, right: T): Boolean; static; inline;
     class procedure InitEquals; static;
-    function GetValue: T; inline;
+    function GetValue: T;
     function GetHasValue: Boolean; inline;
   public
     /// <summary>
@@ -8364,9 +8364,9 @@ end;
 
 function Nullable<T>.GetValue: T;
 begin
-  if not HasValue then
-    Guard.RaiseNullableHasNoValue;
-  Result := fValue;
+  if HasValue then
+    Exit(fValue);
+  Guard.RaiseNullableHasNoValue;
 end;
 
 function Nullable<T>.GetValueOrDefault: T;
