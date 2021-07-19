@@ -1064,7 +1064,7 @@ begin
           if ItemType.HasWeakRef then
           begin
             MoveManaged(@fItems[index + count], @fItems[index], TypeInfo(T), tailCount);
-            FinalizeArray(@fItems[index + count], TypeInfo(T), tailCount);
+            FinalizeArray(@fItems[index + tailCount], TypeInfo(T), count);
           end
           else
             System.Move(fItems[index + count], fItems[index], SizeOf(T) * tailCount);
