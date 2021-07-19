@@ -3113,9 +3113,9 @@ procedure IncUnchecked(var i: Integer; const n: Integer = 1); inline;
 
 procedure SwapPtr(arr: PPointer; left, right: Integer); inline;
 
-function IsPowerOf2(value: Integer): Boolean;
+function IsPowerOf2(value: NativeInt): Boolean;
 
-function NextPowerOf2(value: Integer): Integer;
+function NextPowerOf2(value: NativeInt): NativeInt;
 
 // copy from System.pas to make it possible to inline
 function DynArrayLength(const A: Pointer): NativeInt; inline;
@@ -4138,24 +4138,36 @@ begin
   {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
 end;
 
-function IsPowerOf2(value: Integer): Boolean;
+function IsPowerOf2(value: NativeInt): Boolean;
 begin
   Result := (value > 0) and (value and (value - 1) = 0);
 end;
 
-function NextPowerOf2(value: Integer): Integer;
-{$IFDEF MSWINDOWS}
+function NextPowerOf2(value: NativeInt): NativeInt;
+{$IFDEF ASSEMBLER}
+{$IFDEF CPUX86}
 asm
-  cmp value, 0
+  test eax, eax
   jle @negative
-  bsr ecx, value
-  add ecx, 1
-  mov eax, 1
+  bsr ecx, eax
+  mov eax, 2
   shl eax, cl
   ret
 @negative:
   mov eax, 1
 end;
+{$ELSE}
+asm
+  test rcx, rcx
+  jle @negative
+  bsr rcx, rcx
+  mov eax, 2
+  shl rax, cl
+  ret
+@negative:
+  mov eax, 1
+end;
+{$ENDIF}
 {$ELSE}
 begin
   Result := 1;

@@ -4235,9 +4235,9 @@ end;
 
 procedure TTestBaseRoutines.TestNextPowerOf2;
 
-  procedure TestRange(Low, High, Power: Integer);
+  procedure TestRange(Low, High, Power: NativeInt);
   var
-    i: Integer;
+    i: NativeInt;
   begin
     for i := Low to High do
       CheckEquals(Power, NextPowerOf2(i), Format('NextPowerOf2(%d) did not return %d', [i, Power]));
@@ -4254,8 +4254,8 @@ begin
   TestRange( 16, 31, 32);
 
   TestRange(Pow_2_30 - 50, Pow_2_30 - 1, Pow_2_30);
-  TestRange(High(Integer) div 2 + 1, High(Integer) div 2 + 2, Integer($80000000));
-  TestRange(High(Integer) - 1, High(Integer), Integer($80000000));
+  TestRange(High(NativeInt) div 2 + 1, High(NativeInt) div 2 + 2, Low(NativeInt));
+  TestRange(High(NativeInt) - 1, High(NativeInt), Low(NativeInt));
 end;
 
 {$ENDREGION}
