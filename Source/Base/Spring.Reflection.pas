@@ -665,8 +665,6 @@ type
 
   {$REGION 'Routines'}
 
-function PassByRef(TypeInfo: PTypeInfo; CC: TCallConv;
-  IsConst: Boolean = False): Boolean;
 procedure PassArg(Par: TRttiParameter; const ArgSrc: TValue;
   var ArgDest: TValue; CC: TCallConv);
 
@@ -687,43 +685,6 @@ const
 
 
 {$REGION 'Routines'}
-
-function PassByRef(TypeInfo: PTypeInfo; CC: TCallConv; IsConst: Boolean = False): Boolean;
-begin
-  if TypeInfo = nil then
-    Exit(False);
-  case TypeInfo^.Kind of
-    tkArray:
-      Result := GetTypeData(TypeInfo)^.ArrayData.Size > SizeOf(Pointer);
-{$IF Defined(CPUX86)}
-    tkRecord:
-      if (CC in [ccCdecl, ccStdCall, ccSafeCall]) and not IsConst then
-        Result := False
-      else
-        Result := GetTypeData(TypeInfo)^.RecSize > SizeOf(Pointer);
-    tkVariant:
-      Result := IsConst or not (CC in [ccCdecl, ccStdCall, ccSafeCall]);
-{$ELSEIF Defined(CPUX64)}
-    tkRecord:
-      Result := not (GetTypeData(TypeInfo)^.RecSize in [1,2,4,8]);
-    tkMethod,
-    tkVariant:
-      Result := True;
-{$ELSEIF Defined(CPUARM)}
-    tkRecord:
-      Result := (CC = ccReg) or (CC = ccPascal);
-    tkMethod,
-    tkVariant:
-      Result := True;
-{$IFEND}
-{$IFNDEF NEXTGEN}
-    tkString:
-      Result := GetTypeData(TypeInfo)^.MaxLength > SizeOf(Pointer);
-{$ENDIF}
-  else
-    Result := False;
-  end;
-end;
 
 procedure PassArg(Par: TRttiParameter; const ArgSrc: TValue;
   var ArgDest: TValue; CC: TCallConv);
