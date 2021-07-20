@@ -24,7 +24,7 @@
 
 {$I Spring.inc}
 
-unit Spring.Collections.HashTable;
+unit Spring.HashTable;
 
 interface
 

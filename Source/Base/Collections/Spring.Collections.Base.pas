@@ -36,8 +36,8 @@ uses
   Spring,
   Spring.Collections,
   Spring.Collections.Events,
-  Spring.Collections.HashTable,
-  Spring.Events.Base;
+  Spring.Events.Base,
+  Spring.HashTable;
 
 {$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS(FieldVisibility)}{$ENDIF}
 

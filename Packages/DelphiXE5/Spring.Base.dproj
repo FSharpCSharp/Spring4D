@@ -87,7 +87,6 @@
         <DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.Dictionaries.pas"/>
         <DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.Events.pas"/>
         <DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.Extensions.pas"/>
-        <DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.HashTable.pas"/>
         <DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.Lists.pas"/>
         <DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.LinkedLists.pas"/>
         <DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.MultiMaps.pas"/>
@@ -99,6 +98,7 @@
         <DCCReference Include="..\..\Source\Base\Spring.DesignPatterns.pas"/>
         <DCCReference Include="..\..\Source\Base\Spring.Events.pas"/>
         <DCCReference Include="..\..\Source\Base\Spring.Events.Base.pas"/>
+        <DCCReference Include="..\..\Source\Base\Spring.HashTable.pas"/>
         <DCCReference Include="..\..\Source\Base\Spring.HazardEra.pas"/>
         <DCCReference Include="..\..\Source\Base\Spring.Helpers.pas"/>
         <DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.pas"/>
