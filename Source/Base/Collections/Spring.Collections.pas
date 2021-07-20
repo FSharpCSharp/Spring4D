@@ -40,6 +40,9 @@ uses
   Spring;
 
 const
+  doOwnsKeys = Spring.doOwnsKeys;
+  doOwnsValues = Spring.doOwnsValues;
+
   caAdded = Spring.caAdded;
   caRemoved = Spring.caRemoved;
   caExtracted = Spring.caExtracted;
@@ -50,7 +53,7 @@ const
   caReseted = Spring.caReset deprecated 'Use caReset instead';
 
 type
-  TDictionaryOwnerships = set of (doOwnsKeys, doOwnsValues);
+  TDictionaryOwnerships = Spring.TDictionaryOwnerships;
 
   TCollectionChangedAction = Spring.TCollectionChangedAction;
 

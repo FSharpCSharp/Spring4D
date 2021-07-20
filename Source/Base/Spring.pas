@@ -490,6 +490,26 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TDictionaryOwnerships}
+
+  /// <summary>
+  ///   Controls the ownership of objects stored in any associative collection.
+  /// </summary>
+  TDictionaryOwnerships = set of (
+    /// <summary>
+    ///   Objects stored as key are being destroyed when removed
+    /// </summary>
+    doOwnsKeys,
+
+    /// <summary>
+    ///   Objects stored as value are being destroyed when removed
+    /// </summary>
+    doOwnsValues
+  );
+
+  {$ENDREGION}
+
+
   {$REGION 'TCollectionChangedAction'}
 
   /// <summary>
@@ -9328,7 +9348,7 @@ type
 procedure TWeakReferences.Initialize;
 begin
   fLock := TCriticalSection.Create;
-  fWeakReferences := TObjectDictionary<Pointer, TList>.Create([doOwnsValues]);
+  fWeakReferences := TObjectDictionary<Pointer, TList>.Create([Generics.Collections.doOwnsValues]);
 end;
 
 procedure TWeakReferences.Finalize;
