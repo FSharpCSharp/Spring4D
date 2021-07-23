@@ -53,24 +53,30 @@ type
     IEnumerable<TPair<TKey, TValue>>, IReadOnlyCollection<TPair<TKey, TValue>>,
     IReadOnlyMap<TKey, TValue>, IReadOnlyDictionary<TKey, TValue>,
     ICollection<TPair<TKey, TValue>>, IMap<TKey, TValue>, IDictionary<TKey, TValue>)
-  protected
+  private type
   {$REGION 'Nested Types'}
-    type
-      TKeyValuePair = TPair<TKey, TValue>;
-      PKeyValuePair = ^TKeyValuePair;
-      TItem = TDictionaryItem<TKey, TValue>;
-      TItems = TArray<TItem>;
-      PItem = ^TItem;
+    TKeyValuePair = TPair<TKey, TValue>;
+    PKeyValuePair = ^TKeyValuePair;
+    TItem = TDictionaryItem<TKey, TValue>;
+    TItems = TArray<TItem>;
+    PItem = ^TItem;
 
-      TEnumerator = class(THashTableEnumerator, IEnumerator<TKeyValuePair>)
-      private
-        fCurrent: TKeyValuePair;
-        function GetCurrent: TKeyValuePair;
-        function MoveNext: Boolean;
-      end;
+    PEnumerator = ^TEnumerator;
+    TEnumerator = record
+      Vtable: Pointer;
+      RefCount: Integer;
+      TypeInfo: PTypeInfo;
+      fSource: TDictionary<TKey, TValue>;
+      fIndex: Integer;
+      fVersion: Integer;
+      fCurrent: TKeyValuePair;
+      function GetCurrent: TKeyValuePair;
+      function MoveNext: Boolean;
+      class var Enumerator_Vtable: TEnumeratorVtable;
+    end;
 
-      TKeyCollection = TInnerCollection<TKey>;
-      TValueCollection = TInnerCollection<TValue>;
+    TKeyCollection = TInnerCollection<TKey>;
+    TValueCollection = TInnerCollection<TValue>;
   {$ENDREGION}
   private
     fHashTable: THashTable;
@@ -151,160 +157,159 @@ type
     IReadOnlyMap<TKey, TValue>, IReadOnlyDictionary<TKey, TValue>,
     ICollection<TPair<TKey, TValue>>, IMap<TKey, TValue>,
     IDictionary<TKey, TValue>, IBidiDictionary<TKey, TValue>)
-  protected
+  protected type
   {$REGION 'Nested Types'}
-    type
-      TKeyValuePair = TPair<TKey, TValue>;
-      TValueKeyPair = TPair<TValue, TKey>;
-      TValueKeyPairComparer = TPairComparer<TValue, TKey>;
-      TItem = TBidiDictionaryItem<TKey, TValue>;
-      {$POINTERMATH ON}
-      PItem = ^TItem;
-      {$POINTERMATH OFF}
+    TKeyValuePair = TPair<TKey, TValue>;
+    TValueKeyPair = TPair<TValue, TKey>;
+    TValueKeyPairComparer = TPairComparer<TValue, TKey>;
+    TItem = TBidiDictionaryItem<TKey, TValue>;
+    {$POINTERMATH ON}
+    PItem = ^TItem;
+    {$POINTERMATH OFF}
 
-      TInverse = class(TCollectionBase<TValueKeyPair>,
-        IEnumerable<TValueKeyPair>, IReadOnlyCollection<TValueKeyPair>,
-        IReadOnlyMap<TValue, TKey>, IReadOnlyDictionary<TValue, TKey>,
-        ICollection<TValueKeyPair>, IMap<TValue, TKey>,
-        IDictionary<TValue, TKey>, IBidiDictionary<TValue, TKey>)
-      private
-        fSource: TBidiDictionary<TKey, TValue>;
-      {$REGION 'Property Accessors'}
-        function GetCapacity: Integer;
-        function GetCount: Integer;
-        function GetInverse: IBidiDictionary<TKey, TValue>;
-        function GetIsEmpty: Boolean;
-        function GetItem(const value: TValue): TKey;
-        function GetKeys: IReadOnlyCollection<TValue>;
-        function GetKeyType: PTypeInfo;
-        function GetOnKeyChanged: ICollectionChangedEvent<TValue>;
-        function GetOnValueChanged: ICollectionChangedEvent<TKey>;
-        function GetValues: IReadOnlyCollection<TKey>;
-        function GetValueType: PTypeInfo;
-        procedure SetCapacity(value: Integer);
-        procedure SetItem(const value: TValue; const key: TKey);
-      {$ENDREGION}
-      protected
-        procedure Changed(const item: TValueKeyPair; action: TCollectionChangedAction); override;
-      public
-      {$REGION 'Implements IInterface'}
-        function _AddRef: Integer; stdcall;
-        function _Release: Integer; stdcall;
-      {$ENDREGION}
+    TInverse = class(TCollectionBase<TValueKeyPair>,
+      IEnumerable<TValueKeyPair>, IReadOnlyCollection<TValueKeyPair>,
+      IReadOnlyMap<TValue, TKey>, IReadOnlyDictionary<TValue, TKey>,
+      ICollection<TValueKeyPair>, IMap<TValue, TKey>,
+      IDictionary<TValue, TKey>, IBidiDictionary<TValue, TKey>)
+    private
+      fSource: TBidiDictionary<TKey, TValue>;
+    {$REGION 'Property Accessors'}
+      function GetCapacity: Integer;
+      function GetCount: Integer;
+      function GetInverse: IBidiDictionary<TKey, TValue>;
+      function GetIsEmpty: Boolean;
+      function GetItem(const value: TValue): TKey;
+      function GetKeys: IReadOnlyCollection<TValue>;
+      function GetKeyType: PTypeInfo;
+      function GetOnKeyChanged: ICollectionChangedEvent<TValue>;
+      function GetOnValueChanged: ICollectionChangedEvent<TKey>;
+      function GetValues: IReadOnlyCollection<TKey>;
+      function GetValueType: PTypeInfo;
+      procedure SetCapacity(value: Integer);
+      procedure SetItem(const value: TValue; const key: TKey);
+    {$ENDREGION}
+    protected
+      procedure Changed(const item: TValueKeyPair; action: TCollectionChangedAction); override;
+    public
+    {$REGION 'Implements IInterface'}
+      function _AddRef: Integer; stdcall;
+      function _Release: Integer; stdcall;
+    {$ENDREGION}
 
-      {$REGION 'Implements IEnumerable<TPair<TKey, TValue>>'}
-        function GetEnumerator: IEnumerator<TValueKeyPair>;
-        function Contains(const value: TValueKeyPair): Boolean; overload;
-        function Contains(const value: TValueKeyPair;
-          const comparer: IEqualityComparer<TValueKeyPair>): Boolean; overload;
-        function ToArray: TArray<TValueKeyPair>;
-        function TryGetElementAt(var item: TValueKeyPair; index: Integer): Boolean;
-      {$ENDREGION}
+    {$REGION 'Implements IEnumerable<TPair<TKey, TValue>>'}
+      function GetEnumerator: IEnumerator<TValueKeyPair>;
+      function Contains(const value: TValueKeyPair): Boolean; overload;
+      function Contains(const value: TValueKeyPair;
+        const comparer: IEqualityComparer<TValueKeyPair>): Boolean; overload;
+      function ToArray: TArray<TValueKeyPair>;
+      function TryGetElementAt(var item: TValueKeyPair; index: Integer): Boolean;
+    {$ENDREGION}
 
-      {$REGION 'Implements ICollection<TPair<TKey, TValue>>'}
-        function Add(const item: TValueKeyPair): Boolean; overload;
-        function Remove(const item: TValueKeyPair): Boolean; overload;
-        function Extract(const item: TValueKeyPair): TValueKeyPair; overload;
-        procedure Clear;
-      {$ENDREGION}
+    {$REGION 'Implements ICollection<TPair<TKey, TValue>>'}
+      function Add(const item: TValueKeyPair): Boolean; overload;
+      function Remove(const item: TValueKeyPair): Boolean; overload;
+      function Extract(const item: TValueKeyPair): TValueKeyPair; overload;
+      procedure Clear;
+    {$ENDREGION}
 
-      {$REGION 'Implements IMap<TValue, TKey>'}
-        procedure Add(const value: TValue; const key: TKey); overload;
-        function TryAdd(const value: TValue; const key: TKey): Boolean;
-        function Remove(const value: TValue): Boolean; overload;
-        function Remove(const value: TValue; const key: TKey): Boolean; overload;
-        function RemoveRange(const values: array of TValue): Integer; overload;
-        function RemoveRange(const values: IEnumerable<TValue>): Integer; overload;
-        function Extract(const value: TValue; const key: TKey): TValueKeyPair; overload;
-        function Contains(const value: TValue; const key: TKey): Boolean; overload;
-        function ContainsKey(const value: TValue): Boolean;
-        function ContainsValue(const key: TKey): Boolean;
-        property Keys: IReadOnlyCollection<TValue> read GetKeys;
-        property Values: IReadOnlyCollection<TKey> read GetValues;
-      {$ENDREGION}
+    {$REGION 'Implements IMap<TValue, TKey>'}
+      procedure Add(const value: TValue; const key: TKey); overload;
+      function TryAdd(const value: TValue; const key: TKey): Boolean;
+      function Remove(const value: TValue): Boolean; overload;
+      function Remove(const value: TValue; const key: TKey): Boolean; overload;
+      function RemoveRange(const values: array of TValue): Integer; overload;
+      function RemoveRange(const values: IEnumerable<TValue>): Integer; overload;
+      function Extract(const value: TValue; const key: TKey): TValueKeyPair; overload;
+      function Contains(const value: TValue; const key: TKey): Boolean; overload;
+      function ContainsKey(const value: TValue): Boolean;
+      function ContainsValue(const key: TKey): Boolean;
+      property Keys: IReadOnlyCollection<TValue> read GetKeys;
+      property Values: IReadOnlyCollection<TKey> read GetValues;
+    {$ENDREGION}
 
-      {$REGION 'Implements IDictionary<TValue, TKey>'}
-        procedure AddOrSetValue(const value: TValue; const key: TKey);
-        function Extract(const value: TValue): TKey; overload;
-        function GetValueOrDefault(const value: TValue): TKey; overload;
-        function GetValueOrDefault(const value: TValue; const defaultKey: TKey): TKey; overload;
-        function TryExtract(const value: TValue; var key: TKey): Boolean;
-        function TryGetValue(const value: TValue; var key: TKey): Boolean;
-        function TryUpdateValue(const value: TValue; const newKey: TKey; var oldKey: TKey): Boolean;
-        procedure TrimExcess;
-        function AsReadOnly: IReadOnlyDictionary<TValue, TKey>;
-      {$ENDREGION}
-      end;
+    {$REGION 'Implements IDictionary<TValue, TKey>'}
+      procedure AddOrSetValue(const value: TValue; const key: TKey);
+      function Extract(const value: TValue): TKey; overload;
+      function GetValueOrDefault(const value: TValue): TKey; overload;
+      function GetValueOrDefault(const value: TValue; const defaultKey: TKey): TKey; overload;
+      function TryExtract(const value: TValue; var key: TKey): Boolean;
+      function TryGetValue(const value: TValue; var key: TKey): Boolean;
+      function TryUpdateValue(const value: TValue; const newKey: TKey; var oldKey: TKey): Boolean;
+      procedure TrimExcess;
+      function AsReadOnly: IReadOnlyDictionary<TValue, TKey>;
+    {$ENDREGION}
+    end;
 
-      TEnumerator = class(TRefCountedObject,
-        IEnumerator<TKeyValuePair>, IEnumerator<TKey>, IEnumerator<TValue>)
-      private
-        fSource: TBidiDictionary<TKey, TValue>;
-        fItemIndex: Integer;
-        fVersion: Integer;
-        function GetCurrent: TKeyValuePair;
-        function GetCurrentKey: TKey;
-        function GetCurrentValue: TValue;
-        function IEnumerator<TKey>.GetCurrent = GetCurrentKey;
-        function IEnumerator<TValue>.GetCurrent = GetCurrentValue;
-      public
-        constructor Create(const source: TBidiDictionary<TKey, TValue>);
-        destructor Destroy; override;
-        function MoveNext: Boolean;
-      end;
+    TEnumerator = class(TRefCountedObject,
+      IEnumerator<TKeyValuePair>, IEnumerator<TKey>, IEnumerator<TValue>)
+    private
+      fSource: TBidiDictionary<TKey, TValue>;
+      fItemIndex: Integer;
+      fVersion: Integer;
+      function GetCurrent: TKeyValuePair;
+      function GetCurrentKey: TKey;
+      function GetCurrentValue: TValue;
+      function IEnumerator<TKey>.GetCurrent = GetCurrentKey;
+      function IEnumerator<TValue>.GetCurrent = GetCurrentValue;
+    public
+      constructor Create(const source: TBidiDictionary<TKey, TValue>);
+      destructor Destroy; override;
+      function MoveNext: Boolean;
+    end;
 
-      TInverseEnumerator = class(TEnumerator, IEnumerator<TValueKeyPair>)
-      private
-        function GetCurrent: TValueKeyPair;
-      end;
+    TInverseEnumerator = class(TEnumerator, IEnumerator<TValueKeyPair>)
+    private
+      function GetCurrent: TValueKeyPair;
+    end;
 
-      TKeyCollection = class(TEnumerableBase<TKey>,
-        IEnumerable<TKey>, IReadOnlyCollection<TKey>)
-      private
-        fSource: TBidiDictionary<TKey, TValue>;
-      {$REGION 'Property Accessors'}
-        function GetCount: Integer;
-        function GetIsEmpty: Boolean;
-      {$ENDREGION}
-      public
-        constructor Create(const source: TBidiDictionary<TKey, TValue>);
+    TKeyCollection = class(TEnumerableBase<TKey>,
+      IEnumerable<TKey>, IReadOnlyCollection<TKey>)
+    private
+      fSource: TBidiDictionary<TKey, TValue>;
+    {$REGION 'Property Accessors'}
+      function GetCount: Integer;
+      function GetIsEmpty: Boolean;
+    {$ENDREGION}
+    public
+      constructor Create(const source: TBidiDictionary<TKey, TValue>);
 
-      {$REGION 'Implements IInterface'}
-        function _AddRef: Integer; stdcall;
-        function _Release: Integer; stdcall;
-      {$ENDREGION}
+    {$REGION 'Implements IInterface'}
+      function _AddRef: Integer; stdcall;
+      function _Release: Integer; stdcall;
+    {$ENDREGION}
 
-      {$REGION 'Implements IEnumerable<TKey>'}
-        function GetEnumerator: IEnumerator<TKey>;
-        function Contains(const value: TKey): Boolean; overload;
-        function ToArray: TArray<TKey>;
-        function TryGetElementAt(var key: TKey; index: Integer): Boolean;
-      {$ENDREGION}
-      end;
+    {$REGION 'Implements IEnumerable<TKey>'}
+      function GetEnumerator: IEnumerator<TKey>;
+      function Contains(const value: TKey): Boolean; overload;
+      function ToArray: TArray<TKey>;
+      function TryGetElementAt(var key: TKey; index: Integer): Boolean;
+    {$ENDREGION}
+    end;
 
-      TValueCollection = class(TEnumerableBase<TValue>,
-        IEnumerable<TValue>, IReadOnlyCollection<TValue>)
-      private
-        fSource: TBidiDictionary<TKey, TValue>;
-      {$REGION 'Property Accessors'}
-        function GetCount: Integer;
-        function GetIsEmpty: Boolean;
-      {$ENDREGION}
-      public
-        constructor Create(const source: TBidiDictionary<TKey, TValue>);
+    TValueCollection = class(TEnumerableBase<TValue>,
+      IEnumerable<TValue>, IReadOnlyCollection<TValue>)
+    private
+      fSource: TBidiDictionary<TKey, TValue>;
+    {$REGION 'Property Accessors'}
+      function GetCount: Integer;
+      function GetIsEmpty: Boolean;
+    {$ENDREGION}
+    public
+      constructor Create(const source: TBidiDictionary<TKey, TValue>);
 
-      {$REGION 'Implements IInterface'}
-        function _AddRef: Integer; stdcall;
-        function _Release: Integer; stdcall;
-      {$ENDREGION}
+    {$REGION 'Implements IInterface'}
+      function _AddRef: Integer; stdcall;
+      function _Release: Integer; stdcall;
+    {$ENDREGION}
 
-      {$REGION 'Implements IEnumerable<TValue>'}
-        function GetEnumerator: IEnumerator<TValue>;
-        function Contains(const value: TValue): Boolean; overload;
-        function ToArray: TArray<TValue>;
-        function TryGetElementAt(var value: TValue; index: Integer): Boolean;
-      {$ENDREGION}
-      end;
+    {$REGION 'Implements IEnumerable<TValue>'}
+      function GetEnumerator: IEnumerator<TValue>;
+      function Contains(const value: TValue): Boolean; overload;
+      function ToArray: TArray<TValue>;
+      function TryGetElementAt(var value: TValue; index: Integer): Boolean;
+    {$ENDREGION}
+    end;
   {$ENDREGION}
   private
     fKeyBuckets: TArray<Integer>;
@@ -409,76 +414,75 @@ type
     IEnumerable<TPair<TKey, TValue>>, IReadOnlyCollection<TPair<TKey, TValue>>,
     IReadOnlyMap<TKey, TValue>, IReadOnlyDictionary<TKey, TValue>,
     ICollection<TPair<TKey, TValue>>, IMap<TKey, TValue>, IDictionary<TKey, TValue>)
-  private
+  private type
   {$REGION 'Nested Types'}
-    type
-      TKeyValuePair = TPair<TKey, TValue>;
-      PKeyValuePair = ^TKeyValuePair;
-      PNode = TNodes<TKey, TValue>.PRedBlackTreeNode;
+    TKeyValuePair = TPair<TKey, TValue>;
+    PKeyValuePair = ^TKeyValuePair;
+    PNode = TNodes<TKey, TValue>.PRedBlackTreeNode;
 
-      TEnumerator = class(TRefCountedObject,
-        IEnumerator<TKeyValuePair>, IEnumerator<TKey>, IEnumerator<TValue>)
-      private
-        fSource: TSortedDictionary<TKey, TValue>;
-        fCurrentNode: PNode;
-        fFinished: Boolean;
-        fVersion: Integer;
-        function GetCurrent: TKeyValuePair;
-        function GetCurrentKey: TKey;
-        function GetCurrentValue: TValue;
-        function IEnumerator<TKey>.GetCurrent = GetCurrentKey;
-        function IEnumerator<TValue>.GetCurrent = GetCurrentValue;
-      public
-        constructor Create(const source: TSortedDictionary<TKey, TValue>);
-        destructor Destroy; override;
-        function MoveNext: Boolean;
-      end;
+    TEnumerator = class(TRefCountedObject,
+      IEnumerator<TKeyValuePair>, IEnumerator<TKey>, IEnumerator<TValue>)
+    private
+      fSource: TSortedDictionary<TKey, TValue>;
+      fCurrentNode: PNode;
+      fFinished: Boolean;
+      fVersion: Integer;
+      function GetCurrent: TKeyValuePair;
+      function GetCurrentKey: TKey;
+      function GetCurrentValue: TValue;
+      function IEnumerator<TKey>.GetCurrent = GetCurrentKey;
+      function IEnumerator<TValue>.GetCurrent = GetCurrentValue;
+    public
+      constructor Create(const source: TSortedDictionary<TKey, TValue>);
+      destructor Destroy; override;
+      function MoveNext: Boolean;
+    end;
 
-      TKeyCollection = class(TEnumerableBase<TKey>,
-        IEnumerable<TKey>, IReadOnlyCollection<TKey>)
-      private
-        fSource: TSortedDictionary<TKey, TValue>;
-      {$REGION 'Property Accessors'}
-        function GetCount: Integer;
-        function GetIsEmpty: Boolean;
-      {$ENDREGION}
-      public
-        constructor Create(const source: TSortedDictionary<TKey, TValue>);
+    TKeyCollection = class(TEnumerableBase<TKey>,
+      IEnumerable<TKey>, IReadOnlyCollection<TKey>)
+    private
+      fSource: TSortedDictionary<TKey, TValue>;
+    {$REGION 'Property Accessors'}
+      function GetCount: Integer;
+      function GetIsEmpty: Boolean;
+    {$ENDREGION}
+    public
+      constructor Create(const source: TSortedDictionary<TKey, TValue>);
 
-      {$REGION 'Implements IInterface'}
-        function _AddRef: Integer; stdcall;
-        function _Release: Integer; stdcall;
-      {$ENDREGION}
+    {$REGION 'Implements IInterface'}
+      function _AddRef: Integer; stdcall;
+      function _Release: Integer; stdcall;
+    {$ENDREGION}
 
-      {$REGION 'Implements IEnumerable<TKey>'}
-        function GetEnumerator: IEnumerator<TKey>;
-        function Contains(const value: TKey): Boolean; overload;
-        function ToArray: TArray<TKey>;
-      {$ENDREGION}
-      end;
+    {$REGION 'Implements IEnumerable<TKey>'}
+      function GetEnumerator: IEnumerator<TKey>;
+      function Contains(const value: TKey): Boolean; overload;
+      function ToArray: TArray<TKey>;
+    {$ENDREGION}
+    end;
 
-      TValueCollection = class(TEnumerableBase<TValue>,
-        IEnumerable<TValue>, IReadOnlyCollection<TValue>)
-      private
-        fSource: TSortedDictionary<TKey, TValue>;
-      {$REGION 'Property Accessors'}
-        function GetCount: Integer;
-        function GetIsEmpty: Boolean;
-      {$ENDREGION}
-      public
-        constructor Create(const source: TSortedDictionary<TKey, TValue>);
+    TValueCollection = class(TEnumerableBase<TValue>,
+      IEnumerable<TValue>, IReadOnlyCollection<TValue>)
+    private
+      fSource: TSortedDictionary<TKey, TValue>;
+    {$REGION 'Property Accessors'}
+      function GetCount: Integer;
+      function GetIsEmpty: Boolean;
+    {$ENDREGION}
+    public
+      constructor Create(const source: TSortedDictionary<TKey, TValue>);
 
-      {$REGION 'Implements IInterface'}
-        function _AddRef: Integer; stdcall;
-        function _Release: Integer; stdcall;
-      {$ENDREGION}
+    {$REGION 'Implements IInterface'}
+      function _AddRef: Integer; stdcall;
+      function _Release: Integer; stdcall;
+    {$ENDREGION}
 
-      {$REGION 'Implements IEnumerable<TValue>'}
-        function GetEnumerator: IEnumerator<TValue>;
-        function Contains(const value: TValue): Boolean; overload;
-        function ToArray: TArray<TValue>;
-      {$ENDREGION}
-      end;
+    {$REGION 'Implements IEnumerable<TValue>'}
+      function GetEnumerator: IEnumerator<TValue>;
+      function Contains(const value: TValue): Boolean; overload;
+      function ToArray: TArray<TValue>;
+    {$ENDREGION}
+    end;
   {$ENDREGION}
   private
     fTree: TRedBlackTree<TKey,TValue>;
@@ -683,7 +687,13 @@ end;
 
 function TDictionary<TKey, TValue>.GetEnumerator: IEnumerator<TKeyValuePair>;
 begin
-  Result := TEnumerator.Create(Self, @fHashTable);
+  _AddRef;
+  with PEnumerator(TEnumeratorBlock.Create(@Result, @TEnumerator.Enumerator_Vtable,
+    TypeInfo(TEnumerator), @TEnumerator.GetCurrent, @TEnumerator.MoveNext))^ do
+  begin
+    fSource := Self;
+    fVersion := Self.fHashTable.Version;
+  end;
 end;
 
 procedure TDictionary<TKey, TValue>.Clear;
@@ -1054,14 +1064,31 @@ begin
 end;
 
 function TDictionary<TKey, TValue>.TEnumerator.MoveNext: Boolean;
+var
+  hashTable: PHashTable;
+  item: PItem;
 begin
-  if inherited MoveNext then
+  hashTable := @fSource.fHashTable;
+  if fVersion = hashTable.Version then
   begin
-    fCurrent.Key := PItem(fItem).Key;
-    fCurrent.Value := PItem(fItem).Value;
-    Exit(True);
-  end;
-  Result := False;
+    repeat
+      if fIndex >= hashTable.ItemCount then
+        Break;
+
+      item := @TItems(hashTable.Items)[fIndex];
+      Inc(fIndex);
+      if item.HashCode >= 0 then
+      begin
+        fCurrent := PKeyValuePair(@item.Key)^;
+        Exit(True);
+      end;
+    until False;
+    fCurrent.Key := Default(TKey);
+    fCurrent.Value := Default(TValue);
+    Result := False;
+  end
+  else
+    Result := RaiseHelper.EnumFailedVersion;
 end;
 
 {$ENDREGION}

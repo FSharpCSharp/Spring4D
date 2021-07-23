@@ -49,6 +49,24 @@ type
 
   TValueCollection<T> = class(TEnumerableBase<T>,
     IEnumerable<T>, IReadOnlyCollection<T>)
+  private type
+  {$REGION 'Nested Types'}
+    PEnumerator = ^TEnumerator;
+    TEnumerator = record
+      Vtable: Pointer;
+      RefCount: Integer;
+      TypeInfo: PTypeInfo;
+      Parent: TRefCountedObject;
+      fHashTable: PHashTable;
+      fIndex: Integer;
+      fVersion: Integer;
+      fEnumerator: IEnumerator<T>;
+      fCurrent: T;
+      function GetCurrent: T;
+      function MoveNext: Boolean;
+      class var Enumerator_Vtable: TEnumeratorVtable;
+    end;
+  {$ENDREGION}
   private
     fSource: TRefCountedObject;
     fHashTable: PHashTable;
@@ -74,50 +92,30 @@ type
   {$ENDREGION}
   end;
 
-  TMultiMapEnumerator = class(TRefCountedObject)
-  private
-    fSource: TRefCountedObject;
-    fHashTable: PHashTable;
-    fIndex: Integer;
-    fVersion: Integer;
-    fEnumerator: IInterface;
-  public
-    constructor Create(const source: TRefCountedObject; hashTable: PHashTable);
-    destructor Destroy; override;
-    function MoveNext: Boolean;
-  end;
-
-  TValueEnumerator<T> = class(TMultiMapEnumerator, IEnumerator<T>)
-  private
-    fCurrent: T;
-    function GetCurrent: T;
-    function MoveNext: Boolean;
-  end;
-
   TUpdateValues = procedure(const key; var values: IInterface) of object;
 
-  TWrappedCollection<T> = class(TEnumerableBase<T>,
+  TCollectionWrapper<T> = class(TEnumerableBase<T>,
     IEnumerable<T>, IReadOnlyCollection<T>)
-  private
+  private type
   {$REGION 'Nested Types'}
-    type
-      TEnumerator = class(TRefCountedObject, IEnumerator<T>)
-      private
-        fSource: TWrappedCollection<T>;
-        fDelegate: IEnumerator<T>;
-        fOriginal: ICollection<T>;
-        procedure ValidateEnumerator;
-        function GetCurrent: T;
-      public
-        constructor Create(const source: TWrappedCollection<T>);
-        destructor Destroy; override;
-        function MoveNext: Boolean;
-      end;
+    PEnumerator = ^TEnumerator;
+    TEnumerator = record
+      Vtable: Pointer;
+      RefCount: Integer;
+      TypeInfo: PTypeInfo;
+      fSource: TCollectionWrapper<T>;
+      fCollection: ICollection<T>;
+      fEnumerator: IEnumerator<T>;
+      procedure ValidateEnumerator;
+      function GetCurrent: T;
+      function MoveNext: Boolean;
+      class var Enumerator_Vtable: TEnumeratorVtable;
+    end;
   {$ENDREGION}
   private
     fOnDestroy: TNotifyEventImpl;
     fUpdateValues: TUpdateValues;
-    fDelegate: ICollection<T>;
+    fCollection: ICollection<T>;
     fKey: Pointer;
     function GetCount: Integer;
     procedure RefreshIfEmpty;
@@ -126,7 +124,7 @@ type
     constructor Create(key: Pointer;
       const onDestroy: TNotifyEventImpl;
       const updateValues: TUpdateValues;
-      const delegate: ICollection<T>);
+      const collection: ICollection<T>);
     destructor Destroy; override;
     function Contains(const value: T;
       const comparer: IEqualityComparer<T>): Boolean; overload;
@@ -135,33 +133,40 @@ type
   end;
 
   TMultiMapBase<TKey, TValue> = class abstract(TMapBase<TKey, TValue>)
-  private
+  private type
   {$REGION 'Nested Types'}
-    type
-      TKeyValuePair = TPair<TKey, TValue>;
-      TItem = TMultiMapItem<TKey, TValue>;
-      TItems = TArray<TItem>;
-      PItem = ^TItem;
+    TKeyValuePair = TPair<TKey, TValue>;
+    TItem = TMultiMapItem<TKey, TValue>;
+    TItems = TArray<TItem>;
+    PItem = ^TItem;
 
-      TEnumerator = class(TMultiMapEnumerator, IEnumerator<TKeyValuePair>)
-      private
-        fCurrent: TKeyValuePair;
-        function GetCurrent: TKeyValuePair;
-        function MoveNext: Boolean;
-      end;
+    PEnumerator = ^TEnumerator;
+    TEnumerator = record
+      Vtable: Pointer;
+      RefCount: Integer;
+      TypeInfo: PTypeInfo;
+      fSource: TMultiMapBase<TKey, TValue>;
+      fIndex: Integer;
+      fVersion: Integer;
+      fEnumerator: IEnumerator<TValue>;
+      fCurrent: TKeyValuePair;
+      function GetCurrent: TKeyValuePair;
+      function MoveNext: Boolean;
+      class var Enumerator_Vtable: TEnumeratorVtable;
+    end;
 
-      TKeyCollection = TInnerCollection<TKey>;
-      TValueCollection = TValueCollection<TValue>;
+    TKeyCollection = TInnerCollection<TKey>;
+    TValueCollection = TValueCollection<TValue>;
 
-      TWrappedCollection = class(TWrappedCollection<TValue>)
-      private
-        fKey: TKey;
-      public
-        constructor Create(const key: TKey;
-          const onDestroy: TNotifyEventImpl;
-          const updateValues: TUpdateValues;
-          const delegate: ICollection<TValue>);
-      end;
+    TCollectionWrapper = class(TCollectionWrapper<TValue>)
+    private
+      fKey: TKey;
+    public
+      constructor Create(const key: TKey;
+        const onDestroy: TNotifyEventImpl;
+        const updateValues: TUpdateValues;
+        const collection: ICollection<TValue>);
+    end;
   {$ENDREGION}
   private
     fHashTable: THashTable;
@@ -323,7 +328,14 @@ end;
 
 function TValueCollection<T>.GetEnumerator: IEnumerator<T>;
 begin
-  Result := TValueEnumerator<T>.Create(fSource, fHashTable);
+  _AddRef;
+  with PEnumerator(TEnumeratorBlock.Create(@Result, @TEnumerator.Enumerator_Vtable,
+    TypeInfo(TEnumerator), @TEnumerator.GetCurrent, @TEnumerator.MoveNext))^ do
+  begin
+    Parent := Self.fSource;
+    fHashTable := Self.fHashTable;
+    fVersion := fHashTable.Version;
+  end;
 end;
 
 function TValueCollection<T>.GetIsEmpty: Boolean;
@@ -370,45 +382,48 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TMultiMapEnumerator'}
+{$REGION 'TValueCollection<T>.TEnumerator'}
 
-constructor TMultiMapEnumerator.Create(const source: TRefCountedObject;
-  hashTable: PHashTable);
+function TValueCollection<T>.TEnumerator.GetCurrent: T;
 begin
-  fSource := source;
-  fSource._AddRef;
-  fHashTable := hashTable;
-  fVersion := fHashTable.Version;
+  Result := fCurrent;
 end;
 
-destructor TMultiMapEnumerator.Destroy;
-begin
-  fSource._Release;
-end;
-
-function TMultiMapEnumerator.MoveNext: Boolean;
+function TValueCollection<T>.TEnumerator.MoveNext: Boolean;
 var
+  hashTable: PHashTable;
   item: PByte;
 begin
-  if fVersion = fHashTable.Version then
+  hashTable := fHashTable;
+  if fVersion = hashTable.Version then
   begin
-    while True do
-    begin
-      if Assigned(fEnumerator) then
-        if IEnumerator(fEnumerator).MoveNext then
-          Exit(True)
+    repeat
+      if Assigned(fEnumerator) and fEnumerator.MoveNext then
+      begin
+        fCurrent := fEnumerator.Current;
+        Exit(True);
+      end;
+
+      repeat
+        if fIndex < hashTable.ItemCount then
+        begin
+          item := fHashTable.Items + NativeInt(fIndex) * fHashTable.ItemSize;
+          Inc(fIndex);
+          if PInteger(item)^ >= 0 then
+          begin
+            Inc(item, fHashTable.ItemSize - SizeOf(Pointer));
+            fEnumerator := ICollection<T>(PPointer(item)^).GetEnumerator;
+            Break;
+          end;
+        end
         else
+        begin
           fEnumerator := nil;
-
-      if fIndex >= fHashTable.ItemCount then
-        Break;
-
-      item := fHashTable.Items + fIndex * fHashTable.ItemSize;
-      Inc(fIndex);
-      if PInteger(item)^ >= 0 then
-        fEnumerator := IEnumerable(PPointer(item + fHashTable.ItemSize - SizeOf(Pointer))^).GetEnumerator;
-    end;
-    Result := False;
+          fCurrent := Default(T);
+          Exit(False);
+        end;
+      until False;
+    until False;
   end
   else
     Result := RaiseHelper.EnumFailedVersion;
@@ -417,115 +432,91 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TValueEnumerator<T>'}
+{$REGION 'TCollectionWrapper<T>'}
 
-function TValueEnumerator<T>.GetCurrent: T;
-begin
-  Result := fCurrent;
-end;
-
-function TValueEnumerator<T>.MoveNext: Boolean;
-begin
-  Result := inherited MoveNext;
-  if Result then
-    fCurrent := IEnumerator<T>(fEnumerator).Current;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TWrappedCollection<T>'}
-
-constructor TWrappedCollection<T>.Create(key: Pointer;
+constructor TCollectionWrapper<T>.Create(key: Pointer;
   const onDestroy: TNotifyEventImpl; const updateValues: TUpdateValues;
-  const delegate: ICollection<T>);
+  const collection: ICollection<T>);
 begin
   fOnDestroy := onDestroy;
   fOnDestroy.Add(HandleDestroy);
   fUpdateValues := updateValues;
-  fDelegate := delegate;
+  fCollection := collection;
   fKey := key;
 end;
 
-destructor TWrappedCollection<T>.Destroy;
+destructor TCollectionWrapper<T>.Destroy;
 begin
   if Assigned(fOnDestroy) then
     fOnDestroy.Remove(HandleDestroy);
 end;
 
-function TWrappedCollection<T>.Contains(
+function TCollectionWrapper<T>.Contains(
   const value: T; const comparer: IEqualityComparer<T>): Boolean;
 begin
   RefreshIfEmpty;
-  Result := fDelegate.Contains(value, comparer);
+  Result := fCollection.Contains(value, comparer);
 end;
 
-procedure TWrappedCollection<T>.RefreshIfEmpty;
+procedure TCollectionWrapper<T>.RefreshIfEmpty;
 begin
-  if fDelegate.IsEmpty and Assigned(fUpdateValues) then
-    fUpdateValues(fKey^, IInterface(fDelegate));
+  if fCollection.IsEmpty and Assigned(fUpdateValues) then
+    fUpdateValues(fKey^, IInterface(fCollection));
 end;
 
-function TWrappedCollection<T>.GetCount: Integer;
-begin
-  RefreshIfEmpty;
-  Result := fDelegate.Count;
-end;
-
-function TWrappedCollection<T>.GetEnumerator: IEnumerator<T>;
+function TCollectionWrapper<T>.GetCount: Integer;
 begin
   RefreshIfEmpty;
-  Result := TEnumerator.Create(Self);
+  Result := fCollection.Count;
 end;
 
-procedure TWrappedCollection<T>.HandleDestroy(
+function TCollectionWrapper<T>.GetEnumerator: IEnumerator<T>;
+begin
+  RefreshIfEmpty;
+  _AddRef;
+  with PEnumerator(TEnumeratorBlock.Create(@Result, @TEnumerator.Enumerator_Vtable,
+    TypeInfo(TEnumerator), @TEnumerator.GetCurrent, @TEnumerator.MoveNext))^ do
+  begin
+    fSource := Self;
+    fCollection := Self.fCollection;
+    fEnumerator := fCollection.GetEnumerator;
+  end;
+end;
+
+procedure TCollectionWrapper<T>.HandleDestroy(
   Sender: TObject);
 begin
   fOnDestroy := nil;
   fUpdateValues := nil;
 end;
 
-function TWrappedCollection<T>.ToArray: TArray<T>;
+function TCollectionWrapper<T>.ToArray: TArray<T>;
 begin
   RefreshIfEmpty;
-  Result := fDelegate.ToArray;
+  Result := fCollection.ToArray;
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TWrappedCollection<T>.TEnumerator'}
+{$REGION 'TCollectionWrapper<T>.TEnumerator'}
 
-constructor TWrappedCollection<T>.TEnumerator.Create(
-  const source: TWrappedCollection<T>);
-begin
-  fSource := source;
-  fSource._AddRef;
-  fOriginal := fSource.fDelegate;
-  fDelegate := fSource.fDelegate.GetEnumerator;
-end;
-
-destructor TWrappedCollection<T>.TEnumerator.Destroy;
-begin
-  fSource._Release;
-end;
-
-function TWrappedCollection<T>.TEnumerator.GetCurrent: T;
+function TCollectionWrapper<T>.TEnumerator.GetCurrent: T;
 begin
   ValidateEnumerator;
-  Result := fDelegate.Current;
+  Result := fEnumerator.Current;
 end;
 
-function TWrappedCollection<T>.TEnumerator.MoveNext: Boolean;
+function TCollectionWrapper<T>.TEnumerator.MoveNext: Boolean;
 begin
   ValidateEnumerator;
-  Result := fDelegate.MoveNext;
+  Result := fEnumerator.MoveNext;
 end;
 
-procedure TWrappedCollection<T>.TEnumerator.ValidateEnumerator;
+procedure TCollectionWrapper<T>.TEnumerator.ValidateEnumerator;
 begin
   fSource.RefreshIfEmpty;
-  if fSource.fDelegate <> fOriginal then
+  if fSource.fCollection <> fCollection then
     RaiseHelper.EnumFailedVersion;
 end;
 
@@ -761,7 +752,13 @@ end;
 
 function TMultiMapBase<TKey, TValue>.GetEnumerator: IEnumerator<TKeyValuePair>;
 begin
-  Result := TEnumerator.Create(Self, @fHashTable);
+  _AddRef;
+  with PEnumerator(TEnumeratorBlock.Create(@Result, @TEnumerator.Enumerator_Vtable,
+    TypeInfo(TEnumerator), @TEnumerator.GetCurrent, @TEnumerator.MoveNext))^ do
+  begin
+    fSource := Self;
+    fVersion := Self.fHashTable.Version;
+  end;
 end;
 
 function TMultiMapBase<TKey, TValue>.GetIsEmpty: Boolean;
@@ -778,7 +775,7 @@ begin
   if Assigned(item) then
     Result := item.Values as IReadOnlyCollection<TValue>
   else
-    Result := TWrappedCollection.Create(key, fOnDestroy, UpdateValues, CreateCollection);
+    Result := TCollectionWrapper.Create(key, fOnDestroy, UpdateValues, CreateCollection);
 end;
 
 function TMultiMapBase<TKey, TValue>.GetKeys: IReadOnlyCollection<TKey>;
@@ -885,13 +882,43 @@ begin
 end;
 
 function TMultiMapBase<TKey, TValue>.TEnumerator.MoveNext: Boolean;
+var
+  hashTable: PHashTable;
+  item: PItem;
 begin
-  Result := inherited MoveNext;
-  if Result then
+  hashTable := @fSource.fHashTable;
+  if fVersion = hashTable.Version then
   begin
-    fCurrent.Key := TItems(fHashTable.Items)[fIndex - 1].Key;
-    fCurrent.Value := IEnumerator<TValue>(fEnumerator).Current;
-  end;
+    repeat
+      if Assigned(fEnumerator) and fEnumerator.MoveNext then
+      begin
+        fCurrent.Value := fEnumerator.Current;
+        Exit(True);
+      end;
+
+      repeat
+        if fIndex < hashTable.ItemCount then
+        begin
+          item := @TItems(hashTable.Items)[fIndex];
+          Inc(fIndex);
+          if item.HashCode >= 0 then
+          begin
+            fCurrent.Key := item.Key;
+            fEnumerator := item.Values.GetEnumerator;
+            Break;
+          end;
+        end
+        else
+        begin
+          fEnumerator := nil;
+          fCurrent := Default(TKeyValuePair);
+          Exit(False);
+        end;
+      until False;
+    until False;
+  end
+  else
+    Result := RaiseHelper.EnumFailedVersion;
 end;
 
 {$ENDREGION}
@@ -977,13 +1004,13 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TMultiMapBase<TKey, TValue>.TWrappedCollection'}
+{$REGION 'TMultiMapBase<TKey, TValue>.TCollectionWrapper'}
 
-constructor TMultiMapBase<TKey, TValue>.TWrappedCollection.Create(
+constructor TMultiMapBase<TKey, TValue>.TCollectionWrapper.Create(
   const key: TKey; const onDestroy: TNotifyEventImpl;
-  const updateValues: TUpdateValues; const delegate: ICollection<TValue>);
+  const updateValues: TUpdateValues; const collection: ICollection<TValue>);
 begin
-  inherited Create(@fKey, onDestroy, updateValues, delegate);
+  inherited Create(@fKey, onDestroy, updateValues, collection);
   fKey := key;
 end;
 

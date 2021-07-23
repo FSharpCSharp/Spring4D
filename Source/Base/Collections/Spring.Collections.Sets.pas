@@ -69,19 +69,26 @@ type
   /// </typeparam>
   THashSet<T> = class(TSetBase<T>, IInterface, IEnumerable<T>,
     IReadOnlyCollection<T>, ICollection<T>, ISet<T>)
-  private
+  private type
   {$REGION 'Nested Types'}
-    type
-      TItem = THashSetItem<T>;
-      TItems = TArray<TItem>;
-      PItem = ^TItem;
+    TItem = THashSetItem<T>;
+    TItems = TArray<TItem>;
+    PItem = ^TItem;
 
-      TEnumerator = class(THashTableEnumerator, IEnumerator<T>)
-      private
-        fCurrent: T;
-        function GetCurrent: T;
-        function MoveNext: Boolean;
-      end;
+    PEnumerator = ^TEnumerator;
+    TEnumerator = record
+      Vtable: Pointer;
+      RefCount: Integer;
+      TypeInfo: PTypeInfo;
+      fSource: THashSet<T>;
+      fHashTable: PHashTable;
+      fIndex: Integer;
+      fVersion: Integer;
+      fCurrent: T;
+      function GetCurrent: T;
+      function MoveNext: Boolean;
+      class var Enumerator_Vtable: TEnumeratorVtable;
+    end;
   {$ENDREGION}
   private
     fHashTable: THashTable;
@@ -121,22 +128,23 @@ type
 
   TSortedSet<T> = class(TSetBase<T>, IEnumerable<T>,
     IReadOnlyCollection<T>, ICollection<T>, ISet<T>)
-  private
+  private type
   {$REGION 'Nested Types'}
-    type
-      PNode = TNodes<T>.PRedBlackTreeNode;
-      TEnumerator = class(TRefCountedObject, IEnumerator<T>)
-      private
-        fSource: TSortedSet<T>;
-        fVersion: Integer;
-        fCurrent: PNode;
-        fFinished: Boolean;
-        function GetCurrent: T;
-      public
-        constructor Create(const source: TSortedSet<T>);
-        destructor Destroy; override;
-        function MoveNext: Boolean;
-      end;
+    PNode = TNodes<T>.PRedBlackTreeNode;
+
+    PEnumerator = ^TEnumerator;
+    TEnumerator = record
+      Vtable: Pointer;
+      RefCount: Integer;
+      TypeInfo: PTypeInfo;
+      fSource: TSortedSet<T>;
+      fNode: PNode;
+      fVersion: Integer;
+      fCurrent: T;
+      function GetCurrent: T;
+      function MoveNext: Boolean;
+      class var Enumerator_Vtable: TEnumeratorVtable;
+    end;
   {$ENDREGION}
   private
     fTree: TRedBlackTree<T>;
@@ -445,7 +453,13 @@ end;
 
 function THashSet<T>.GetEnumerator: IEnumerator<T>;
 begin
-  Result := TEnumerator.Create(Self, @fHashTable);
+  _AddRef;
+  with PEnumerator(TEnumeratorBlock.Create(@Result, @TEnumerator.Enumerator_Vtable,
+    TypeInfo(TEnumerator), @TEnumerator.GetCurrent, @TEnumerator.MoveNext))^ do
+  begin
+    fSource := Self;
+    fVersion := Self.fHashTable.Version;
+  end;
 end;
 
 function THashSet<T>.GetCapacity: Integer;
@@ -503,13 +517,30 @@ begin
 end;
 
 function THashSet<T>.TEnumerator.MoveNext: Boolean;
+var
+  hashTable: PHashTable;
+  item: PItem;
 begin
-  if inherited MoveNext then
+  hashTable := @fSource.fHashTable;
+  if fVersion = hashTable.Version then
   begin
-    fCurrent := PItem(fItem).Item;
-    Exit(True);
-  end;
-  Result := False;
+    repeat
+      if fIndex >= hashTable.ItemCount then
+        Break;
+
+      item := @TItems(hashTable.Items)[fIndex];
+      Inc(fIndex);
+      if item.HashCode >= 0 then
+      begin
+        fCurrent := item.Item;
+        Exit(True);
+      end;
+    until False;
+    fCurrent := Default(T);
+    Result := False;
+  end
+  else
+    Result := RaiseHelper.EnumFailedVersion;
 end;
 
 {$ENDREGION}
@@ -603,7 +634,13 @@ end;
 
 function TSortedSet<T>.GetEnumerator: IEnumerator<T>;
 begin
-  Result := TEnumerator.Create(Self);
+  _AddRef;
+  with PEnumerator(TEnumeratorBlock.Create(@Result, @TEnumerator.Enumerator_Vtable,
+    TypeInfo(TEnumerator), @TEnumerator.GetCurrent, @TEnumerator.MoveNext))^ do
+  begin
+    fSource := Self;
+    fVersion := Self.fVersion;
+  end;
 end;
 
 function TSortedSet<T>.Remove(const item: T): Boolean;
@@ -643,36 +680,29 @@ end;
 
 {$REGION 'TSortedSet<T>.TEnumerator'}
 
-constructor TSortedSet<T>.TEnumerator.Create(const source: TSortedSet<T>);
-begin
-  fSource := source;
-  fSource._AddRef;
-  fVersion := fSource.fVersion;
-end;
-
-destructor TSortedSet<T>.TEnumerator.Destroy;
-begin
-  fSource._Release;
-end;
-
 function TSortedSet<T>.TEnumerator.GetCurrent: T;
 begin
-  Result := fCurrent.Key;
+  Result := fCurrent;
 end;
 
 function TSortedSet<T>.TEnumerator.MoveNext: Boolean;
 begin
   if fVersion = fSource.fVersion then
   begin
-    if fFinished then
+    if NativeUInt(fNode) = 1 then
       Exit(False);
-    if not Assigned(fCurrent) then
-      fCurrent := fSource.fTree.Root.LeftMost
+    if not Assigned(fNode) then
+      fNode := fSource.fTree.Root.LeftMost
     else
-      fCurrent := fCurrent.Next;
-    Result := Assigned(fCurrent);
-    if not Result then
-      fFinished := True;
+      fNode := fNode.Next;
+    if Assigned(fNode) then
+    begin
+      fCurrent := fNode.Key;
+      Exit(True);
+    end;
+    NativeUInt(fNode) := 1;
+    fCurrent := Default(T);
+    Result := False;
   end
   else
     Result := RaiseHelper.EnumFailedVersion;

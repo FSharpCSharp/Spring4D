@@ -506,13 +506,19 @@ type
   private type
   {$REGION 'Nested Types'}
     PT = ^T;
-    TEnumerator = class(THashTableEnumerator, IEnumerator<T>)
-    private
+    PEnumerator = ^TEnumerator;
+    TEnumerator = record
+      Vtable: Pointer;
+      RefCount: Integer;
+      TypeInfo: PTypeInfo;
+      Parent: TRefCountedObject;
+      fSource: TInnerCollection<T>;
+      fIndex: Integer;
+      fVersion: Integer;
       fCurrent: T;
       function GetCurrent: T;
-    public
-      procedure BeforeDestruction; override;
       function MoveNext: Boolean;
+      class var Enumerator_Vtable: TEnumeratorVtable;
     end;
   {$ENDREGION}
   private
@@ -791,7 +797,8 @@ begin
   Result := AtomicDecrement(RefCount);
   if Result = 0 then
   begin
-    Parent._Release;
+    if Assigned(Parent) then
+      Parent._Release;
     FinalizeRecord(@Self, TypeInfo);
     FreeMem(@Self);
   end;
@@ -2166,15 +2173,15 @@ begin
 end;
 
 function TInnerCollection<T>.GetEnumerator: IEnumerator<T>;
-var
-  enumerator: TEnumerator;
 begin
   _AddRef;
-  enumerator := TEnumerator.Create;
-  enumerator.fSource := Self;
-  enumerator.fHashTable := fHashTable;
-  enumerator.fVersion := enumerator.fHashTable.Version;
-  Result := enumerator;
+  with PEnumerator(TEnumeratorBlock.Create(@Result, @TEnumerator.Enumerator_Vtable,
+    TypeInfo(TEnumerator), @TEnumerator.GetCurrent, @TEnumerator.MoveNext))^ do
+  begin
+    Parent := Self.fSource;
+    fSource := Self;
+    fVersion := Self.fHashTable.Version;
+  end;
 end;
 
 function TInnerCollection<T>.GetIsEmpty: Boolean;
@@ -2234,24 +2241,38 @@ end;
 
 {$REGION 'TInnerCollection<T>.TEnumerator'}
 
-procedure TInnerCollection<T>.TEnumerator.BeforeDestruction;
-begin
-  TInnerCollection<T>(fSource)._Release;
-end;
-
 function TInnerCollection<T>.TEnumerator.GetCurrent: T;
 begin
   Result := fCurrent;
 end;
 
 function TInnerCollection<T>.TEnumerator.MoveNext: Boolean;
+var
+  hashTable: PHashTable;
+  item: PByte;
+  offset: Integer;
 begin
-  if inherited MoveNext then
+  offset := fSource.fOffset;
+  hashTable := fSource.fHashTable;
+  if fVersion = hashTable.Version then
   begin
-    fCurrent := PT(fItem + TInnerCollection<T>(fSource).fOffset)^;
-    Exit(True);
-  end;
-  Result := False;
+    repeat
+      if fIndex >= hashTable.ItemCount then
+        Break;
+
+      item := @hashTable.Items[fIndex * hashTable.ItemSize];
+      Inc(fIndex);
+      if PInteger(item)^ >= 0 then
+      begin
+        fCurrent := PT(item + offset)^;
+        Exit(True);
+      end;
+    until False;
+    fCurrent := Default(T);
+    Result := False;
+  end
+  else
+    Result := RaiseHelper.EnumFailedVersion;
 end;
 
 {$ENDREGION}

@@ -40,10 +40,8 @@ uses
 
 type
   TAbstractMultiSet<T> = class abstract(TCollectionBase<T>)
-  {$REGION 'Nested Types'}
-    type
-      TEntry = TMultiSetEntry<T>;
-  {$ENDREGION}
+  private type
+    TEntry = TMultiSetEntry<T>;
   private
     fCount: Integer;
   protected
@@ -69,65 +67,66 @@ type
   THashMultiSet<T> = class(TAbstractMultiSet<T>, IEnumerable<T>,
     IReadOnlyCollection<T>, IReadOnlyMultiSet<T>,
     ICollection<T>, IMultiSet<T>)
-  private
+  private type
   {$REGION 'Nested Types'}
-    type
-      TEntry = TMultiSetEntry<T>;
-      TItem = THashMultiSetItem<T>;
-      TItems = TArray<TItem>;
-      PItem = ^TItem;
+    TEntry = TMultiSetEntry<T>;
+    TItem = THashMultiSetItem<T>;
+    TItems = TArray<TItem>;
+    PItem = ^TItem;
 
-      TEnumerator = class(TRefCountedObject, IEnumerator<T>)
-      private
-        fSource: THashMultiSet<T>;
-        fItemIndex: Integer;
-        fRemainingCount: Integer;
-        fVersion: Integer;
-        fCurrent: T;
-        function GetCurrent: T;
-      public
-        constructor Create(const source: THashMultiSet<T>);
-        destructor Destroy; override;
-        function MoveNext: Boolean;
-      end;
+    PEnumerator = ^TEnumerator;
+    TEnumerator = record
+      Vtable: Pointer;
+      RefCount: Integer;
+      TypeInfo: PTypeInfo;
+      fSource: THashMultiSet<T>;
+      fItemIndex: Integer;
+      fRemainingCount: Integer;
+      fVersion: Integer;
+      fCurrent: T;
+      function GetCurrent: T;
+      function MoveNext: Boolean;
+      class var Enumerator_Vtable: TEnumeratorVtable;
+    end;
 
-      TItemCollection = TInnerCollection<T>;
+    TItemCollection = TInnerCollection<T>;
 
-      TEntryCollection = class(TEnumerableBase<TEntry>,
-        IEnumerable<TEntry>, IReadOnlyCollection<TEntry>)
-      private
-        fSource: THashMultiSet<T>;
-      {$REGION 'Property Accessors'}
-        function GetCount: Integer;
-        function GetIsEmpty: Boolean;
-      {$ENDREGION}
-      public
-        constructor Create(const source: THashMultiSet<T>);
+    TEntryCollection = class(TEnumerableBase<TEntry>,
+      IEnumerable<TEntry>, IReadOnlyCollection<TEntry>)
+    private
+      fSource: THashMultiSet<T>;
+    {$REGION 'Property Accessors'}
+      function GetCount: Integer;
+      function GetIsEmpty: Boolean;
+    {$ENDREGION}
+    public
+      constructor Create(const source: THashMultiSet<T>);
 
-      {$REGION 'Implements IInterface'}
-        function _AddRef: Integer; stdcall;
-        function _Release: Integer; stdcall;
-      {$ENDREGION}
+    {$REGION 'Implements IInterface'}
+      function _AddRef: Integer; stdcall;
+      function _Release: Integer; stdcall;
+    {$ENDREGION}
 
-      {$REGION 'Implements IEnumerable<TEntry>'}
-        function GetEnumerator: IEnumerator<TEntry>;
-        function Contains(const value: TEntry): Boolean; overload;
-        function ToArray: TArray<TEntry>;
-      {$ENDREGION}
-      end;
+    {$REGION 'Implements IEnumerable<TEntry>'}
+      function GetEnumerator: IEnumerator<TEntry>;
+      function Contains(const value: TEntry): Boolean; overload;
+      function ToArray: TArray<TEntry>;
+    {$ENDREGION}
+    end;
 
-      TEntryEnumerator = class(TRefCountedObject, IEnumerator<TEntry>)
-      private
-        fSource: THashMultiSet<T>;
-        fItemIndex: Integer;
-        fVersion: Integer;
-        fCurrent: TEntry;
-        function GetCurrent: TEntry;
-      public
-        constructor Create(const source: THashMultiSet<T>);
-        destructor Destroy; override;
-        function MoveNext: Boolean;
-      end;
+    PEntryEnumerator = ^TEntryEnumerator;
+    TEntryEnumerator = record
+      Vtable: Pointer;
+      RefCount: Integer;
+      TypeInfo: PTypeInfo;
+      fSource: THashMultiSet<T>;
+      fItemIndex: Integer;
+      fVersion: Integer;
+      fCurrent: TEntry;
+      function GetCurrent: TEntry;
+      function MoveNext: Boolean;
+      class var Enumerator_Vtable: TEnumeratorVtable;
+    end;
   {$ENDREGION}
   private
     fHashTable: THashTable;
@@ -170,96 +169,96 @@ type
   TTreeMultiSet<T> = class(TAbstractMultiSet<T>, IEnumerable<T>,
     IReadOnlyCollection<T>, IReadOnlyMultiSet<T>,
     ICollection<T>, IMultiSet<T>)
-  private
+  private type
   {$REGION 'Nested Types'}
-    type
-      TEntry = TMultiSetEntry<T>;
-      PNode = TNodes<T, Integer>.PRedBlackTreeNode;
+    TEntry = TMultiSetEntry<T>;
+    PNode = TNodes<T, Integer>.PRedBlackTreeNode;
 
-      TEnumerator = class(TRefCountedObject, IEnumerator<T>)
-      private
-        fSource: TTreeMultiSet<T>;
-        fNode: PNode;
-        fRemainingCount: Integer;
-        fVersion: Integer;
-        function GetCurrent: T;
-      public
-        constructor Create(const source: TTreeMultiSet<T>);
-        destructor Destroy; override;
-        function MoveNext: Boolean;
-      end;
+    PEnumerator = ^TEnumerator;
+    TEnumerator = record
+      Vtable: Pointer;
+      RefCount: Integer;
+      TypeInfo: PTypeInfo;
+      fSource: TTreeMultiSet<T>;
+      fNode: PNode;
+      fRemainingCount: Integer;
+      fVersion: Integer;
+      function GetCurrent: T;
+      function MoveNext: Boolean;
+      class var Enumerator_Vtable: TEnumeratorVtable;
+    end;
 
-      TItemCollection = class(TEnumerableBase<T>,
-        IEnumerable<T>, IReadOnlyCollection<T>)
-      private
-        fSource: TTreeMultiSet<T>;
-      {$REGION 'Property Accessors'}
-        function GetCount: Integer;
-        function GetIsEmpty: Boolean;
-      {$ENDREGION}
-      public
-        constructor Create(const source: TTreeMultiSet<T>);
+    TItemCollection = class(TEnumerableBase<T>,
+      IEnumerable<T>, IReadOnlyCollection<T>)
+    private
+      fSource: TTreeMultiSet<T>;
+    {$REGION 'Property Accessors'}
+      function GetCount: Integer;
+      function GetIsEmpty: Boolean;
+    {$ENDREGION}
+    public
+      constructor Create(const source: TTreeMultiSet<T>);
 
-      {$REGION 'Implements IInterface'}
-        function _AddRef: Integer; stdcall;
-        function _Release: Integer; stdcall;
-      {$ENDREGION}
+    {$REGION 'Implements IInterface'}
+      function _AddRef: Integer; stdcall;
+      function _Release: Integer; stdcall;
+    {$ENDREGION}
 
-      {$REGION 'Implements IEnumerable<T>'}
-        function GetEnumerator: IEnumerator<T>;
-        function Contains(const value: T): Boolean; overload;
-        function ToArray: TArray<T>;
-      {$ENDREGION}
-      end;
+    {$REGION 'Implements IEnumerable<T>'}
+      function GetEnumerator: IEnumerator<T>;
+      function Contains(const value: T): Boolean; overload;
+      function ToArray: TArray<T>;
+    {$ENDREGION}
+    end;
 
-      TItemEnumerator = class(TRefCountedObject, IEnumerator<T>)
-      private
-        fSource: TTreeMultiSet<T>;
-        fCurrentNode: PNode;
-        fFinished: Boolean;
-        fVersion: Integer;
-        function GetCurrent: T;
-      public
-        constructor Create(const source: TTreeMultiSet<T>);
-        destructor Destroy; override;
-        function MoveNext: Boolean;
-      end;
+    TItemEnumerator = class(TRefCountedObject, IEnumerator<T>)
+    private
+      fSource: TTreeMultiSet<T>;
+      fCurrentNode: PNode;
+      fFinished: Boolean;
+      fVersion: Integer;
+      function GetCurrent: T;
+    public
+      constructor Create(const source: TTreeMultiSet<T>);
+      destructor Destroy; override;
+      function MoveNext: Boolean;
+    end;
 
-      TEntryCollection = class(TEnumerableBase<TEntry>,
-        IEnumerable<TEntry>, IReadOnlyCollection<TEntry>)
-      private
-        fSource: TTreeMultiSet<T>;
-      {$REGION 'Property Accessors'}
-        function GetCount: Integer;
-        function GetIsEmpty: Boolean;
-      {$ENDREGION}
-      public
-        constructor Create(const source: TTreeMultiSet<T>);
+    TEntryCollection = class(TEnumerableBase<TEntry>,
+      IEnumerable<TEntry>, IReadOnlyCollection<TEntry>)
+    private
+      fSource: TTreeMultiSet<T>;
+    {$REGION 'Property Accessors'}
+      function GetCount: Integer;
+      function GetIsEmpty: Boolean;
+    {$ENDREGION}
+    public
+      constructor Create(const source: TTreeMultiSet<T>);
 
-      {$REGION 'Implements IInterface'}
-        function _AddRef: Integer; stdcall;
-        function _Release: Integer; stdcall;
-      {$ENDREGION}
+    {$REGION 'Implements IInterface'}
+      function _AddRef: Integer; stdcall;
+      function _Release: Integer; stdcall;
+    {$ENDREGION}
 
-      {$REGION 'Implements IEnumerable<TEntry>'}
-        function GetEnumerator: IEnumerator<TEntry>;
-        function Contains(const value: TEntry): Boolean; overload;
-        function ToArray: TArray<TEntry>;
-      {$ENDREGION}
-      end;
+    {$REGION 'Implements IEnumerable<TEntry>'}
+      function GetEnumerator: IEnumerator<TEntry>;
+      function Contains(const value: TEntry): Boolean; overload;
+      function ToArray: TArray<TEntry>;
+    {$ENDREGION}
+    end;
 
-      TEntryEnumerator = class(TRefCountedObject, IEnumerator<TEntry>)
-      private
-        fSource: TTreeMultiSet<T>;
-        fCurrentNode: PNode;
-        fFinished: Boolean;
-        fVersion: Integer;
-        function GetCurrent: TEntry;
-      public
-        constructor Create(const source: TTreeMultiSet<T>);
-        destructor Destroy; override;
-        function MoveNext: Boolean;
-      end;
+    TEntryEnumerator = class(TRefCountedObject, IEnumerator<TEntry>)
+    private
+      fSource: TTreeMultiSet<T>;
+      fCurrentNode: PNode;
+      fFinished: Boolean;
+      fVersion: Integer;
+      function GetCurrent: TEntry;
+    public
+      constructor Create(const source: TTreeMultiSet<T>);
+      destructor Destroy; override;
+      function MoveNext: Boolean;
+    end;
   {$ENDREGION}
   private
     fTree: TRedBlackTree<T, Integer>;
@@ -491,7 +490,13 @@ end;
 
 function THashMultiSet<T>.GetEnumerator: IEnumerator<T>;
 begin
-  Result := TEnumerator.Create(Self);
+  _AddRef;
+  with PEnumerator(TEnumeratorBlock.Create(@Result, @TEnumerator.Enumerator_Vtable,
+    TypeInfo(TEnumerator), @TEnumerator.GetCurrent, @TEnumerator.MoveNext))^ do
+  begin
+    fSource := Self;
+    fVersion := Self.fHashTable.Version;
+  end;
 end;
 
 function THashMultiSet<T>.GetItemCount(const item: T): Integer;
@@ -605,19 +610,6 @@ end;
 
 {$REGION 'THashMultiSet<T>.TEnumerator'}
 
-constructor THashMultiSet<T>.TEnumerator.Create(const source: THashMultiSet<T>);
-begin
-  fSource := source;
-  fSource._AddRef;
-  fRemainingCount := 0;
-  fVersion := fSource.fHashTable.Version;
-end;
-
-destructor THashMultiSet<T>.TEnumerator.Destroy;
-begin
-  fSource._Release;
-end;
-
 function THashMultiSet<T>.TEnumerator.GetCurrent: T;
 begin
   Result := fCurrent;
@@ -625,8 +617,8 @@ end;
 
 function THashMultiSet<T>.TEnumerator.MoveNext: Boolean;
 var
-  hashTable: ^THashTable;
-  entry: ^TItem;
+  hashTable: PHashTable;
+  entry: PItem;
 begin
   hashTable := @fSource.fHashTable;
   if fVersion = hashTable.Version then
@@ -683,7 +675,13 @@ end;
 
 function THashMultiSet<T>.TEntryCollection.GetEnumerator: IEnumerator<TEntry>;
 begin
-  Result := TEntryEnumerator.Create(fSource);
+  _AddRef;
+  with PEntryEnumerator(TEnumeratorBlock.Create(@Result, @TEntryEnumerator.Enumerator_Vtable,
+    TypeInfo(TEntryEnumerator), @TEntryEnumerator.GetCurrent, @TEntryEnumerator.MoveNext))^ do
+  begin
+    fSource := Self.fSource;
+    fVersion := fSource.fHashTable.Version;
+  end;
 end;
 
 function THashMultiSet<T>.TEntryCollection.GetIsEmpty: Boolean;
@@ -725,19 +723,6 @@ end;
 
 {$REGION 'THashMultiSet<T>.TEntryEnumerator'}
 
-constructor THashMultiSet<T>.TEntryEnumerator.Create(
-  const source: THashMultiSet<T>);
-begin
-  fSource := source;
-  fSource._AddRef;
-  fVersion := fSource.fHashTable.Version;
-end;
-
-destructor THashMultiSet<T>.TEntryEnumerator.Destroy;
-begin
-  fSource._Release;
-end;
-
 function THashMultiSet<T>.TEntryEnumerator.GetCurrent: TEntry;
 begin
   Result := fCurrent;
@@ -745,8 +730,8 @@ end;
 
 function THashMultiSet<T>.TEntryEnumerator.MoveNext: Boolean;
 var
-  hashTable: ^THashTable;
-  entry: ^TItem;
+  hashTable: PHashTable;
+  entry: PItem;
 begin
   hashTable := @fSource.fHashTable;
   if fVersion = hashTable.Version then
@@ -901,7 +886,13 @@ end;
 
 function TTreeMultiSet<T>.GetEnumerator: IEnumerator<T>;
 begin
-  Result := TEnumerator.Create(Self);
+  _AddRef;
+  with PEnumerator(TEnumeratorBlock.Create(@Result, @TEnumerator.Enumerator_Vtable,
+    TypeInfo(TEnumerator), @TEnumerator.GetCurrent, @TEnumerator.MoveNext))^ do
+  begin
+    fSource := Self;
+    fVersion := Self.fVersion;
+  end;
 end;
 
 function TTreeMultiSet<T>.GetItemCount(const item: T): Integer;
@@ -980,20 +971,6 @@ end;
 
 
 {$REGION 'TTreeMultiSet<T>.TEnumerator'}
-
-constructor TTreeMultiSet<T>.TEnumerator.Create(
-  const source: TTreeMultiSet<T>);
-begin
-  fSource := source;
-  fSource._AddRef;
-  fRemainingCount := 0;
-  fVersion := fSource.fVersion;
-end;
-
-destructor TTreeMultiSet<T>.TEnumerator.Destroy;
-begin
-  fSource._Release;
-end;
 
 function TTreeMultiSet<T>.TEnumerator.GetCurrent: T;
 begin

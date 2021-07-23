@@ -647,6 +647,7 @@ type
   published
     procedure TestEnumeratorMoveNext_VersionMismatch;
     procedure TestEnumeratorKeepsSourceAlive;
+    procedure TestEnumerate;
 
     procedure TestAdd;
     procedure TestRemove;
@@ -670,6 +671,7 @@ type
   published
     procedure TestAdd;
     procedure TestRemove;
+    procedure TestEnumerate;
 
     procedure TestOrderedByCount;
     procedure TestSetEquals;
@@ -4751,6 +4753,23 @@ begin
   CheckCount(3);
 end;
 
+procedure TTestSet.TestEnumerate;
+var
+  values: TArray<string>;
+  i: Integer;
+  s: string;
+begin
+  SUT.AddRange(['a', 'c', 'b']);
+  values := SUT.ToArray;
+  i := 0;
+  for s in SUT do
+  begin
+    CheckEquals(values[i], s);
+    Inc(i);
+  end;
+  CheckEquals(3, i);
+end;
+
 procedure TTestSet.TestEnumeratorKeepsSourceAlive;
 var
   e: IEnumerator<string>;
@@ -5010,6 +5029,23 @@ begin
   CheckEquals(1, SUT.Add('a', 2));
   CheckCount(4);
   CheckEquals(3, SUT['a']);
+end;
+
+procedure TTestMultiSetBase.TestEnumerate;
+var
+  i: Integer;
+  s: string;
+  values: TArray<string>;
+begin
+  SUT.AddRange(['a', 'c', 'b', 'b', 'a', 'b']);
+  values := SUT.ToArray;
+  i := 0;
+  for s in SUT do
+  begin
+    CheckEquals(values[i], s);
+    Inc(i);
+  end;
+  CheckEquals(6, i);
 end;
 
 procedure TTestMultiSetBase.TestOrderedByCount;
