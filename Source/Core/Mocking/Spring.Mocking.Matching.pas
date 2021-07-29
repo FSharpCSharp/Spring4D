@@ -453,17 +453,11 @@ begin
 end;
 
 class function TArg.IsEqual<T>(const value: T): T;
-var
-  comparer: IEqualityComparer<T>;
 begin
-  comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
   Result := TMatcherFactory.CreateMatcher<T>(
     function(const arg: TValue): Boolean
-    var
-      argValue: T;
     begin
-      arg.AsType(TypeInfo(T), argValue);
-      Result := comparer.Equals(argValue, value);
+      Result := arg.Convert<T>.Equals(TValue.From<T>(value));
     end);
 end;
 
