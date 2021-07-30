@@ -242,16 +242,18 @@ type
     procedure Clear;
   end;
 
-  TEnumeratorState = (Initial, Started, Finished);
   TIteratorKind = (
     Partition, &Array,
     Concat, Ordered, Reversed, Shuffled,
     SkipWhile, SkipWhileIndex,
     TakeWhile, TakeWhileIndex,
     Where, WhereIndex, Select);
-  TMoveNextFunc = function(self: Pointer): Boolean;
-  TStartFunc = function(self: Pointer): Boolean;
-  TFinalizeProc = procedure(self: Pointer);
+
+  TIteratorMethods = packed record
+    MoveNext: function(self: Pointer): Boolean;
+    Finalize: function(self: Pointer): Boolean;
+  end;
+
   PIteratorBlock = ^TIteratorBlock;
   TIteratorBlock = record
     // field layout has to match with TIteratorBlock<T> record below
@@ -260,9 +262,8 @@ type
 
     Parent: TRefCountedObject;
 
-    DoMoveNext: TMoveNextFunc;
-    DoStart: TStartFunc;
-    DoFinalize: TFinalizeProc;
+    Methods: TIteratorMethods;
+    DoMoveNext: function(self: Pointer): Boolean;
     Enumerator: IEnumerator;
 
     Source: IEnumerable;
@@ -270,14 +271,11 @@ type
     Items: Pointer;
     Index, Count: Integer;
     Kind: TIteratorKind;
-    State: TEnumeratorState;
 
     function MoveNextEmpty: Boolean;
 
-    function EmptyStart: Boolean;
     function GetEnumerator: Boolean;
     function GetEnumeratorAndSkip: Boolean;
-    procedure GetSecondEnumerator;
 
     function _Release: Integer; stdcall;
     function MoveNext: Boolean;
@@ -324,9 +322,8 @@ type
 
     Parent: TRefCountedObject;
 
-    DoMoveNext: TMoveNextFunc;
-    DoStart: TStartFunc;
-    DoFinalize: TFinalizeProc;
+    Methods: TIteratorMethods;
+    DoMoveNext: function(self: Pointer): Boolean;
     Enumerator: IEnumerator<T>;
 
     Source: IEnumerable<T>;
@@ -334,7 +331,7 @@ type
     Items: TArray<T>;
     Index, Count: Integer;
     Kind: TIteratorKind;
-    State: TEnumeratorState;
+
     Current: T;
 
     class var Enumerator_Vtable: array[0..4] of Pointer;
@@ -342,7 +339,7 @@ type
     procedure InitVtable;
 
     class function Create(const iterator: TIteratorBase<T>): IEnumerator<T>; static;
-    procedure Finalize;
+    function Finalize: Boolean;
 
     function GetCurrent: T;
 
@@ -652,6 +649,21 @@ type
 
     function Contains(const item: TKeyValuePair): Boolean; overload;
   end;
+
+  {$IFDEF MSWINDOWS}
+  IEnumerableInternal = interface
+    procedure GetEnumerator(var result);
+  end;
+
+  {$IF defined(DELPHIX_SYDNEY_UP) and defined(WIN32)}
+    {$DEFINE RSP31615}
+    // see https://quality.embarcadero.com/browse/RSP-31615
+  {$IFEND}
+
+  IEnumeratorInternal = interface
+    procedure GetCurrent(var result);
+  end;
+  {$ENDIF}
 
 const
   OwnsObjectsBitIndex = 31;
@@ -1729,7 +1741,7 @@ begin
   if not Assigned(predicate) then RaiseHelper.ArgumentNil(ExceptionArgument.predicate);
 
   Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
-    -1, 0, PPointer(@predicate)^, TIteratorKind.WhereIndex);
+    0, 0, PPointer(@predicate)^, TIteratorKind.WhereIndex);
 end;
 
 {$ENDREGION}
@@ -2714,38 +2726,32 @@ end;
 
 {$REGION 'TIteratorBlock'}
 
-type
-  IEnumerableInternal = interface
-    procedure GetEnumerator(var result: IEnumerator);
-  end;
-
 function TIteratorBlock.MoveNext: Boolean;
-label
-  _Started, _Finished;
-begin
-  case State of
-    Started:
-    _Started:
-    begin
-      Result := DoMoveNext(@Self);
-      if not Result then
-        goto _Finished;
-      Exit;
-    end;
-    Initial:
-    begin
-      if DoStart(@Self) then
-      begin
-        State := Started;
-        goto _Started;
-      end;
-    _Finished:
-      State := Finished;
-      DoFinalize(@Self);
-    end;
-  end;
-  Result := False;
+{$IFDEF CPUX86}
+asm
+  push eax
+  call TIteratorBlock(eax).DoMoveNext
+  test al,al
+  jz @@ExitFalse
+  pop edx
+  ret
+@@ExitFalse:
+  mov eax,[esp]
+  mov edx,offset [TIteratorBlock.MoveNextEmpty]
+  mov TIteratorBlock(eax).DoMoveNext,edx
+  call TIteratorBlock(eax).Methods.Finalize
+  pop edx
 end;
+{$ELSE}
+begin
+  Result := DoMoveNext(@Self);
+  if Result then
+    Exit;
+
+  DoMoveNext := @TIteratorBlock.MoveNextEmpty;
+  Result := Methods.Finalize(@Self);
+end;
+{$ENDIF}
 
 function TIteratorBlock._Release: Integer;
 begin
@@ -2753,14 +2759,9 @@ begin
   if Result = 0 then
   begin
     Parent._Release;
-    DoFinalize(@Self);
+    Methods.Finalize(@Self);
     FreeMem(@Self);
   end;
-end;
-
-function TIteratorBlock.EmptyStart: Boolean;
-begin
-  Result := True;
 end;
 
 function TIteratorBlock.GetEnumerator: Boolean;
@@ -2770,7 +2771,8 @@ begin
 {$ELSE}
   Enumerator := Source.GetEnumerator;
 {$ENDIF}
-  Result := True;
+  DoMoveNext := Methods.MoveNext;
+  Result := DoMoveNext(@Self);
 end;
 
 function TIteratorBlock.GetEnumeratorAndSkip: Boolean;
@@ -2782,16 +2784,12 @@ begin
 {$ENDIF}
   while (Index > 0) and Enumerator.MoveNext do
     Dec(Index);
-  Result := Index >= 0;
-end;
-
-procedure TIteratorBlock.GetSecondEnumerator;
-begin
-{$IFDEF MSWINDOWS}
-  IEnumerableInternal(Predicate).GetEnumerator(Enumerator);
-{$ELSE}
-  Enumerator := IEnumerable(Predicate).GetEnumerator;
-{$ENDIF}
+  Result := Index = 0;
+  if Result then
+  begin
+    DoMoveNext := Methods.MoveNext;
+    Result := DoMoveNext(@Self);
+  end;
 end;
 
 function TIteratorBlock.MoveNextEmpty: Boolean;
@@ -2825,7 +2823,7 @@ begin
     Index := iterator.fIndex;
     Count := iterator.fCount;
     Kind := iterator.fKind;
-    DoFinalize := @TIteratorBlock<T>.Finalize;
+    Methods.Finalize := @TIteratorBlock<T>.Finalize;
   end;
   rec.InitMethods;
   rec.InitVtable;
@@ -2854,77 +2852,68 @@ begin
     TIteratorKind.Partition:
       if Assigned(Source) then
         if SupportsIndexedAccess(Source) then
-        begin
-          DoMoveNext := @TIteratorBlock<T>.MoveNextIndexed;
-          DoStart := @TIteratorBlock.EmptyStart;
-        end
+          DoMoveNext := @TIteratorBlock<T>.MoveNextIndexed
         else
         begin
           if Count >= 0 then
-            DoMoveNext := @TIteratorBlock<T>.MoveNextEnumeratorCounted
+            Methods.MoveNext := @TIteratorBlock<T>.MoveNextEnumeratorCounted
           else
-            DoMoveNext := @TIteratorBlock<T>.MoveNextEnumerator;
-          DoStart := @TIteratorBlock.GetEnumeratorAndSkip;
+            Methods.MoveNext := @TIteratorBlock<T>.MoveNextEnumerator;
+          DoMoveNext := @TIteratorBlock.GetEnumeratorAndSkip;
         end
       else
-      begin
         DoMoveNext := @TIteratorBlock.MoveNextEmpty;
-        DoStart := @TIteratorBlock.EmptyStart;
-      end;
     TIteratorKind.Array:
-    begin
       DoMoveNext := @TIteratorBlock<T>.MoveNextOrdered;
-      DoStart := @TIteratorBlock.EmptyStart;
-    end;
     TIteratorKind.Concat:
     begin
-      DoMoveNext := @TIteratorBlock<T>.MoveNextConcat;
-      DoStart := @TIteratorBlock.GetEnumerator;
+      Methods.MoveNext := @TIteratorBlock<T>.MoveNextConcat;
+      DoMoveNext := @TIteratorBlock.GetEnumerator;
     end;
     TIteratorKind.Ordered:
     begin
-      DoMoveNext := @TIteratorBlock<T>.MoveNextOrdered;
-      DoStart := @TIteratorBlock<T>.ToArray;
+      Methods.MoveNext := @TIteratorBlock<T>.MoveNextOrdered;
+      DoMoveNext := @TIteratorBlock<T>.ToArray;
     end;
     TIteratorKind.Reversed:
     begin
-      DoMoveNext := @TIteratorBlock<T>.MoveNextReversed;
-      DoStart := @TIteratorBlock<T>.ToArray;
+      Methods.MoveNext := @TIteratorBlock<T>.MoveNextReversed;
+      DoMoveNext := @TIteratorBlock<T>.ToArray;
     end;
     TIteratorKind.Shuffled:
     begin
-      DoMoveNext := @TIteratorBlock<T>.MoveNextOrdered;
-      DoStart := @TIteratorBlock<T>.ToArray;
+      Methods.MoveNext := @TIteratorBlock<T>.MoveNextOrdered;
+      DoMoveNext := @TIteratorBlock<T>.ToArray;
     end;
     TIteratorKind.SkipWhile:
     begin
-      DoMoveNext := @TIteratorBlock<T>.MoveNextSkipWhile;
-      DoStart := @TIteratorBlock.GetEnumerator;
+      Methods.MoveNext := @TIteratorBlock<T>.MoveNextSkipWhile;
+      DoMoveNext := @TIteratorBlock.GetEnumerator;
     end;
     TIteratorKind.SkipWhileIndex:
     begin
-      DoMoveNext := @TIteratorBlock<T>.MoveNextSkipWhileIndex;
-      DoStart := @TIteratorBlock.GetEnumerator;
+      Methods.MoveNext := @TIteratorBlock<T>.MoveNextSkipWhileIndex;
+      DoMoveNext := @TIteratorBlock.GetEnumerator;
     end;
     TIteratorKind.TakeWhile:
     begin
-      DoMoveNext := @TIteratorBlock<T>.MoveNextTakeWhile;
-      DoStart := @TIteratorBlock.GetEnumerator;
+      Methods.MoveNext := @TIteratorBlock<T>.MoveNextTakeWhile;
+      DoMoveNext := @TIteratorBlock.GetEnumerator;
     end;
     TIteratorKind.TakeWhileIndex:
     begin
-      DoMoveNext := @TIteratorBlock<T>.MoveNextTakeWhileIndex;
-      DoStart := @TIteratorBlock.GetEnumerator;
+      Methods.MoveNext := @TIteratorBlock<T>.MoveNextTakeWhileIndex;
+      DoMoveNext := @TIteratorBlock.GetEnumerator;
     end;
     TIteratorKind.Where:
     begin
-      DoMoveNext := @TIteratorBlock<T>.MoveNextWhere;
-      DoStart := @TIteratorBlock.GetEnumerator;
+      Methods.MoveNext := @TIteratorBlock<T>.MoveNextWhere;
+      DoMoveNext := @TIteratorBlock.GetEnumerator;
     end;
     TIteratorKind.WhereIndex:
     begin
-      DoMoveNext := @TIteratorBlock<T>.MoveNextWhereIndex;
-      DoStart := @TIteratorBlock.GetEnumerator;
+      Methods.MoveNext := @TIteratorBlock<T>.MoveNextWhereIndex;
+      DoMoveNext := @TIteratorBlock.GetEnumerator;
     end;
   end;
 end;
@@ -2938,7 +2927,7 @@ begin
   Spring.TValue.Make(@current, elementType, Result);
 end;
 
-procedure TIteratorBlock<T>.Finalize;
+function TIteratorBlock<T>.Finalize: Boolean;
 begin
   Enumerator := nil;
   Source := nil;
@@ -2948,6 +2937,7 @@ begin
   if IsManagedType(T) then
 {$ENDIF}
     Current := Default(T);
+  Result := False;
 end;
 
 class function TIteratorBlock<T>.DoAdd(const collection: IInterface;
@@ -2970,58 +2960,78 @@ end;
 
 function TIteratorBlock<T>.MoveNextConcat: Boolean;
 begin
-  while True do
-  begin
+  repeat
     if Enumerator.MoveNext then
     begin
+      {$IF defined(DELPHIXE7_UP) and defined(MSWINDOWS)}
+      if IsManagedType(T) then
+        IEnumeratorInternal(Enumerator).GetCurrent(Current)
+      else
+      {$IFEND}
       Current := Enumerator.Current;
       Exit(True);
     end;
 
-    if Index = 0 then
-    begin
-      Inc(Index);
-      PIteratorBlock(@Self).GetSecondEnumerator;
-      Continue;
-    end;
+    Result := Assigned(Predicate);
+    if not Result then
+      Break;
 
-    Exit(False);
-  end;
+    {$IFDEF MSWINDOWS}
+    IEnumerableInternal(Predicate).GetEnumerator(Enumerator);
+    {$ELSE}
+    Enumerator := IEnumerable<T>(Predicate).GetEnumerator;
+    {$ENDIF}
+    Predicate := nil;
+  until False;
 end;
 
 function TIteratorBlock<T>.MoveNextEnumerator: Boolean;
 begin
-  if Enumerator.MoveNext then
+  Result := Enumerator.MoveNext;
+  if Result then
   begin
+    {$IF defined(DELPHIXE7_UP) and defined(MSWINDOWS)}
+    if IsManagedType(T) then
+      IEnumeratorInternal(Enumerator).GetCurrent(Current)
+    else
+    {$IFEND}
     Current := Enumerator.Current;
     Result := True;
-  end
-  else
-    Result := False;
+  end;
 end;
 
 function TIteratorBlock<T>.MoveNextEnumeratorCounted: Boolean;
 begin
-  if (Count > 0) and Enumerator.MoveNext then
+  Result := Count > 0;
+  if Result then
   begin
-    Current := Enumerator.Current;
-    Dec(Count);
-    Result := True;
-  end
-  else
-    Result := False;
+    Result := Enumerator.MoveNext;
+    if Result then
+    begin
+      {$IF defined(DELPHIXE7_UP) and defined(MSWINDOWS)}
+      if IsManagedType(T) then
+        IEnumeratorInternal(Enumerator).GetCurrent(Current)
+      else
+      {$IFEND}
+      Current := Enumerator.Current;
+      Dec(Count);
+      Result := True;
+    end;
+  end;
 end;
 
 function TIteratorBlock<T>.MoveNextIndexed: Boolean;
 begin
-  if (Count > 0) and Source.TryGetElementAt(Current, Index) then
+  Result := Count > 0;
+  if Result then
   begin
-    Inc(Index);
-    Dec(Count);
-    Result := True;
-  end
-  else
-    Result := False;
+    Result := Source.TryGetElementAt(Current, Index);
+    if Result then
+    begin
+      Inc(Index);
+      Dec(Count);
+    end;
+  end;
 end;
 
 function TIteratorBlock<T>.MoveNextOrdered: Boolean;
@@ -3046,36 +3056,43 @@ end;
 
 function TIteratorBlock<T>.MoveNextSkipWhile: Boolean;
 begin
-  while Enumerator.MoveNext do
-  begin
+  repeat
+    Result := Enumerator.MoveNext;
+    if not Result then
+      Break;
+    {$IF defined(DELPHIXE7_UP) and defined(MSWINDOWS)}
+    if IsManagedType(T) then
+      IEnumeratorInternal(Enumerator).GetCurrent(Current)
+    else
+    {$IFEND}
     Current := Enumerator.Current;
-
-    if Count > -1 then // -1 means already done skipping
-      if not Predicate<T>(Predicate)(Current) then
-        Count := -1;
-
-    if Count = -1 then
-      Exit(True);
-  end;
-  Result := False;
+    Result := Predicate<T>(Predicate)(Current);
+    if Result then
+      Continue;
+    DoMoveNext := @TIteratorBlock<T>.MoveNextEnumerator;
+    Exit(True);
+  until False;
 end;
 
 function TIteratorBlock<T>.MoveNextSkipWhileIndex: Boolean;
 begin
-  while Enumerator.MoveNext do
-  begin
+  repeat
+    Result := Enumerator.MoveNext;
+    if not Result then
+      Break;
+    {$IF defined(DELPHIXE7_UP) and defined(MSWINDOWS)}
+    if IsManagedType(T) then
+      IEnumeratorInternal(Enumerator).GetCurrent(Current)
+    else
+    {$IFEND}
     Current := Enumerator.Current;
-
-    if Count > -1 then // -1 means already done skipping
-      if not Func<T, Integer, Boolean>(Predicate)(Current, Count) then
-        Count := -1
-      else
-        Inc(Count);
-
-    if Count = -1 then
-      Exit(True);
-  end;
-  Result := False;
+    Result := Func<T, Integer, Boolean>(Predicate)(Current, Index);
+    Inc(Index, Ord(Result));
+    if Result then
+      Continue;
+    DoMoveNext := @TIteratorBlock<T>.MoveNextEnumerator;
+    Exit(True);
+  until False;
 end;
 
 function TIteratorBlock<T>.MoveNextTakeWhile: Boolean;
@@ -3083,6 +3100,11 @@ begin
   Result := Enumerator.MoveNext;
   if Result then
   begin
+    {$IF defined(DELPHIXE7_UP) and defined(MSWINDOWS)}
+    if IsManagedType(T) then
+      IEnumeratorInternal(Enumerator).GetCurrent(Current)
+    else
+    {$IFEND}
     Current := Enumerator.Current;
     Result := Predicate<T>(Predicate)(Current);
   end;
@@ -3093,46 +3115,50 @@ begin
   Result := Enumerator.MoveNext;
   if Result then
   begin
+    {$IF defined(DELPHIXE7_UP) and defined(MSWINDOWS)}
+    if IsManagedType(T) then
+      IEnumeratorInternal(Enumerator).GetCurrent(Current)
+    else
+    {$IFEND}
     Current := Enumerator.Current;
-    Result := Func<T, Integer, Boolean>(Predicate)(Current, Count);
-    Inc(Count);
+    Result := Func<T, Integer, Boolean>(Predicate)(Current, Index);
+    Inc(Index);
   end;
 end;
 
 function TIteratorBlock<T>.MoveNextWhere: Boolean;
-var
-  item: T;
 begin
   repeat
-    if not Enumerator.MoveNext then
+    Result := Enumerator.MoveNext;
+    if not Result then
       Break;
-    item := Enumerator.Current;
-    if Predicate<T>(Predicate)(item) then
-    begin
-      Current := item;
-      Exit(True);
-    end;
-  until False;
-  Result := False;
+    {$IF defined(DELPHIXE7_UP) and defined(MSWINDOWS)}
+    if IsManagedType(T) then
+      IEnumeratorInternal(Enumerator).GetCurrent(Current)
+    else
+    {$IFEND}
+    Current := Enumerator.Current;
+    Result := Predicate<T>(Predicate)(Current);
+  until Result;
 end;
 
 function TIteratorBlock<T>.MoveNextWhereIndex: Boolean;
 var
-  item: T;
   i: Integer;
 begin
   repeat
-    if not Enumerator.MoveNext then
+    Result := Enumerator.MoveNext;
+    if not Result then
       Break;
-    item := Enumerator.Current;
+    {$IF defined(DELPHIXE7_UP) and defined(MSWINDOWS)}
+    if IsManagedType(T) then
+      IEnumeratorInternal(Enumerator).GetCurrent(Current)
+    else
+    {$IFEND}
+    Current := Enumerator.Current;
+    Result := Func<T,Integer,Boolean>(Predicate)(Current, Index);
     Inc(Index);
-    if Func<T,Integer,Boolean>(Predicate)(item, Index) then
-    begin
-      Current := item;
-      Exit(True);
-    end;
-  until False;
-  Result := False;
+  until Result;
 end;
 
 function TIteratorBlock<T>.ToArray: Boolean;
@@ -3147,7 +3173,8 @@ begin
     TIteratorKind.Shuffled:
       TArray.Shuffle<T>(Items, DynArrayHigh(Items));
   end;
-  Result := True;
+  DoMoveNext := Methods.MoveNext;
+  Result := DoMoveNext(@Self);
 end;
 
 {$ENDREGION}
