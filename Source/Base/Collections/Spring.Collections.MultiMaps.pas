@@ -73,7 +73,7 @@ type
     fCount: PInteger;
   {$REGION 'Property Accessors'}
     function GetCount: Integer;
-    function GetIsEmpty: Boolean;
+    function GetCountFast: Integer;
   {$ENDREGION}
   public
     constructor Create(const source: TRefCountedObject;
@@ -118,6 +118,7 @@ type
     fCollection: ICollection<T>;
     fKey: Pointer;
     function GetCount: Integer;
+    function GetCountFast: Integer;
     procedure RefreshIfEmpty;
     procedure HandleDestroy(Sender: TObject);
   public
@@ -182,7 +183,7 @@ type
   protected
   {$REGION 'Property Accessors'}
     function GetCount: Integer;
-    function GetIsEmpty: Boolean;
+    function GetCountFast: Integer;
     function GetItems(const key: TKey): IReadOnlyCollection<TValue>;
     function GetKeys: IReadOnlyCollection<TKey>;
     function GetValues: IReadOnlyCollection<TValue>;
@@ -326,6 +327,11 @@ begin
   Result := fCount^;
 end;
 
+function TValueCollection<T>.GetCountFast: Integer;
+begin
+  Result := fCount^;
+end;
+
 function TValueCollection<T>.GetEnumerator: IEnumerator<T>;
 begin
   _AddRef;
@@ -336,11 +342,6 @@ begin
     fHashTable := Self.fHashTable;
     fVersion := fHashTable.Version;
   end;
-end;
-
-function TValueCollection<T>.GetIsEmpty: Boolean;
-begin
-  Result := fCount^ = 0;
 end;
 
 function TValueCollection<T>.ToArray: TArray<T>;
@@ -465,6 +466,12 @@ begin
 end;
 
 function TCollectionWrapper<T>.GetCount: Integer;
+begin
+  RefreshIfEmpty;
+  Result := fCollection.Count;
+end;
+
+function TCollectionWrapper<T>.GetCountFast: Integer;
 begin
   RefreshIfEmpty;
   Result := fCollection.Count;
@@ -750,6 +757,11 @@ begin
   Result := fCount;
 end;
 
+function TMultiMapBase<TKey, TValue>.GetCountFast: Integer;
+begin
+  Result := fCount;
+end;
+
 function TMultiMapBase<TKey, TValue>.GetEnumerator: IEnumerator<TKeyValuePair>;
 begin
   _AddRef;
@@ -759,11 +771,6 @@ begin
     fSource := Self;
     fVersion := Self.fHashTable.Version;
   end;
-end;
-
-function TMultiMapBase<TKey, TValue>.GetIsEmpty: Boolean;
-begin
-  Result := fCount = 0;
 end;
 
 function TMultiMapBase<TKey, TValue>.GetItems(

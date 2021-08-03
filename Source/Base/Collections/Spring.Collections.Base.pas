@@ -89,8 +89,8 @@ type
     this: Pointer;
   {$REGION 'Property Accessors'}
     function GetCount: Integer;
-    function GetIsEmpty: Boolean;
     function GetCountFast: Integer;
+    function GetIsEmpty: Boolean;
   {$ENDREGION}
     function IsCountInRange(min, max, limit: Integer): Boolean;
   public
@@ -217,9 +217,9 @@ type
     fSource: IEnumerable;
     fGetCurrent: TGetCurrentFunc;
     function GetCount: Integer;
+    function GetCountFast: Integer;
     function GetElementType: PTypeInfo;
     function GetIsEmpty: Boolean;
-    function GetCountFast: Integer;
   protected
     function QueryInterface(const IID: TGUID; out obj): HResult; stdcall;
   public
@@ -376,7 +376,7 @@ type
   private
   {$REGION 'Property Accessors'}
     function GetCount: Integer;
-    function GetIsEmpty: Boolean;
+    function GetCountFast: Integer;
     function GetItem(index: Integer): T;
   {$ENDREGION}
   public
@@ -526,7 +526,7 @@ type
     fOffset: Integer;
   {$REGION 'Property Accessors'}
     function GetCount: Integer;
-    function GetIsEmpty: Boolean;
+    function GetCountFast: Integer;
   {$ENDREGION}
   protected
     function GetElementType: PTypeInfo; override;
@@ -581,7 +581,7 @@ type
   {$REGION 'Property Accessors'}
     function GetCapacity: Integer; inline;
     function GetCount: Integer; inline;
-    function GetIsEmpty: Boolean;
+    function GetCountFast: Integer;
     function GetOnChanged: ICollectionChangedEvent<T>;
     function GetOwnsObjects: Boolean; inline;
     procedure SetCapacity(value: Integer);
@@ -897,7 +897,7 @@ end;
 
 function TEnumerableBase.Any: Boolean;
 begin
-  Result := not IEnumerable(this).IsEmpty;
+  Result := IsCountInRange(1, MaxInt, 1);
 end;
 
 function TEnumerableBase.AtLeast(count: Integer): Boolean;
@@ -954,11 +954,8 @@ begin
 end;
 
 function TEnumerableBase.GetIsEmpty: Boolean;
-var
-  enumerator: IEnumerator;
 begin
-  enumerator := IEnumerable(this).GetEnumerator;
-  Result := not enumerator.MoveNext;
+  Result := IsCountInRange(0, 0, 1);
 end;
 
 function TEnumerableBase.IsCountInRange(min, max, limit: Integer): Boolean;
@@ -985,7 +982,7 @@ end;
 function TEnumerableBase.GetCountFast: Integer;
 begin
   // implementing IReadOnlyCollection is an indicator for having its own count
-  if GetInterfaceEntry(IReadOnlyCollection<Integer>) <> nil then
+  if GetInterfaceEntry(IReadOnlyCollectionOfTGuid) <> nil then
     Result := IEnumerable(this).Count
   else
     Result := -1;
@@ -2179,6 +2176,11 @@ begin
   Result := fHashTable.Count;
 end;
 
+function TInnerCollection<T>.GetCountFast: Integer;
+begin
+  Result := fHashTable.Count;
+end;
+
 function TInnerCollection<T>.GetElementType: PTypeInfo;
 begin
   Result := fElementType;
@@ -2194,11 +2196,6 @@ begin
     fSource := Self;
     fVersion := Self.fHashTable.Version;
   end;
-end;
-
-function TInnerCollection<T>.GetIsEmpty: Boolean;
-begin
-  Result := fHashTable.Count = 0;
 end;
 
 function TInnerCollection<T>.ToArray: TArray<T>;
@@ -2328,6 +2325,11 @@ begin
   Result := fCount and CountMask;
 end;
 
+function TCircularArrayBuffer<T>.GetCountFast: Integer;
+begin
+  Result := fCount and CountMask;
+end;
+
 function TCircularArrayBuffer<T>.GetEnumerator: IEnumerator<T>;
 begin
   _AddRef;
@@ -2338,11 +2340,6 @@ begin
     fCount := Self.Count;
     fVersion := Self.fVersion;
   end;
-end;
-
-function TCircularArrayBuffer<T>.GetIsEmpty: Boolean;
-begin
-  Result := Count = 0;
 end;
 
 function TCircularArrayBuffer<T>.GetOnChanged: ICollectionChangedEvent<T>;
@@ -3199,7 +3196,7 @@ begin
           {$IFNDEF OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
       end;
     end;
-    TIteratorKind.Ordered, TIteratorKind.Reversed:
+    TIteratorKind.Ordered, TIteratorKind.Reversed, TIteratorKind.Shuffled:
       Result := fSource.GetCountFast;
     TIteratorKind.Partition:
     begin
@@ -3541,9 +3538,9 @@ begin
   Result := fCount;
 end;
 
-function TArrayIterator<T>.GetIsEmpty: Boolean;
+function TArrayIterator<T>.GetCountFast: Integer;
 begin
-  Result := fItems = nil;
+  Result := fCount;
 end;
 
 function TArrayIterator<T>.GetItem(index: Integer): T;

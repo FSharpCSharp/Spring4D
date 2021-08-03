@@ -88,7 +88,7 @@ type
   {$REGION 'Property Accessors'}
     function GetCapacity: Integer; inline;
     function GetCount: Integer; inline;
-    function GetIsEmpty: Boolean;
+    function GetCountFast: Integer;
     function GetItem(index: Integer): T;
     function GetOwnsObjects: Boolean; inline;
     procedure SetCapacity(value: Integer);
@@ -251,7 +251,7 @@ type
   {$REGION 'Property Accessors'}
     function GetCapacity: Integer;
     function GetCount: Integer;
-    function GetIsEmpty: Boolean;
+    function GetCountFast: Integer;
     function GetItem(index: Integer): T;
     function GetOwnsObjects: Boolean;
     procedure SetCapacity(value: Integer);
@@ -326,7 +326,7 @@ type
     fIterator: IEnumerable<T>;
   {$REGION 'Property Accessors'}
     function GetCount: Integer;
-    function GetIsEmpty: Boolean;
+    function GetCountFast: Integer;
     function GetItem(index: Integer): T;
   {$ENDREGION}
   public
@@ -465,6 +465,11 @@ begin
   Result := fCount and CountMask;
 end;
 
+function TAbstractArrayList<T>.GetCountFast: Integer;
+begin
+  Result := fCount and CountMask;
+end;
+
 function TAbstractArrayList<T>.GetOwnsObjects: Boolean;
 begin
   Result := {$IFDEF DELPHIXE7_UP}(GetTypeKind(T) = tkClass) and {$ENDIF}(fCount < 0);
@@ -510,11 +515,6 @@ begin
     fCount := Self.Count;
     fVersion := Self.fVersion;
   end;
-end;
-
-function TAbstractArrayList<T>.GetIsEmpty: Boolean;
-begin
-  Result := Count = 0;
 end;
 
 function TAbstractArrayList<T>.GetItem(index: Integer): T;
@@ -1912,6 +1912,11 @@ begin
   Result := fCollection.Count;
 end;
 
+function TCollectionList<T>.GetCountFast: Integer;
+begin
+  Result := fCollection.Count;
+end;
+
 function TCollectionList<T>.GetElementType: PTypeInfo;
 begin
   Result := fCollection.ItemClass.ClassInfo;
@@ -1920,11 +1925,6 @@ end;
 function TCollectionList<T>.GetEnumerator: IEnumerator<T>;
 begin
   Result := TEnumerator.Create(Self);
-end;
-
-function TCollectionList<T>.GetIsEmpty: Boolean;
-begin
-  Result := fCollection.Count = 0;
 end;
 
 function TCollectionList<T>.GetItem(index: Integer): T;
@@ -2211,14 +2211,14 @@ begin
   Result := fCount;
 end;
 
+function TAnonymousReadOnlyList<T>.GetCountFast: Integer;
+begin
+  Result := fCount;
+end;
+
 function TAnonymousReadOnlyList<T>.GetEnumerator: IEnumerator<T>;
 begin
   Result := fIterator.GetEnumerator;
-end;
-
-function TAnonymousReadOnlyList<T>.GetIsEmpty: Boolean;
-begin
-  Result := fCount = 0;
 end;
 
 function TAnonymousReadOnlyList<T>.GetItem(index: Integer): T;

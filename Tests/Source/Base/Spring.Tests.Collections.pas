@@ -782,6 +782,17 @@ type
 
   TEnumerableTestCase = class(TTestCase)
   private type
+    TBreakingSequence<T> = class(TEnumerableBase<T>, IEnumerable<T>)
+      function GetEnumerator: IEnumerator<T>;
+    end;
+    TBreakingReadOnlyCollection<T> = class(TBreakingSequence<T>,
+      IEnumerable<T>, IReadOnlyCollection<T>)
+    private
+      fCollection: IReadOnlyCollection<T>;
+      function GetCount: Integer;
+    public
+      constructor Create(const collection: IReadOnlyCollection<T>);
+    end;
     TFastInfiniteEnumerator<T> = class(TIterator<T>, IEnumerable<T>)
     protected
       function Clone: TIterator<T>; override;
@@ -813,6 +824,8 @@ type
       function TryMoveNext(var current: T): Boolean; override;
     end;
   protected
+    class function BreakingSequence<T>: IEnumerable<T>; static;
+    class function BreakingReadOnlyCollection<T>(const collection: IReadOnlyCollection<T>): IEnumerable<T>; static;
     class function FastInfiniteEnumerator<T>: IEnumerable<T>; static;
     class function ForceNotCollection<T>(const source: array of T): IEnumerable<T>; overload; static;
     class function ForceNotCollection<T>(const source: IEnumerable<T>): IEnumerable<T>; overload; static;
@@ -953,6 +966,58 @@ type
     [TestCase('[0xfefe], 100, 100, [-1, 0, 1, 2], [0, 0, 0, 0]')]
     [TestCase('[0xfefe, 123, 456, 7890, 5555, 55], 1, 10, [-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], [0, 123, 456, 7890, 5555, 55, 0, 0, 0, 0, 0, 0, 0]')]
     procedure ElementAtOfLazySkipTakeChain(const source: TArray<Integer>; skip, take: Integer; indices, expectedValues: TArray<Integer>);
+  end;
+
+  TAtLeastTests = class(TEnumerableTestCase)
+  published
+    procedure NegativeCount;
+    procedure EmptySequenceHasAtLeastZeroElements;
+    procedure EmptySequenceHasAtLeastOneElement;
+    procedure EmptySequenceHasAtLeastManyElements;
+    procedure SingleElementHasAtLeastZeroElements;
+    procedure SingleElementHasAtLeastOneElement;
+    procedure SingleElementHasAtLeastManyElements;
+    procedure ManyElementsHasAtLeastZeroElements;
+    procedure ManyElementsHasAtLeastOneElement;
+    procedure ManyElementsHasAtLeastManyElements;
+    procedure DoesNotIterateUnnecessaryElements;
+  end;
+
+  TAtMostTests = class(TEnumerableTestCase)
+  published
+    procedure NegativeCount;
+    procedure EmptySequenceHasAtMostZeroElements;
+    procedure EmptySequenceHasAtMostOneElement;
+    procedure SingleElementHasAtMostZeroElements;
+    procedure SingleElementHasAtMostOneElement;
+    procedure SingleElementHasAtMostManyElements;
+    procedure ManyElementsHasAtMostOneElement;
+    procedure DoesNotIterateUnnecessaryElements;
+  end;
+
+  TBetweenTests = class(TEnumerableTestCase)
+  published
+    procedure NegativeMin;
+    procedure NegativeMax;
+    procedure MaxLesserThanMin;
+    procedure MaxEqualsMin;
+    [TestCase('1, 2, 4, false')]
+    [TestCase('2, 2, 4, true')]
+    [TestCase('3, 2, 4, true')]
+    [TestCase('4, 2, 4, true')]
+    [TestCase('5, 2, 4, false')]
+    procedure RangeTests(count, min, max: Integer; expecting: Boolean);
+    procedure DoesNotIterateUnnecessaryElements;
+  end;
+
+  TExactlyTests = class(TEnumerableTestCase)
+  published
+    procedure NegativeCount;
+    procedure EmptySequenceHasExactlyZeroElements;
+    procedure EmptySequenceHasExactlyOneElement;
+    procedure SingleElementHasExactlyOneElement;
+    procedure ManyElementsHasExactlyOneElement;
+    procedure DoesNotIterateUnnecessaryElements;
   end;
 
 implementation
@@ -5330,6 +5395,17 @@ begin
   CheckEquals(TEnumerable.From<Integer>(expected), actual);
 end;
 
+class function TEnumerableTestCase.BreakingSequence<T>: IEnumerable<T>;
+begin
+  Result := TBreakingSequence<T>.Create;
+end;
+
+class function TEnumerableTestCase.BreakingReadOnlyCollection<T>(
+  const collection: IReadOnlyCollection<T>): IEnumerable<T>;
+begin
+  Result := TBreakingReadOnlyCollection<T>.Create(collection);
+end;
+
 class function TEnumerableTestCase.FastInfiniteEnumerator<T>: IEnumerable<T>;
 begin
   Result := TFastInfiniteEnumerator<T>.Create;
@@ -5370,6 +5446,31 @@ end;
 procedure TEnumerableTestCase.CheckEmpty(const values: array of Integer);
 begin
   Check(Length(values) = 0, 'array not empty');
+end;
+
+{$ENDREGION}
+
+{$REGION 'TEnumerableTestCase.TBreakingSequence<T>'}
+
+function TEnumerableTestCase.TBreakingSequence<T>.GetEnumerator: IEnumerator<T>;
+begin
+  raise EInvalidOperationException.Create('');
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TEnumerableTestCase.TBreakingReadOnlyCollection<T>'}
+
+constructor TEnumerableTestCase.TBreakingReadOnlyCollection<T>.Create(
+  const collection: IReadOnlyCollection<T>);
+begin
+  fCollection := collection;
+end;
+
+function TEnumerableTestCase.TBreakingReadOnlyCollection<T>.GetCount: Integer;
+begin
+  Result := fCollection.Count;
 end;
 
 {$ENDREGION}
@@ -6381,6 +6482,227 @@ begin
   CheckEquals(Length(expectedValues), Length(indices));
   for i := 0 to High(indices) do
     CheckEquals(expectedValues[i], partition.ElementAtOrDefault(indices[i]));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TAtLeastTests'}
+
+procedure TAtLeastTests.NegativeCount;
+begin
+  CheckException(EArgumentOutOfRangeException, procedure begin
+    BreakingReadOnlyCollection<Integer>(TEnumerable.From<Integer>([1])).AtLeast(-1); end);
+end;
+
+procedure TAtLeastTests.EmptySequenceHasAtLeastZeroElements;
+begin
+  CheckTrue(BreakingReadOnlyCollection<Integer>(TEnumerable.Empty<Integer>).AtLeast(0));
+end;
+
+procedure TAtLeastTests.EmptySequenceHasAtLeastOneElement;
+begin
+  CheckFalse(BreakingReadOnlyCollection<Integer>(TEnumerable.Empty<Integer>).AtLeast(1));
+end;
+
+procedure TAtLeastTests.EmptySequenceHasAtLeastManyElements;
+begin
+  CheckFalse(BreakingReadOnlyCollection<Integer>(TEnumerable.Empty<Integer>).AtLeast(2));
+end;
+
+procedure TAtLeastTests.SingleElementHasAtLeastZeroElements;
+begin
+  CheckTrue(BreakingReadOnlyCollection<Integer>(TEnumerable.From<Integer>([1])).AtLeast(0));
+end;
+
+procedure TAtLeastTests.SingleElementHasAtLeastOneElement;
+begin
+  CheckTrue(BreakingReadOnlyCollection<Integer>(TEnumerable.From<Integer>([1])).AtLeast(1));
+end;
+
+procedure TAtLeastTests.SingleElementHasAtLeastManyElements;
+begin
+  CheckFalse(BreakingReadOnlyCollection<Integer>(TEnumerable.From<Integer>([1])).AtLeast(2));
+end;
+
+procedure TAtLeastTests.ManyElementsHasAtLeastZeroElements;
+begin
+  CheckTrue(BreakingReadOnlyCollection<Integer>(TEnumerable.From<Integer>([1, 2, 3])).AtLeast(0));
+end;
+
+procedure TAtLeastTests.ManyElementsHasAtLeastOneElement;
+begin
+  CheckTrue(BreakingReadOnlyCollection<Integer>(TEnumerable.From<Integer>([1, 2, 3])).AtLeast(1));
+end;
+
+procedure TAtLeastTests.ManyElementsHasAtLeastManyElements;
+begin
+  CheckTrue(BreakingReadOnlyCollection<Integer>(TEnumerable.From<Integer>([1, 2, 3])).AtLeast(2));
+end;
+
+procedure TAtLeastTests.DoesNotIterateUnnecessaryElements;
+var
+  source: IEnumerable<Integer>;
+begin
+  source := TEnumerable.Range(1, 3).Where(
+    function(const i: Integer): Boolean
+    begin
+      if i <= 2 then
+        Result := True
+      else
+        raise Exception.Create('');
+    end);
+  CheckTrue(source.AtLeast(2));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TAtMostTests'}
+
+procedure TAtMostTests.NegativeCount;
+begin
+  CheckException(EArgumentOutOfRangeException, procedure begin
+    BreakingReadOnlyCollection<Integer>(TEnumerable.From<Integer>([1])).AtMost(-1); end);
+end;
+
+procedure TAtMostTests.EmptySequenceHasAtMostZeroElements;
+begin
+  CheckTrue(BreakingReadOnlyCollection<Integer>(TEnumerable.Empty<Integer>).AtMost(0));
+end;
+
+procedure TAtMostTests.EmptySequenceHasAtMostOneElement;
+begin
+  CheckTrue(BreakingReadOnlyCollection<Integer>(TEnumerable.Empty<Integer>).AtMost(1));
+end;
+
+procedure TAtMostTests.SingleElementHasAtMostZeroElements;
+begin
+  CheckFalse(BreakingReadOnlyCollection<Integer>(TEnumerable.From<Integer>([1])).AtMost(0));
+end;
+
+procedure TAtMostTests.SingleElementHasAtMostOneElement;
+begin
+  CheckTrue(BreakingReadOnlyCollection<Integer>(TEnumerable.From<Integer>([1])).AtMost(1));
+end;
+
+procedure TAtMostTests.SingleElementHasAtMostManyElements;
+begin
+  CheckTrue(BreakingReadOnlyCollection<Integer>(TEnumerable.From<Integer>([1])).AtMost(2));
+end;
+
+procedure TAtMostTests.ManyElementsHasAtMostOneElement;
+begin
+  CheckFalse(BreakingReadOnlyCollection<Integer>(TEnumerable.From<Integer>([1, 2, 3])).AtMost(1));
+end;
+
+procedure TAtMostTests.DoesNotIterateUnnecessaryElements;
+var
+  source: IEnumerable<Integer>;
+begin
+  source := TEnumerable.Range(1, 4).Where(
+    function(const i: Integer): Boolean
+    begin
+      if i <= 3 then
+        Result := True
+      else
+        raise Exception.Create('');
+    end);
+  CheckFalse(source.AtMost(2));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TBetweenTests'}
+
+procedure TBetweenTests.NegativeMin;
+begin
+  CheckException(EArgumentOutOfRangeException, procedure begin
+    BreakingReadOnlyCollection<Integer>(TEnumerable.From<Integer>([1])).Between(-1, 0); end);
+end;
+
+procedure TBetweenTests.NegativeMax;
+begin
+  CheckException(EArgumentOutOfRangeException, procedure begin
+    BreakingReadOnlyCollection<Integer>(TEnumerable.From<Integer>([1])).Between(0, -1); end);
+end;
+
+procedure TBetweenTests.MaxLesserThanMin;
+begin
+  CheckException(EArgumentOutOfRangeException, procedure begin
+    BreakingReadOnlyCollection<Integer>(TEnumerable.From<Integer>([1])).Between(1, 0); end);
+end;
+
+procedure TBetweenTests.MaxEqualsMin;
+begin
+  CheckTrue(BreakingReadOnlyCollection<Integer>(TEnumerable.From<Integer>([1])).Between(1, 1));
+end;
+
+procedure TBetweenTests.RangeTests(count, min, max: Integer; expecting: Boolean);
+begin
+  CheckEquals(expecting, BreakingReadOnlyCollection<Integer>(TEnumerable.Range(1, count)).Between(min, max));
+end;
+
+procedure TBetweenTests.DoesNotIterateUnnecessaryElements;
+var
+  source: IEnumerable<Integer>;
+begin
+  source := TEnumerable.Range(1, 5).Where(
+    function(const i: Integer): Boolean
+    begin
+      if i <= 4 then
+        Result := True
+      else
+        raise Exception.Create('');
+    end);
+  CheckFalse(source.Between(2, 3));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TBetweenTests'}
+
+procedure TExactlyTests.NegativeCount;
+begin
+  CheckException(EArgumentOutOfRangeException, procedure begin
+    BreakingReadOnlyCollection<Integer>(TEnumerable.From<Integer>([1])).Exactly(-1); end);
+end;
+
+procedure TExactlyTests.EmptySequenceHasExactlyZeroElements;
+begin
+  CheckTrue(BreakingReadOnlyCollection<Integer>(TEnumerable.Empty<Integer>).Exactly(0));
+end;
+
+procedure TExactlyTests.EmptySequenceHasExactlyOneElement;
+begin
+  CheckFalse(BreakingReadOnlyCollection<Integer>(TEnumerable.Empty<Integer>).Exactly(1));
+end;
+
+procedure TExactlyTests.SingleElementHasExactlyOneElement;
+begin
+  CheckTrue(BreakingReadOnlyCollection<Integer>(TEnumerable.From<Integer>([1])).Exactly(1));
+end;
+
+procedure TExactlyTests.ManyElementsHasExactlyOneElement;
+begin
+  CheckFalse(BreakingReadOnlyCollection<Integer>(TEnumerable.From<Integer>([1, 2, 3])).Exactly(1));
+end;
+
+procedure TExactlyTests.DoesNotIterateUnnecessaryElements;
+var
+  source: IEnumerable<Integer>;
+begin
+  source := TEnumerable.Range(1, 4).Where(
+    function(const i: Integer): Boolean
+    begin
+      if i <= 3 then
+        Result := True
+      else
+        raise Exception.Create('');
+    end);
+  CheckFalse(source.Exactly(2));
 end;
 
 {$ENDREGION}

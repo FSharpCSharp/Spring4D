@@ -72,7 +72,7 @@ type
   {$REGION 'Property Accessors'}
     function GetCapacity: Integer; inline;
     function GetCount: Integer; inline;
-    function GetIsEmpty: Boolean; inline;
+    function GetCountFast: Integer;
     function GetOnChanged: ICollectionChangedEvent<T>;
     function GetOwnsObjects: Boolean; inline;
     procedure SetCapacity(value: Integer);
@@ -175,6 +175,11 @@ begin
   Result := fCount and CountMask;
 end;
 
+function TAbstractStack<T>.GetCountFast: Integer;
+begin
+  Result := fCount and CountMask;
+end;
+
 function TAbstractStack<T>.GetEnumerator: IEnumerator<T>;
 begin
   _AddRef;
@@ -185,11 +190,6 @@ begin
     fCount := Self.Count;
     fVersion := Self.fVersion;
   end;
-end;
-
-function TAbstractStack<T>.GetIsEmpty: Boolean;
-begin
-  Result := Count = 0;
 end;
 
 function TAbstractStack<T>.GetOnChanged: ICollectionChangedEvent<T>;

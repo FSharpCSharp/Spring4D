@@ -96,7 +96,7 @@ type
   {$REGION 'Property Accessors'}
     function GetCapacity: Integer; inline;
     function GetCount: Integer;
-    function GetIsEmpty: Boolean;
+    function GetCountFast: Integer;
     procedure SetCapacity(value: Integer);
   {$ENDREGION}
   protected
@@ -152,6 +152,7 @@ type
   {$REGION 'Property Accessors'}
     function GetCapacity: Integer;
     function GetCount: Integer;
+    function GetCountFast: Integer;
     procedure SetCapacity(value: Integer);
   {$ENDREGION}
   protected
@@ -472,9 +473,9 @@ begin
   Result := fHashTable.Count;
 end;
 
-function THashSet<T>.GetIsEmpty: Boolean;
+function THashSet<T>.GetCountFast: Integer;
 begin
-  Result := fHashTable.Count = 0;
+  Result := fHashTable.Count;
 end;
 
 function THashSet<T>.Remove(const item: T): Boolean;
@@ -628,6 +629,11 @@ begin
 end;
 
 function TSortedSet<T>.GetCount: Integer;
+begin
+  Result := fTree.Count;
+end;
+
+function TSortedSet<T>.GetCountFast: Integer;
 begin
   Result := fTree.Count;
 end;

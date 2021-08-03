@@ -47,7 +47,7 @@ type
   protected
   {$REGION 'Property Accessors'}
     function GetCount: Integer;
-    function GetIsEmpty: Boolean;
+    function GetCountFast: Integer;
   {$ENDREGION}
     function CreateMultiSet: IMultiSet<T>; virtual; abstract;
   public
@@ -97,7 +97,7 @@ type
       fSource: THashMultiSet<T>;
     {$REGION 'Property Accessors'}
       function GetCount: Integer;
-      function GetIsEmpty: Boolean;
+      function GetCountFast: Integer;
     {$ENDREGION}
     public
       constructor Create(const source: THashMultiSet<T>);
@@ -194,7 +194,7 @@ type
       fSource: TTreeMultiSet<T>;
     {$REGION 'Property Accessors'}
       function GetCount: Integer;
-      function GetIsEmpty: Boolean;
+      function GetCountFast: Integer;
     {$ENDREGION}
     public
       constructor Create(const source: TTreeMultiSet<T>);
@@ -230,7 +230,7 @@ type
       fSource: TTreeMultiSet<T>;
     {$REGION 'Property Accessors'}
       function GetCount: Integer;
-      function GetIsEmpty: Boolean;
+      function GetCountFast: Integer;
     {$ENDREGION}
     public
       constructor Create(const source: TTreeMultiSet<T>);
@@ -312,9 +312,9 @@ begin
   Result := fCount;
 end;
 
-function TAbstractMultiSet<T>.GetIsEmpty: Boolean;
+function TAbstractMultiSet<T>.GetCountFast: Integer;
 begin
-  Result := fCount = 0;
+  Result := fCount;
 end;
 
 function TAbstractMultiSet<T>.OrderedByCount: IReadOnlyMultiSet<T>;
@@ -673,6 +673,11 @@ begin
   Result := fSource.fCount;
 end;
 
+function THashMultiSet<T>.TEntryCollection.GetCountFast: Integer;
+begin
+  Result := fSource.fCount;
+end;
+
 function THashMultiSet<T>.TEntryCollection.GetEnumerator: IEnumerator<TEntry>;
 begin
   _AddRef;
@@ -682,11 +687,6 @@ begin
     fSource := Self.fSource;
     fVersion := fSource.fHashTable.Version;
   end;
-end;
-
-function THashMultiSet<T>.TEntryCollection.GetIsEmpty: Boolean;
-begin
-  Result := fSource.fCount = 0;
 end;
 
 function THashMultiSet<T>.TEntryCollection.ToArray: TArray<TEntry>;
@@ -1028,14 +1028,14 @@ begin
   Result := fSource.fTree.Count;
 end;
 
+function TTreeMultiSet<T>.TItemCollection.GetCountFast: Integer;
+begin
+  Result := fSource.fTree.Count;
+end;
+
 function TTreeMultiSet<T>.TItemCollection.GetEnumerator: IEnumerator<T>;
 begin
   Result := TItemEnumerator.Create(fSource);
-end;
-
-function TTreeMultiSet<T>.TItemCollection.GetIsEmpty: Boolean;
-begin
-  Result := fSource.fTree.Count = 0;
 end;
 
 function TTreeMultiSet<T>.TItemCollection.ToArray: TArray<T>;
@@ -1117,14 +1117,14 @@ begin
   Result := fSource.fTree.Count;
 end;
 
+function TTreeMultiSet<T>.TEntryCollection.GetCountFast: Integer;
+begin
+  Result := fSource.fTree.Count;
+end;
+
 function TTreeMultiSet<T>.TEntryCollection.GetEnumerator: IEnumerator<TEntry>;
 begin
   Result := TEntryEnumerator.Create(fSource);
-end;
-
-function TTreeMultiSet<T>.TEntryCollection.GetIsEmpty: Boolean;
-begin
-  Result := fSource.fTree.Count = 0;
 end;
 
 function TTreeMultiSet<T>.TEntryCollection.ToArray: TArray<TEntry>;

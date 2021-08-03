@@ -47,7 +47,7 @@ type
     function GetCurrent: T;
   {$REGION 'Property Accessors'}
     function GetCount: Integer;
-    function GetIsEmpty: Boolean;
+    function GetCountFast: Integer;
     function GetItem(index: Integer): T;
   {$ENDREGION}
   public
@@ -253,7 +253,7 @@ type
     fStart, fCount: Integer;
   {$REGION 'Property Accessors'}
     function GetCount: Integer;
-    function GetIsEmpty: Boolean;
+    function GetCountFast: Integer;
     function GetItem(index: Integer): Integer;
   {$ENDREGION}
   public
@@ -461,7 +461,7 @@ type
         fElements: IList<TElement>;
       {$REGION 'Property Accessors'}
         function GetCount: Integer;
-        function GetIsEmpty: Boolean;
+        function GetCountFast: Integer;
         function GetKey: TKey;
       {$ENDREGION}
         procedure Add(const item: TElement);
@@ -487,8 +487,8 @@ type
     fGroupingKeys: IDictionary<TKey, TGrouping>;
   {$REGION 'Property Accessors'}
     function GetCount: Integer;
+    function GetCountFast: Integer;
     function GetGrouping(const key: TKey; create: Boolean): TGrouping;
-    function GetIsEmpty: Boolean;
     function GetItem(const key: TKey): IReadOnlyCollection<TElement>;
   {$ENDREGION}
   public
@@ -696,7 +696,7 @@ type
     fSource: IEnumerable<T>;
   {$REGION 'Property Accessors'}
     function GetCount: Integer;
-    function GetIsEmpty: Boolean;
+    function GetCountFast: Integer;
   {$ENDREGION}
   protected
     function GetElementType: PTypeInfo; override;
@@ -820,7 +820,7 @@ type
     fIndex: Integer;
   {$REGION 'Property Accessors'}
     function GetCount: Integer;
-    function GetIsEmpty: Boolean;
+    function GetCountFast: Integer;
   {$ENDREGION}
   protected
     function Clone: TIterator<T>; override;
@@ -836,7 +836,7 @@ type
     fIndex: Integer;
   {$REGION 'Property Accessors'}
     function GetCount: Integer;
-    function GetIsEmpty: Boolean;
+    function GetCountFast: Integer;
   {$ENDREGION}
   protected
     function Clone: TIterator<T>; override;
@@ -874,6 +874,11 @@ begin
   Result := 0;
 end;
 
+function TEmptyEnumerable<T>.GetCountFast: Integer;
+begin
+  Result := 0;
+end;
+
 function TEmptyEnumerable<T>.GetCurrent: T;
 begin
   RaiseHelper.NoElements;
@@ -882,11 +887,6 @@ end;
 function TEmptyEnumerable<T>.GetEnumerator: IEnumerator<T>;
 begin
   Result := Self;
-end;
-
-function TEmptyEnumerable<T>.GetIsEmpty: Boolean;
-begin
-  Result := True;
 end;
 
 function TEmptyEnumerable<T>.GetItem(index: Integer): T;
@@ -1437,14 +1437,14 @@ begin
   Result := fCount;
 end;
 
+function TRangeIterator.GetCountFast: Integer;
+begin
+  Result := fCount;
+end;
+
 function TRangeIterator.GetEnumerator: IEnumerator<Integer>;
 begin
   Result := TEnumerator.Create(fStart, fCount);
-end;
-
-function TRangeIterator.GetIsEmpty: Boolean;
-begin
-  Result := fCount = 0;
 end;
 
 function TRangeIterator.GetItem(index: Integer): Integer;
@@ -2077,6 +2077,11 @@ begin
   Result := fGroupings.Count;
 end;
 
+function TLookup<TKey, TElement>.GetCountFast: Integer;
+begin
+  Result := fGroupings.Count;
+end;
+
 function TLookup<TKey, TElement>.GetEnumerator: IEnumerator<IInterface>;
 begin
   Result := TEnumerator.Create(Self);
@@ -2094,11 +2099,6 @@ begin
     fGroupingKeys.Add(key, grouping);
     Result := grouping;
   end;
-end;
-
-function TLookup<TKey, TElement>.GetIsEmpty: Boolean;
-begin
-  Result := fGroupings.IsEmpty;
 end;
 
 function TLookup<TKey, TElement>.GetItem(
@@ -2132,14 +2132,14 @@ begin
   Result := fElements.Count;
 end;
 
+function TLookup<TKey, TElement>.TGrouping.GetCountFast: Integer;
+begin
+  Result := fElements.Count;
+end;
+
 function TLookup<TKey, TElement>.TGrouping.GetEnumerator: IEnumerator<TElement>;
 begin
   Result := fElements.GetEnumerator;
-end;
-
-function TLookup<TKey, TElement>.TGrouping.GetIsEmpty: Boolean;
-begin
-  Result := fElements.IsEmpty;
 end;
 
 function TLookup<TKey, TElement>.TGrouping.GetKey: TKey;
@@ -2704,6 +2704,11 @@ begin
   Result := fSource.Count;
 end;
 
+function TOrderedEnumerable<T>.GetCountFast: Integer;
+begin
+  Result := fSource.GetCountFast;
+end;
+
 function TOrderedEnumerable<T>.GetElementType: PTypeInfo;
 begin
   Result := fSource.ElementType;
@@ -2712,11 +2717,6 @@ end;
 function TOrderedEnumerable<T>.GetEnumerator: IEnumerator<T>;
 begin
   Result := TEnumerator.Create(fSource, GetEnumerableSorter(nil));
-end;
-
-function TOrderedEnumerable<T>.GetIsEmpty: Boolean;
-begin
-  Result := fSource.IsEmpty;
 end;
 
 {$ENDREGION}
@@ -3098,9 +3098,9 @@ begin
   Result := fCount;
 end;
 
-function TRepeatIterator<T>.GetIsEmpty: Boolean;
+function TRepeatIterator<T>.GetCountFast: Integer;
 begin
-  Result := fCount = 0;
+  Result := fCount;
 end;
 
 function TRepeatIterator<T>.TryMoveNext(var current: T): Boolean;
@@ -3137,9 +3137,9 @@ begin
   Result := fCount;
 end;
 
-function TAnonymousIterator<T>.GetIsEmpty: Boolean;
+function TAnonymousIterator<T>.GetCountFast: Integer;
 begin
-  Result := fCount = 0;
+  Result := fCount;
 end;
 
 function TAnonymousIterator<T>.TryMoveNext(var current: T): Boolean;

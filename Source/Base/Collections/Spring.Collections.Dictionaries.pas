@@ -88,7 +88,7 @@ type
   {$REGION 'Property Accessors'}
     function GetCapacity: Integer; inline;
     function GetCount: Integer;
-    function GetIsEmpty: Boolean;
+    function GetCountFast: Integer;
     function GetItem(const key: TKey): TValue;
     function GetKeys: IReadOnlyCollection<TKey>;
     function GetValues: IReadOnlyCollection<TValue>;
@@ -177,8 +177,8 @@ type
     {$REGION 'Property Accessors'}
       function GetCapacity: Integer;
       function GetCount: Integer;
+      function GetCountFast: Integer;
       function GetInverse: IBidiDictionary<TKey, TValue>;
-      function GetIsEmpty: Boolean;
       function GetItem(const value: TValue): TKey;
       function GetKeys: IReadOnlyCollection<TValue>;
       function GetKeyType: PTypeInfo;
@@ -269,7 +269,7 @@ type
       fSource: TBidiDictionary<TKey, TValue>;
     {$REGION 'Property Accessors'}
       function GetCount: Integer;
-      function GetIsEmpty: Boolean;
+      function GetCountFast: Integer;
     {$ENDREGION}
     public
       constructor Create(const source: TBidiDictionary<TKey, TValue>);
@@ -293,7 +293,7 @@ type
       fSource: TBidiDictionary<TKey, TValue>;
     {$REGION 'Property Accessors'}
       function GetCount: Integer;
-      function GetIsEmpty: Boolean;
+      function GetCountFast: Integer;
     {$ENDREGION}
     public
       constructor Create(const source: TBidiDictionary<TKey, TValue>);
@@ -329,8 +329,8 @@ type
   {$REGION 'Property Accessors'}
     function GetCapacity: Integer; inline;
     function GetCount: Integer;
+    function GetCountFast: Integer;
     function GetInverse: IBidiDictionary<TValue, TKey>;
-    function GetIsEmpty: Boolean;
     function GetItem(const key: TKey): TValue;
     function GetKeys: IReadOnlyCollection<TKey>;
     function GetValues: IReadOnlyCollection<TValue>;
@@ -444,7 +444,7 @@ type
       fSource: TSortedDictionary<TKey, TValue>;
     {$REGION 'Property Accessors'}
       function GetCount: Integer;
-      function GetIsEmpty: Boolean;
+      function GetCountFast: Integer;
     {$ENDREGION}
     public
       constructor Create(const source: TSortedDictionary<TKey, TValue>);
@@ -467,7 +467,7 @@ type
       fSource: TSortedDictionary<TKey, TValue>;
     {$REGION 'Property Accessors'}
       function GetCount: Integer;
-      function GetIsEmpty: Boolean;
+      function GetCountFast: Integer;
     {$ENDREGION}
     public
       constructor Create(const source: TSortedDictionary<TKey, TValue>);
@@ -494,7 +494,7 @@ type
   {$REGION 'Property Accessors'}
     function GetCapacity: Integer;
     function GetCount: Integer;
-    function GetIsEmpty: Boolean;
+    function GetCountFast: Integer;
     function GetItem(const key: TKey): TValue;
     function GetKeys: IReadOnlyCollection<TKey>;
     function GetValues: IReadOnlyCollection<TValue>;
@@ -768,9 +768,9 @@ begin
   Result := fHashTable.Count;
 end;
 
-function TDictionary<TKey, TValue>.GetIsEmpty: Boolean;
+function TDictionary<TKey, TValue>.GetCountFast: Integer;
 begin
-  Result := fHashTable.Count = 0;
+  Result := fHashTable.Count;
 end;
 
 procedure TDictionary<TKey, TValue>.Add(const key: TKey; const value: TValue);
@@ -1588,6 +1588,11 @@ begin
   Result := fCount;
 end;
 
+function TBidiDictionary<TKey, TValue>.GetCountFast: Integer;
+begin
+  Result := fCount;
+end;
+
 procedure TBidiDictionary<TKey, TValue>.AddOrSetKey(const value: TValue; const key: TKey);
 var
   keyHashCode, keyBucketIndex, valueHashCode, valueBucketIndex, keyItemIndex, valueItemIndex: Integer;
@@ -1797,11 +1802,6 @@ begin
   Result := fInverse;
 end;
 
-function TBidiDictionary<TKey, TValue>.GetIsEmpty: Boolean;
-begin
-  Result := fCount = 0;
-end;
-
 function TBidiDictionary<TKey, TValue>.GetKeys: IReadOnlyCollection<TKey>;
 begin
   Result := fKeys;
@@ -1973,6 +1973,11 @@ begin
   Result := fSource.fCount;
 end;
 
+function TBidiDictionary<TKey, TValue>.TInverse.GetCountFast: Integer;
+begin
+  Result := fSource.fCount;
+end;
+
 function TBidiDictionary<TKey, TValue>.TInverse.GetEnumerator: IEnumerator<TValueKeyPair>;
 begin
   Result := TInverseEnumerator.Create(fSource);
@@ -1983,13 +1988,7 @@ begin
   Result := fSource;
 end;
 
-function TBidiDictionary<TKey, TValue>.TInverse.GetIsEmpty: Boolean;
-begin
-  Result := fSource.fCount = 0;
-end;
-
-function TBidiDictionary<TKey, TValue>.TInverse.GetItem(
-  const value: TValue): TKey;
+function TBidiDictionary<TKey, TValue>.TInverse.GetItem(const value: TValue): TKey;
 var
   valueBucketIndex, valueItemIndex: Integer;
 begin
@@ -2266,14 +2265,14 @@ begin
   Result := fSource.fCount;
 end;
 
+function TBidiDictionary<TKey, TValue>.TKeyCollection.GetCountFast: Integer;
+begin
+  Result := fSource.fCount;
+end;
+
 function TBidiDictionary<TKey, TValue>.TKeyCollection.GetEnumerator: IEnumerator<TKey>;
 begin
   Result := TEnumerator.Create(fSource);
-end;
-
-function TBidiDictionary<TKey, TValue>.TKeyCollection.GetIsEmpty: Boolean;
-begin
-  Result := fSource.fCount = 0;
 end;
 
 function TBidiDictionary<TKey, TValue>.TKeyCollection.ToArray: TArray<TKey>;
@@ -2332,14 +2331,14 @@ begin
   Result := fSource.fCount;
 end;
 
+function TBidiDictionary<TKey, TValue>.TValueCollection.GetCountFast: Integer;
+begin
+  Result := fSource.fCount;
+end;
+
 function TBidiDictionary<TKey, TValue>.TValueCollection.GetEnumerator: IEnumerator<TValue>;
 begin
   Result := TEnumerator.Create(fSource);
-end;
-
-function TBidiDictionary<TKey, TValue>.TValueCollection.GetIsEmpty: Boolean;
-begin
-  Result := fSource.fCount = 0;
 end;
 
 function TBidiDictionary<TKey, TValue>.TValueCollection.ToArray: TArray<TValue>;
@@ -2565,14 +2564,14 @@ begin
   Result := fTree.Count;
 end;
 
+function TSortedDictionary<TKey, TValue>.GetCountFast: Integer;
+begin
+  Result := fTree.Count;
+end;
+
 function TSortedDictionary<TKey, TValue>.GetEnumerator: IEnumerator<TKeyValuePair>;
 begin
   Result := TEnumerator.Create(Self);
-end;
-
-function TSortedDictionary<TKey, TValue>.GetIsEmpty: Boolean;
-begin
-  Result := fTree.Count = 0;
 end;
 
 function TSortedDictionary<TKey, TValue>.GetItem(const key: TKey): TValue;
@@ -2825,14 +2824,14 @@ begin
   Result := fSource.fTree.Count;
 end;
 
+function TSortedDictionary<TKey, TValue>.TKeyCollection.GetCountFast: Integer;
+begin
+  Result := fSource.fTree.Count;
+end;
+
 function TSortedDictionary<TKey, TValue>.TKeyCollection.GetEnumerator: IEnumerator<TKey>;
 begin
   Result := TEnumerator.Create(fSource);
-end;
-
-function TSortedDictionary<TKey, TValue>.TKeyCollection.GetIsEmpty: Boolean;
-begin
-  Result := fSource.fTree.Count = 0;
 end;
 
 function TSortedDictionary<TKey, TValue>.TKeyCollection.ToArray: TArray<TKey>;
@@ -2883,14 +2882,14 @@ begin
   Result := fSource.fTree.Count;
 end;
 
+function TSortedDictionary<TKey, TValue>.TValueCollection.GetCountFast: Integer;
+begin
+  Result := fSource.fTree.Count;
+end;
+
 function TSortedDictionary<TKey, TValue>.TValueCollection.GetEnumerator: IEnumerator<TValue>;
 begin
   Result := TEnumerator.Create(fSource);
-end;
-
-function TSortedDictionary<TKey, TValue>.TValueCollection.GetIsEmpty: Boolean;
-begin
-  Result := fSource.fTree.Count = 0;
 end;
 
 function TSortedDictionary<TKey, TValue>.TValueCollection.ToArray: TArray<TValue>;

@@ -76,6 +76,7 @@ type
     fHead: TLinkedListNode<T>;
   {$REGION 'Property Accessors'}
     function GetCount: Integer; 
+    function GetCountFast: Integer;
     function GetFirst: TLinkedListNode<T>;
     function GetLast: TLinkedListNode<T>;
   {$ENDREGION}
@@ -309,6 +310,11 @@ begin
 end;
 
 function TLinkedList<T>.GetCount: Integer;
+begin
+  Result := fCount;
+end;
+
+function TLinkedList<T>.GetCountFast: Integer;
 begin
   Result := fCount;
 end;

@@ -144,7 +144,12 @@ begin
       TTestSortedSet.Suite,
 
       TSkipTests.Suite,
-      TTakeTests.Suite
+      TTakeTests.Suite,
+
+      TAtLeastTests.Suite,
+      TAtMostTests.Suite,
+      TBetweenTests.Suite,
+      TExactlyTests.Suite
     ]);
 
     RegisterTests('Spring.Base.Collections.Dictionaries', [
