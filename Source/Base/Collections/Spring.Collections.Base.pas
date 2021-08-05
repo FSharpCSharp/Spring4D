@@ -42,6 +42,18 @@ uses
 {$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS(FieldVisibility)}{$ENDIF}
 
 type
+  {$IFDEF MSWINDOWS}
+  IEnumerableInternal = interface
+    procedure GetEnumerator(var result);
+  end;
+  IEnumeratorInternal = interface
+    procedure GetCurrent(var result);
+  end;
+
+  // see https://quality.embarcadero.com/browse/RSP-31615
+  {$IF defined(DELPHIX_SYDNEY_UP)}{$DEFINE RSP31615}{$IFEND}
+  {$ENDIF}
+
   PEnumeratorVtable = ^TEnumeratorVtable;
   TEnumeratorVtable = array[0..4] of Pointer;
   PEnumeratorBlock = ^TEnumeratorBlock;
@@ -105,6 +117,9 @@ type
   end;
 
   TEnumerableBase<T> = class abstract(TEnumerableBase)
+  {$IFDEF RSP31615}
+  private type FuncInternal = reference to procedure(const arg1, arg2: T; var result);
+  {$ENDIF}
   protected
     fComparer: IComparer<T>;
   {$REGION 'Property Accessors'}
@@ -650,21 +665,6 @@ type
     function Contains(const item: TKeyValuePair): Boolean; overload;
   end;
 
-  {$IFDEF MSWINDOWS}
-  IEnumerableInternal = interface
-    procedure GetEnumerator(var result);
-  end;
-
-  {$IF defined(DELPHIX_SYDNEY_UP) and defined(WIN32)}
-    {$DEFINE RSP31615}
-    // see https://quality.embarcadero.com/browse/RSP-31615
-  {$IFEND}
-
-  IEnumeratorInternal = interface
-    procedure GetCurrent(var result);
-  end;
-  {$ENDIF}
-
 const
   OwnsObjectsBitIndex = 31;
   OwnsObjectsMask     = 1 shl OwnsObjectsBitIndex;
@@ -1003,25 +1003,54 @@ end;
 function TEnumerableBase<T>.Aggregate(const func: Func<T, T, T>): T;
 var
   enumerator: IEnumerator<T>;
+  {$IFDEF RSP31615}
+  item, res: T;
+  {$ENDIF}
 begin
   if not Assigned(func) then RaiseHelper.ArgumentNil(ExceptionArgument.func);
 
   enumerator := IEnumerable<T>(this).GetEnumerator;
   if not enumerator.MoveNext then
     RaiseHelper.NoElements;
+  {$IFDEF RSP31615}
+  if IsManagedType(T) then
+    IEnumeratorInternal(enumerator).GetCurrent(Result)
+  else
+  {$ENDIF}
   Result := enumerator.Current;
   while enumerator.MoveNext do
+    {$IFDEF RSP31615}
+    if IsManagedType(T) then
+    begin
+      IEnumeratorInternal(enumerator).GetCurrent(item);
+      FuncInternal(func)(Result, item, res);
+      Result := res;
+    end
+    else
+    {$ENDIF}
     Result := func(Result, enumerator.Current);
 end;
 
 function TEnumerableBase<T>.All(const predicate: Predicate<T>): Boolean;
 var
   enumerator: IEnumerator<T>;
+  {$IFDEF RSP31615}
+  item: T;
+  {$ENDIF}
 begin
   if not Assigned(predicate) then RaiseHelper.ArgumentNil(ExceptionArgument.predicate);
 
   enumerator := IEnumerable<T>(this).GetEnumerator;
   while enumerator.MoveNext do
+    {$IFDEF RSP31615}
+    if IsManagedType(T) then
+    begin
+      IEnumeratorInternal(enumerator).GetCurrent(item);
+      if not predicate(item) then
+        Exit(False);
+    end
+    else
+    {$ENDIF}
     if not predicate(enumerator.Current) then
       Exit(False);
   Result := True;
@@ -1030,11 +1059,23 @@ end;
 function TEnumerableBase<T>.Any(const predicate: Predicate<T>): Boolean;
 var
   enumerator: IEnumerator<T>;
+  {$IFDEF RSP31615}
+  item: T;
+  {$ENDIF}
 begin
   if not Assigned(predicate) then RaiseHelper.ArgumentNil(ExceptionArgument.predicate);
 
   enumerator := IEnumerable<T>(this).GetEnumerator;
   while enumerator.MoveNext do
+    {$IFDEF RSP31615}
+    if IsManagedType(T) then
+    begin
+      IEnumeratorInternal(enumerator).GetCurrent(item);
+      if predicate(item) then
+        Exit(True);
+    end
+    else
+    {$ENDIF}
     if predicate(enumerator.Current) then
       Exit(True);
   Result := False;
@@ -1060,11 +1101,23 @@ function TEnumerableBase<T>.Contains(const value: T;
   const comparer: IEqualityComparer<T>): Boolean;
 var
   enumerator: IEnumerator<T>;
+  {$IFDEF RSP31615}
+  item: T;
+  {$ENDIF}
 begin
   if not Assigned(comparer) then RaiseHelper.ArgumentNil(ExceptionArgument.comparer);
 
   enumerator := IEnumerable<T>(this).GetEnumerator;
   while enumerator.MoveNext do
+    {$IFDEF RSP31615}
+    if IsManagedType(T) then
+    begin
+      IEnumeratorInternal(enumerator).GetCurrent(item);
+      if comparer.Equals(item, value) then
+        Exit(True);
+    end
+    else
+    {$ENDIF}
     if comparer.Equals(enumerator.Current, value) then
       Exit(True);
   Result := False;
@@ -1083,6 +1136,11 @@ begin
   enumerator := IEnumerable<T>(this).GetEnumerator;
   while enumerator.MoveNext do
   begin
+    {$IF defined(DELPHIXE7_UP) and defined(MSWINDOWS)}
+    if IsManagedType(T) then
+      IEnumeratorInternal(enumerator).GetCurrent(values[index])
+    else
+    {$IFEND}
     values[index] := enumerator.Current;
     Inc(index);
   end;
@@ -1107,30 +1165,47 @@ begin
 end;
 
 function TEnumerableBase<T>.EqualsTo(const values: array of T): Boolean;
+label
+  ExitFalse;
 var
   enumerator: IEnumerator<T>;
   comparer: IEqualityComparer<T>;
   i: Integer;
+  {$IFDEF RSP31615}
+  item: T;
+  {$ENDIF}
 begin
   i := 0;
   enumerator := IEnumerable<T>(this).GetEnumerator;
   comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, GetElementType, SizeOf(T)));
   while enumerator.MoveNext do
   begin
+    {$IFDEF RSP31615}
+    if IsManagedType(T) then
+    begin
+      if i > High(values) then
+        goto ExitFalse;
+      IEnumeratorInternal(enumerator).GetCurrent(item);
+      if not IEqualityComparer<T>(comparer).Equals(item, values[i]) then
+        goto ExitFalse;
+    end
+    else
+    {$ENDIF}
     if (i > High(values)) or not comparer.Equals(enumerator.Current, values[i]) then
-      Exit(False);
+      goto ExitFalse;
     Inc(i);
   end;
-  Result := i > High(values);
+  Exit(i > High(values));
+ExitFalse:
+  Result := False;
 end;
 
 function TEnumerableBase<T>.EqualsTo(const values: IEnumerable<T>): Boolean;
 var
   comparer: IEqualityComparer<T>;
 begin
-  if IInterface(this) = values then
-    Result := True
-  else
+  Result := IInterface(this) = values;
+  if not Result then
   begin
     comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, GetElementType, SizeOf(T)));
     Result := IEnumerable<T>(this).EqualsTo(values, comparer);
@@ -1139,8 +1214,13 @@ end;
 
 function TEnumerableBase<T>.EqualsTo(const values: IEnumerable<T>;
   const comparer: IEqualityComparer<T>): Boolean;
+label
+  ExitFalse;
 var
   e1, e2: IEnumerator<T>;
+  {$IFDEF RSP31615}
+  item1, item2: T;
+  {$ENDIF}
 begin
   if not Assigned(values) then RaiseHelper.ArgumentNil(ExceptionArgument.values);
   if not Assigned(comparer) then RaiseHelper.ArgumentNil(ExceptionArgument.comparer);
@@ -1149,9 +1229,25 @@ begin
   e2 := values.GetEnumerator;
 
   while e1.MoveNext do
-    if not (e2.MoveNext and comparer.Equals(e1.Current, e2.Current)) then
-      Exit(False);
-  Result := not e2.MoveNext;
+    {$IFDEF RSP31615}
+    if IsManagedType(T) then
+    begin
+      if not e2.MoveNext then
+        goto ExitFalse;
+
+      IEnumeratorInternal(e1).GetCurrent(item1);
+      IEnumeratorInternal(e2).GetCurrent(item2);
+      if not comparer.Equals(item1, item2) then
+        goto ExitFalse;
+    end
+    else
+    {$ENDIF}
+    if not e2.MoveNext or not comparer.Equals(e1.Current, e2.Current) then
+      goto ExitFalse;
+  if not e2.MoveNext then
+    Exit(True);
+ExitFalse:
+  Result := False;
 end;
 
 function TEnumerableBase<T>.First: T;
@@ -1192,16 +1288,23 @@ end;
 procedure TEnumerableBase<T>.ForEach(const action: Action<T>);
 var
   enumerator: IEnumerator<T>;
+  {$IFDEF RSP31615}
   item: T;
+  {$ENDIF}
 begin
   if not Assigned(action) then RaiseHelper.ArgumentNil(ExceptionArgument.action);
 
   enumerator := IEnumerable<T>(this).GetEnumerator;
   while enumerator.MoveNext do
-  begin
-    item := enumerator.Current;
-    action(item);
-  end;
+    {$IFDEF RSP31615}
+    if IsManagedType(T) then
+    begin
+      IEnumeratorInternal(enumerator).GetCurrent(item);
+      action(item);
+    end
+    else
+    {$ENDIF}
+    action(enumerator.Current);
 end;
 
 function TEnumerableBase<T>.GetComparer: IComparer<T>;
@@ -1257,19 +1360,38 @@ end;
 function TEnumerableBase<T>.Max(const selector: Func<T, Integer>): Integer;
 var
   enumerator: IEnumerator<T>;
-  item: Integer;
+  value: Integer;
+  {$IFDEF RSP31615}
+  item: T;
+  {$ENDIF}
 begin
   if not Assigned(selector) then RaiseHelper.ArgumentNil(ExceptionArgument.selector);
 
   enumerator := IEnumerable<T>(this).GetEnumerator;
   if not enumerator.MoveNext then
     RaiseHelper.NoElements;
+  {$IFDEF RSP31615}
+  if IsManagedType(T) then
+  begin
+    IEnumeratorInternal(enumerator).GetCurrent(item);
+    Result := selector(item);
+  end
+  else
+  {$ENDIF}
   Result := selector(enumerator.Current);
   while enumerator.MoveNext do
   begin
-    item := selector(enumerator.Current);
-    if item > Result then
-      Result := item;
+    {$IFDEF RSP31615}
+    if IsManagedType(T) then
+    begin
+      IEnumeratorInternal(enumerator).GetCurrent(item);
+      value := selector(item);
+    end
+    else
+    {$ENDIF}
+    value := selector(enumerator.Current);
+    if value > Result then
+      Result := value;
   end;
 end;
 
@@ -1283,9 +1405,19 @@ begin
   enumerator := IEnumerable<T>(this).GetEnumerator;
   if not enumerator.MoveNext then
     RaiseHelper.NoElements;
+  {$IFDEF RSP31615}
+  if IsManagedType(T) then
+    IEnumeratorInternal(enumerator).GetCurrent(Result)
+  else
+  {$ENDIF}
   Result := enumerator.Current;
   while enumerator.MoveNext do
   begin
+    {$IFDEF RSP31615}
+    if IsManagedType(T) then
+      IEnumeratorInternal(enumerator).GetCurrent(item)
+    else
+    {$ENDIF}
     item := enumerator.Current;
     if comparer.Compare(item, Result) > 0 then
       Result := item;
@@ -1305,19 +1437,38 @@ end;
 function TEnumerableBase<T>.Min(const selector: Func<T, Integer>): Integer;
 var
   enumerator: IEnumerator<T>;
-  item: Integer;
+  value: Integer;
+  {$IFDEF RSP31615}
+  item: T;
+  {$ENDIF}
 begin
   if not Assigned(selector) then RaiseHelper.ArgumentNil(ExceptionArgument.selector);
 
   enumerator := IEnumerable<T>(this).GetEnumerator;
   if not enumerator.MoveNext then
     RaiseHelper.NoElements;
+  {$IFDEF RSP31615}
+  if IsManagedType(T) then
+  begin
+    IEnumeratorInternal(enumerator).GetCurrent(item);
+    Result := selector(item);
+  end
+  else
+  {$ENDIF}
   Result := selector(enumerator.Current);
   while enumerator.MoveNext do
   begin
-    item := selector(enumerator.Current);
-    if item < Result then
-      Result := item;
+    {$IFDEF RSP31615}
+    if IsManagedType(T) then
+    begin
+      IEnumeratorInternal(enumerator).GetCurrent(item);
+      value := selector(item);
+    end
+    else
+    {$ENDIF}
+    value := selector(enumerator.Current);
+    if value < Result then
+      Result := value;
   end;
 end;
 
@@ -1331,9 +1482,19 @@ begin
   enumerator := IEnumerable<T>(this).GetEnumerator;
   if not enumerator.MoveNext then
     RaiseHelper.NoElements;
+  {$IFDEF RSP31615}
+  if IsManagedType(T) then
+    IEnumeratorInternal(enumerator).GetCurrent(Result)
+  else
+  {$ENDIF}
   Result := enumerator.Current;
   while enumerator.MoveNext do
   begin
+    {$IFDEF RSP31615}
+    if IsManagedType(T) then
+      IEnumeratorInternal(enumerator).GetCurrent(item)
+    else
+    {$ENDIF}
     item := enumerator.Current;
     if comparer.Compare(item, Result) < 0 then
       Result := item;
@@ -1391,6 +1552,11 @@ begin
   enumerator := IEnumerable<T>(this).GetEnumerator;
   if not enumerator.MoveNext then
     RaiseHelper.NoElements;
+  {$IFDEF RSP31615}
+  if IsManagedType(T) then
+    IEnumeratorInternal(enumerator).GetCurrent(Result)
+  else
+  {$ENDIF}
   Result := enumerator.Current;
   if enumerator.MoveNext then
     RaiseHelper.MoreThanOneElement;
@@ -1409,6 +1575,11 @@ begin
   while True do
   begin
     if not enumerator.MoveNext then Break;
+    {$IFDEF RSP31615}
+    if IsManagedType(T) then
+      IEnumeratorInternal(enumerator).GetCurrent(item)
+    else
+    {$ENDIF}
     item := enumerator.Current;
     if predicate(item) then
     begin
@@ -1438,6 +1609,11 @@ begin
   enumerator := IEnumerable<T>(this).GetEnumerator;
   if not enumerator.MoveNext then
     Exit(defaultValue);
+  {$IFDEF RSP31615}
+  if IsManagedType(T) then
+    IEnumeratorInternal(enumerator).GetCurrent(Result)
+  else
+  {$ENDIF}
   Result := enumerator.Current;
   if enumerator.MoveNext then
     RaiseHelper.MoreThanOneElement;
@@ -1464,6 +1640,11 @@ begin
   while True do
   begin
     if not enumerator.MoveNext then Break;
+    {$IFDEF RSP31615}
+    if IsManagedType(T) then
+      IEnumeratorInternal(enumerator).GetCurrent(item)
+    else
+    {$ENDIF}
     item := enumerator.Current;
     if predicate(item) then
     begin
@@ -1521,6 +1702,11 @@ begin
   enumerator := IEnumerable<T>(this).GetEnumerator;
   while enumerator.MoveNext do
   begin
+    {$IFDEF RSP31615}
+    if IsManagedType(T) then
+      IEnumeratorInternal(enumerator).GetCurrent(item)
+    else
+    {$ENDIF}
     item := enumerator.Current;
     case TType.Kind<T> of
       tkInteger: PInteger(@Result)^ := PInteger(@Result)^ + PInteger(@item)^;
@@ -1576,6 +1762,11 @@ begin
       capacity := GrowCapacity(capacity);
       SetLength(Result, capacity);
     end;
+    {$IF defined(DELPHIXE7_UP) and defined(MSWINDOWS)}
+    if IsManagedType(T) then
+      IEnumeratorInternal(enumerator).GetCurrent(Result[count])
+    else
+    {$IFEND}
     Result[count] := enumerator.Current;
     Inc(count);
   end;
@@ -1961,6 +2152,13 @@ begin
     Notify(Self, item, action);
 end;
 
+function TCollectionBase<T>.Add(const item: T): Boolean;
+begin
+  // only for usage with implementing IList<T>
+  IList<T>(this).Add(item);
+  Result := True;
+end;
+
 procedure TCollectionBase<T>.AddRange(const values: array of T);
 var
   i: Integer;
@@ -1969,26 +2167,26 @@ begin
     ICollection<T>(this).Add(values[i]);
 end;
 
-function TCollectionBase<T>.Add(const item: T): Boolean;
-begin
-  // only for usage with implementing IList<T>
-  IList<T>(this).Add(item);
-  Result := True;
-end;
-
 procedure TCollectionBase<T>.AddRange(const values: IEnumerable<T>);
 var
   enumerator: IEnumerator<T>;
+  {$IFDEF RSP31615}
   item: T;
+  {$ENDIF}
 begin
   if not Assigned(values) then RaiseHelper.ArgumentNil(ExceptionArgument.values);
 
   enumerator := values.GetEnumerator;
   while enumerator.MoveNext do
-  begin
-    item := enumerator.Current;
-    ICollection<T>(this).Add(item);
-  end;
+    {$IFDEF RSP31615}
+    if IsManagedType(T) then
+    begin
+      IEnumeratorInternal(enumerator).GetCurrent(item);
+      ICollection<T>(this).Add(item);
+    end
+    else
+    {$ENDIF}
+    ICollection<T>(this).Add(enumerator.Current);
 end;
 
 procedure TCollectionBase<T>.Changed(const item: T; action: TCollectionChangedAction);
@@ -2014,16 +2212,23 @@ end;
 procedure TCollectionBase<T>.ExtractRange(const values: IEnumerable<T>);
 var
   enumerator: IEnumerator<T>;
+  {$IFDEF RSP31615}
   item: T;
+  {$ENDIF}
 begin
   if not Assigned(values) then RaiseHelper.ArgumentNil(ExceptionArgument.values);
 
   enumerator := values.GetEnumerator;
   while enumerator.MoveNext do
-  begin
-    item := enumerator.Current;
-    ICollection<T>(this).Extract(item);
-  end;
+    {$IFDEF RSP31615}
+    if IsManagedType(T) then
+    begin
+      IEnumeratorInternal(enumerator).GetCurrent(item);
+      ICollection<T>(this).Extract(item);
+    end
+    else
+    {$ENDIF}
+    ICollection<T>(this).Extract(enumerator.Current);
 end;
 
 function TCollectionBase<T>.GetOnChanged: ICollectionChangedEvent<T>;
@@ -2070,29 +2275,38 @@ end;
 
 function TCollectionBase<T>.RemoveRange(const values: array of T): Integer;
 var
+  this: Pointer;
   i: Integer;
 begin
+  this := Self.this;
   Result := 0;
   for i := 0 to High(values) do
-    if ICollection<T>(this).Remove(values[i]) then
-      Inc(Result);
+    Inc(Result, Byte(ICollection<T>(this).Remove(values[i])));
 end;
 
 function TCollectionBase<T>.RemoveRange(const values: IEnumerable<T>): Integer;
 var
   enumerator: IEnumerator<T>;
+  count: Integer;
+  {$IFDEF RSP31615}
   item: T;
+  {$ENDIF}
 begin
   if not Assigned(values) then RaiseHelper.ArgumentNil(ExceptionArgument.values);
 
-  Result := 0;
+  count := 0;
   enumerator := values.GetEnumerator;
   while enumerator.MoveNext do
-  begin
-    item := enumerator.Current;
-    if ICollection<T>(this).Remove(item) then
-      Inc(Result);
-  end;
+    {$IFDEF RSP31615}
+    if IsManagedType(T) then
+    begin
+      IEnumeratorInternal(enumerator).GetCurrent(item);
+      Inc(Result, Byte(ICollection<T>(this).Remove(item)));
+    end
+    else
+    {$ENDIF}
+    Inc(Result, Byte(ICollection<T>(this).Remove(enumerator.Current)));
+  Result := count;
 end;
 
 procedure TCollectionBase<T>.Reset;
