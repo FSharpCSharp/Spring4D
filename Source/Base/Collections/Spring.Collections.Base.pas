@@ -3262,22 +3262,26 @@ end;
 
 function TIteratorBlock<T>.MoveNextOrdered: Boolean;
 begin
-  Result := Index < Count;
-  if Result then
+  if Index < Count then
   begin
     Current := Items[Index];
     Inc(Index);
-  end;
+    Result := True;
+  end
+  else
+    Result := False;
 end;
 
 function TIteratorBlock<T>.MoveNextReversed: Boolean;
 begin
-  Result := Count > 0;
-  if Result then
+  if Count > 0 then
   begin
     Dec(Count);
     Current := Items[Count];
-  end;
+    Result := True;
+  end
+  else
+    Result := False;
 end;
 
 function TIteratorBlock<T>.MoveNextSkipWhile: Boolean;

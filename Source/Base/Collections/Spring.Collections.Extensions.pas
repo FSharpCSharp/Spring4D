@@ -1781,7 +1781,10 @@ var
 begin
   Result := fSource.TryGetElementAt(sourceValue, index);
   if Result then
+  begin
     value := fSelector(sourceValue);
+    Result := True;
+  end;
 end;
 
 function TSelectIterator<TSource, TResult>.TryGetFirst(var value: TResult): Boolean;
@@ -1790,7 +1793,10 @@ var
 begin
   Result := fSource.TryGetFirst(sourceValue);
   if Result then
+  begin
     value := fSelector(sourceValue);
+    Result := True;
+  end;
 end;
 
 function TSelectIterator<TSource, TResult>.TryGetLast(var value: TResult): Boolean;
@@ -1799,14 +1805,20 @@ var
 begin
   Result := fSource.TryGetLast(sourceValue);
   if Result then
+  begin
     value := fSelector(sourceValue);
+    Result := True;
+  end;
 end;
 
 function TSelectIterator<TSource, TResult>.TryMoveNext(var current: TResult): Boolean;
 begin
   Result := fEnumerator.MoveNext;
   if Result then
+  begin
     current := fSelector(fEnumerator.Current);
+    Result := True;
+  end;
 end;
 
 procedure TSelectIterator<TSource, TResult>.Start;
