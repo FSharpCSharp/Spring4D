@@ -172,11 +172,21 @@ end;
 
 function TAbstractStack<T>.GetCount: Integer;
 begin
+  {$IFDEF DELPHIXE7_UP}
+  if GetTypeKind(T) <> tkClass then
+    Result := fCount
+  else
+  {$ENDIF}
   Result := fCount and CountMask;
 end;
 
 function TAbstractStack<T>.GetCountFast: Integer;
 begin
+  {$IFDEF DELPHIXE7_UP}
+  if GetTypeKind(T) <> tkClass then
+    Result := fCount
+  else
+  {$ENDIF}
   Result := fCount and CountMask;
 end;
 
@@ -313,7 +323,11 @@ end;
 
 procedure TAbstractStack<T>.SetOwnsObjects(const value: Boolean);
 begin
-  if GetElementType.Kind = tkClass then
+  {$IFDEF DELPHIXE7_UP}
+  if GetTypeKind(T) = tkClass then
+  {$ELSE}
+  if TType.Kind<T> = tkClass then
+  {$ENDIF}
     fCount := (fCount and CountMask) or (Ord(value) shl OwnsObjectsBitIndex);
 end;
 

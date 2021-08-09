@@ -2536,11 +2536,21 @@ end;
 
 function TCircularArrayBuffer<T>.GetCount: Integer;
 begin
+  {$IFDEF DELPHIXE7_UP}
+  if GetTypeKind(T) <> tkClass then
+    Result := fCount
+  else
+  {$ENDIF}
   Result := fCount and CountMask;
 end;
 
 function TCircularArrayBuffer<T>.GetCountFast: Integer;
 begin
+  {$IFDEF DELPHIXE7_UP}
+  if GetTypeKind(T) <> tkClass then
+    Result := fCount
+  else
+  {$ENDIF}
   Result := fCount and CountMask;
 end;
 
@@ -2798,7 +2808,12 @@ end;
 
 procedure TCircularArrayBuffer<T>.SetOwnsObjects(value: Boolean);
 begin
-  fCount := (fCount and CountMask) or (Ord(value) shl OwnsObjectsBitIndex);
+  {$IFDEF DELPHIXE7_UP}
+  if GetTypeKind(T) = tkClass then
+  {$ELSE}
+  if TType.Kind<T> = tkClass then
+  {$ENDIF}
+    fCount := (fCount and CountMask) or (Ord(value) shl OwnsObjectsBitIndex);
 end;
 
 {$ENDREGION}

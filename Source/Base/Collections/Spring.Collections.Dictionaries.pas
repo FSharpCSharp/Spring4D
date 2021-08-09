@@ -605,11 +605,19 @@ constructor TDictionary<TKey, TValue>.Create(capacity: Integer;
 begin
   if capacity < 0 then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.capacity, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
 
+  {$IFDEF DELPHIXE7_UP}
+  if GetTypeKind(TKey) <> tkClass then
+  {$ELSE}
   if TType.Kind<TKey> <> tkClass then
+  {$ENDIF}
     if doOwnsKeys in ownerships then
       RaiseHelper.NoClassType(TypeInfo(TKey));
 
+  {$IFDEF DELPHIXE7_UP}
+  if GetTypeKind(TValue) <> tkClass then
+  {$ELSE}
   if TType.Kind<TValue> <> tkClass then
+  {$ENDIF}
     if doOwnsValues in ownerships then
       RaiseHelper.NoClassType(TypeInfo(TValue));
 
@@ -1113,11 +1121,19 @@ constructor TBidiDictionary<TKey, TValue>.Create(capacity: Integer;
 begin
   if capacity < 0 then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.capacity, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
 
+  {$IFDEF DELPHIXE7_UP}
+  if GetTypeKind(TKey) <> tkClass then
+  {$ELSE}
   if TType.Kind<TKey> <> tkClass then
+  {$ENDIF}
     if doOwnsKeys in ownerships then
       RaiseHelper.NoClassType(TypeInfo(TKey));
 
+  {$IFDEF DELPHIXE7_UP}
+  if GetTypeKind(TValue) <> tkClass then
+  {$ELSE}
   if TType.Kind<TValue> <> tkClass then
+  {$ENDIF}
     if doOwnsValues in ownerships then
       RaiseHelper.NoClassType(TypeInfo(TValue));
 
@@ -2931,11 +2947,19 @@ constructor TFoldedDictionary<TKey, TValue>.Create(keyType,
 begin
   if capacity < 0 then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.capacity, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
 
+  {$IFDEF DELPHIXE7_UP}
+  if GetTypeKind(TKey) <> tkClass then
+  {$ELSE}
   if TType.Kind<TKey> <> tkClass then
+  {$ENDIF}
     if doOwnsKeys in ownerships then
       RaiseHelper.NoClassType(keyType);
 
+  {$IFDEF DELPHIXE7_UP}
+  if GetTypeKind(TValue) <> tkClass then
+  {$ELSE}
   if TType.Kind<TValue> <> tkClass then
+  {$ENDIF}
     if doOwnsValues in ownerships then
       RaiseHelper.NoClassType(valueType);
 
@@ -2979,11 +3003,19 @@ constructor TFoldedBidiDictionary<TKey, TValue>.Create(keyType, valueType,
 begin
   if capacity < 0 then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.capacity, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
 
+  {$IFDEF DELPHIXE7_UP}
+  if GetTypeKind(TKey) <> tkClass then
+  {$ELSE}
   if TType.Kind<TKey> <> tkClass then
+  {$ENDIF}
     if doOwnsKeys in ownerships then
       RaiseHelper.NoClassType(keyType);
 
+  {$IFDEF DELPHIXE7_UP}
+  if GetTypeKind(TValue) <> tkClass then
+  {$ELSE}
   if TType.Kind<TValue> <> tkClass then
+  {$ENDIF}
     if doOwnsValues in ownerships then
       RaiseHelper.NoClassType(valueType);
 

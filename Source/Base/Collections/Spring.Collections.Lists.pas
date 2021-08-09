@@ -462,11 +462,21 @@ end;
 
 function TAbstractArrayList<T>.GetCount: Integer;
 begin
+  {$IFDEF DELPHIXE7_UP}
+  if GetTypeKind(T) <> tkClass then
+    Result := fCount
+  else
+  {$ENDIF}
   Result := fCount and CountMask;
 end;
 
 function TAbstractArrayList<T>.GetCountFast: Integer;
 begin
+  {$IFDEF DELPHIXE7_UP}
+  if GetTypeKind(T) <> tkClass then
+    Result := fCount
+  else
+  {$ENDIF}
   Result := fCount and CountMask;
 end;
 
@@ -685,7 +695,11 @@ end;
 
 procedure TAbstractArrayList<T>.SetOwnsObjects(value: Boolean);
 begin
+  {$IFDEF DELPHIXE7_UP}
+  if GetTypeKind(T) = tkClass then
+  {$ELSE}
   if TType.Kind<T> = tkClass then
+  {$ENDIF}
     fCount := (fCount and CountMask) or (Ord(value) shl OwnsObjectsBitIndex);
 end;
 

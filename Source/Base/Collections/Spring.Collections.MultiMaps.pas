@@ -536,11 +536,19 @@ constructor TMultiMapBase<TKey, TValue>.Create(
   const keyComparer: IEqualityComparer<TKey>;
   ownerships: TDictionaryOwnerships);
 begin
+  {$IFDEF DELPHIXE7_UP}
+  if GetTypeKind(TKey) <> tkClass then
+  {$ELSE}
   if TType.Kind<TKey> <> tkClass then
+  {$ENDIF}
     if doOwnsKeys in ownerships then
       RaiseHelper.NoClassType(TypeInfo(TKey));
 
+  {$IFDEF DELPHIXE7_UP}
+  if GetTypeKind(TValue) <> tkClass then
+  {$ELSE}
   if TType.Kind<TValue> <> tkClass then
+  {$ENDIF}
     if doOwnsValues in ownerships then
       RaiseHelper.NoClassType(TypeInfo(TValue));
 
@@ -953,11 +961,19 @@ constructor THashMultiMap<TKey, TValue>.Create(
   const valueComparer: IEqualityComparer<TValue>;
   ownerships: TDictionaryOwnerships);
 begin
+  {$IFDEF DELPHIXE7_UP}
+  if GetTypeKind(TKey) <> tkClass then
+  {$ELSE}
   if TType.Kind<TKey> <> tkClass then
+  {$ENDIF}
     if doOwnsKeys in ownerships then
       RaiseHelper.NoClassType(TypeInfo(TKey));
 
+  {$IFDEF DELPHIXE7_UP}
+  if GetTypeKind(TValue) <> tkClass then
+  {$ELSE}
   if TType.Kind<TValue> <> tkClass then
+  {$ENDIF}
     if doOwnsValues in ownerships then
       RaiseHelper.NoClassType(TypeInfo(TValue));
 
@@ -985,11 +1001,19 @@ constructor TTreeMultiMap<TKey, TValue>.Create(
   const keyComparer: IEqualityComparer<TKey>;
   const valueComparer: IComparer<TValue>; ownerships: TDictionaryOwnerships);
 begin
+  {$IFDEF DELPHIXE7_UP}
+  if GetTypeKind(TKey) <> tkClass then
+  {$ELSE}
   if TType.Kind<TKey> <> tkClass then
+  {$ENDIF}
     if doOwnsKeys in ownerships then
       RaiseHelper.NoClassType(TypeInfo(TKey));
 
+  {$IFDEF DELPHIXE7_UP}
+  if GetTypeKind(TValue) <> tkClass then
+  {$ELSE}
   if TType.Kind<TValue> <> tkClass then
+  {$ENDIF}
     if doOwnsValues in ownerships then
       RaiseHelper.NoClassType(TypeInfo(TValue));
 
@@ -1030,11 +1054,19 @@ constructor TFoldedListMultiMap<TKey, TValue>.Create(keyType,
   valueType, elementType: PTypeInfo; const keyComparer: IEqualityComparer<TKey>;
   ownerships: TDictionaryOwnerships);
 begin
+  {$IFDEF DELPHIXE7_UP}
+  if GetTypeKind(TKey) <> tkClass then
+  {$ELSE}
   if TType.Kind<TKey> <> tkClass then
+  {$ENDIF}
     if doOwnsKeys in ownerships then
       RaiseHelper.NoClassType(keyType);
 
+  {$IFDEF DELPHIXE7_UP}
+  if GetTypeKind(TValue) <> tkClass then
+  {$ELSE}
   if TType.Kind<TValue> <> tkClass then
+  {$ENDIF}
     if doOwnsValues in ownerships then
       RaiseHelper.NoClassType(valueType);
 
