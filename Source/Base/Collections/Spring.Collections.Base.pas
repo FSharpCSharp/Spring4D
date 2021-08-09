@@ -320,6 +320,7 @@ type
     fKind: TIteratorKind;
 
     function GetElementType: PTypeInfo; override;
+    function PartitionToArray(var values: TArray<T>): Boolean;
   public
     function GetEnumerator: IEnumerator<T>;
     function Skip(count: Integer): IEnumerable<T>;
@@ -748,7 +749,7 @@ begin
   if not Result then
   begin
     entry := obj.GetInterfaceEntry(IPartitionOfTGuid);
-    Result := Assigned(entry) and (IPartition<Integer>(PByte(obj) + entry.IOffset).GetCountFast >= 0);
+    Result := Assigned(entry) and (IEnumerable(PByte(obj) + entry.IOffset).GetCountFast >= 0);
   end;
 end;
 
@@ -1751,7 +1752,6 @@ var
   enumerator: IEnumerator<T>;
   count, capacity: Integer;
 begin
-  Result := nil;
   count := 0;
   capacity := 0;
   enumerator := IEnumerable<T>(this).GetEnumerator;
@@ -3569,32 +3569,62 @@ begin
     Result := inherited Take(count);
 end;
 
+function TIteratorBase<T>.PartitionToArray(var values: TArray<T>): Boolean;
+var
+  count, index, i: Integer;
+  source: Pointer;
+begin
+  Result := SupportsIndexedAccess(fSource);
+  if Result then
+  begin
+    index := fIndex;
+    count := fSource.Count - index;
+    if count > fCount then
+      count := fCount
+    else if count < 0 then
+      count := 0;
+    SetLength(values, count);
+    source := Pointer(fSource);
+    for i := 0 to count - 1 do
+    begin
+      IEnumerable<T>(source).TryGetElementAt(values[i], index);
+      Inc(index);
+    end;
+    Result := True;
+  end;
+end;
+
 function TIteratorBase<T>.ToArray: TArray<T>;
 begin
   case fKind of
+    TIteratorKind.Partition:
+      if PartitionToArray(Result) then Exit;
     TIteratorKind.Array:
     begin
       Result := fItems;
       SetLength(Result, Length(Result));
+      Exit;
     end;
     TIteratorKind.Ordered:
     begin
       Result := fSource.ToArray;
       TArray.Sort<T>(Result, IComparer<T>(fPredicate));
+      Exit;
     end;
     TIteratorKind.Reversed:
     begin
       Result := fSource.ToArray;
       TArray.Reverse<T>(Result);
+      Exit;
     end;
     TIteratorKind.Shuffled:
     begin
       Result := fSource.ToArray;
       TArray.Shuffle<T>(Result);
+      Exit;
     end;
-  else
-    Result := inherited ToArray;
   end;
+  Result := inherited ToArray;
 end;
 
 function TIteratorBase<T>.TryGetElementAt(var value: T; index: Integer): Boolean;
