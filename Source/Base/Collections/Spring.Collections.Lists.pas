@@ -529,11 +529,11 @@ end;
 
 function TAbstractArrayList<T>.GetItem(index: Integer): T;
 var
-  listCount: Integer;
+  items: Pointer;
 begin
-  listCount := Count;
-  if Cardinal(index) < Cardinal(listCount) then
-    Exit(fItems[index]);
+  items := fItems;
+  if Cardinal(index) < Cardinal(Count) then
+    Exit(TArray<T>(items)[index]);
   RaiseHelper.ArgumentOutOfRange_Index;
   {$IFDEF DELPHIXE7_UP}{$IFDEF CPUX86}{$IFDEF OPTIMIZATION_ON}
   // cause the compiler to omit push instruction for types that return in eax
