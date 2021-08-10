@@ -1118,7 +1118,6 @@ end;
 procedure TAbstractArrayList<T>.Sort(const comparer: IComparer<T>; index, count: Integer);
 var
   listCount: Integer;
-  compare: TMethod;
 begin
   listCount := Self.Count;
   if Cardinal(index) <= Cardinal(listCount) then
@@ -1138,41 +1137,39 @@ begin
       else
       {$ENDIF}
       begin
-        compare.Data := Pointer(comparer);
-        compare.Code := PPVTable(comparer)^[3];
         {$R-}
         {$IFDEF DELPHIXE7_UP}
         case GetTypeKind(T) of
           tkInteger, tkChar, tkEnumeration, tkClass, tkWChar, tkLString, tkWString,
           tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef, tkPointer, tkProcedure:
             case SizeOf(T) of
-              1: TArray.IntroSort_Int8(@fItems[index], index + count - 1, @compare);
-              2: TArray.IntroSort_Int16(@fItems[index], index + count - 1, @compare);
-              4: TArray.IntroSort_Int32(@fItems[index], index + count - 1, @compare);
-              8: TArray.IntroSort_Int64(@fItems[index], index + count - 1, @compare);
+              1: TArray.IntroSort_Int8(Slice(TSlice<Int8>((@fItems[index])^), count), IComparer<Int8>(comparer));
+              2: TArray.IntroSort_Int16(Slice(TSlice<Int16>((@fItems[index])^), count), IComparer<Int16>(comparer));
+              4: TArray.IntroSort_Int32(Slice(TSlice<Int32>((@fItems[index])^), count), IComparer<Int32>(comparer));
+              8: TArray.IntroSort_Int64(Slice(TSlice<Int64>((@fItems[index])^), count), IComparer<Int64>(comparer));
             end;
           tkFloat:
             case SizeOf(T) of
-              4: TArray.IntroSort_Single(@fItems[index], index + count - 1, @compare);
-              10,16: TArray.IntroSort_Extended(@fItems[index], index + count - 1, @compare);
+              4: TArray.IntroSort_Single(Slice(TSlice<System.Single>((@fItems[index])^), count), IComparer<System.Single>(comparer));
+              10,16: TArray.IntroSort_Extended(Slice(TSlice<Extended>((@fItems[index])^), count), IComparer<Extended>(comparer));
             else
               if GetTypeData(TypeInfo(T)).FloatType = ftDouble then
-                TArray.IntroSort_Double(@fItems[index], index + count - 1, @compare)
+                TArray.IntroSort_Double(Slice(TSlice<Double>((@fItems[index])^), count), IComparer<Double>(comparer))
               else
-                TArray.IntroSort_Int64(@fItems[index], index + count - 1, @compare);
+                TArray.IntroSort_Int64(Slice(TSlice<Int64>((@fItems[index])^), count), IComparer<Int64>(comparer));
             end;
           tkString:
-            TArray.IntroSort_Ref(@fItems[index], index + count - 1, TCompareMethod(compare), SizeOf(T));
+            TArray.IntroSort_Ref(@fItems[index], index + count - 1, IComparerRef(comparer), SizeOf(T));
           tkSet:
             case SizeOf(T) of
-              1: TArray.IntroSort_Int8(@fItems[index], index + count - 1, @compare);
-              2: TArray.IntroSort_Int16(@fItems[index], index + count - 1, @compare);
-              4: TArray.IntroSort_Int32(@fItems[index], index + count - 1, @compare);
+              1: TArray.IntroSort_Int8(Slice(TSlice<Int8>((@fItems[index])^), count), IComparer<Int8>(comparer));
+              2: TArray.IntroSort_Int16(Slice(TSlice<Int16>((@fItems[index])^), count), IComparer<Int16>(comparer));
+              4: TArray.IntroSort_Int32(Slice(TSlice<Int32>((@fItems[index])^), count), IComparer<Int32>(comparer));
             else
-              TArray.IntroSort_Ref(@fItems[index], index + count - 1, TCompareMethod(compare), SizeOf(T));
+              TArray.IntroSort_Ref(@fItems[index], index + count - 1, IComparerRef(comparer), SizeOf(T));
             end;
           tkMethod:
-            TArray.IntroSort_Method(@fItems[index], index + count - 1, @compare);
+            TArray.IntroSort_Method(Slice(TSlice<TMethodPointer>((@fItems[index])^), count), IComparer<TMethodPointer>(comparer));
           tkVariant,
           {$IF Declared(tkMRecord)}
           tkMRecord,
@@ -1180,29 +1177,29 @@ begin
           tkRecord:
             if not System.HasWeakRef(T) then
               case SizeOf(T) of
-                1: TArray.IntroSort_Int8(@fItems[index], index + count - 1, @compare);
-                2: TArray.IntroSort_Int16(@fItems[index], index + count - 1, @compare);
-                3: TArray.IntroSort_Int24(@fItems[index], index + count - 1, @compare);
-                4: TArray.IntroSort_Int32(@fItems[index], index + count - 1, @compare);
+                1: TArray.IntroSort_Int8(Slice(TSlice<Int8>((@fItems[index])^), count), IComparer<Int8>(comparer));
+                2: TArray.IntroSort_Int16(Slice(TSlice<Int16>((@fItems[index])^), count), IComparer<Int16>(comparer));
+                3: TArray.IntroSort_Int24(Slice(TSlice<Int24>((@fItems[index])^), count), IComparer<Int24>(comparer));
+                4: TArray.IntroSort_Int32(Slice(TSlice<Int32>((@fItems[index])^), count), IComparer<Int32>(comparer));
               else
-                TArray.IntroSort_Ref(@fItems[index], index + count - 1, TCompareMethod(compare), SizeOf(T))
+                TArray.IntroSort_Ref(@fItems[index], index + count - 1, IComparerRef(comparer), SizeOf(T))
               end
             else
-              TArray.IntroSort<T>(Slice(TSlice<T>((@fItems[index])^), count), TCompareMethod<T>(compare));
+              TArray.IntroSort<T>(Slice(TSlice<T>((@fItems[index])^), count), comparer);
           tkArray:
             case SizeOf(T) of
-              1: TArray.IntroSort_Int8(@fItems[index], index + count - 1, @compare);
-              2: TArray.IntroSort_Int16(@fItems[index], index + count - 1, @compare);
-              3: TArray.IntroSort_Int24(@fItems[index], index + count - 1, @compare);
-              4: TArray.IntroSort_Int32(@fItems[index], index + count - 1, @compare);
+              1: TArray.IntroSort_Int8(Slice(TSlice<Int8>((@fItems[index])^), count), IComparer<Int8>(comparer));
+              2: TArray.IntroSort_Int16(Slice(TSlice<Int16>((@fItems[index])^), count), IComparer<Int16>(comparer));
+              3: TArray.IntroSort_Int24(Slice(TSlice<Int24>((@fItems[index])^), count), IComparer<Int24>(comparer));
+              4: TArray.IntroSort_Int32(Slice(TSlice<Int32>((@fItems[index])^), count), IComparer<Int32>(comparer));
             else
-              TArray.IntroSort_Ref(@fItems[index], index + count - 1, TCompareMethod(compare), SizeOf(T));
+              TArray.IntroSort_Ref(@fItems[index], index + count - 1, IComparerRef(comparer), SizeOf(T));
             end;
         else
         {$ELSE}
         begin
         {$ENDIF}
-          TArray.IntroSort<T>(Slice(TSlice<T>((@fItems[index])^), count), TCompareMethod<T>(compare));
+          TArray.IntroSort<T>(Slice(TSlice<T>((@fItems[index])^), count), comparer);
         end;
         {$IFDEF RANGECHECKS_ON}{$R+}{$ENDIF}
       end;
