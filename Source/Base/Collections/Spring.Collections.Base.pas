@@ -116,7 +116,10 @@ type
 
   TEnumerableBase<T> = class abstract(TEnumerableBase)
   {$IFDEF RSP31615}
-  private type FuncInternal = reference to procedure(const arg1, arg2: T; var result);
+  private type FuncInternal = reference to procedure(
+    {$IFDEF CPUX64}var result;{$ENDIF}
+    const arg1, arg2: T
+    {$IFDEF CPUX86}; var result{$ENDIF});
   {$ENDIF}
   protected
     fComparer: IComparer<T>;
@@ -1019,7 +1022,7 @@ begin
     if IsManagedType(T) then
     begin
       IEnumeratorInternal(enumerator).GetCurrent(item);
-      FuncInternal(func)(Result, item, res);
+      FuncInternal(func)({$IFDEF CPUX64}res, {$ENDIF}Result, item{$IFDEF CPUX86}, res{$ENDIF});
       Result := res;
     end
     else
