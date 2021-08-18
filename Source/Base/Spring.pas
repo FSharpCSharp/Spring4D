@@ -1320,7 +1320,6 @@ type
     [Volatile]
 {$IFEND}
     fRefCount: Integer;
-    class procedure __MarkDestroying(const obj); static; inline;
     function AsObject: TObject;
   public
     function QueryInterface(const IID: TGUID; out obj): HResult; stdcall;
@@ -7718,15 +7717,6 @@ begin
   Result := fRefCount and not objDestroyingFlag;
 end;
 
-class procedure TRefCountedObject.__MarkDestroying(const obj);
-var
-  refCount: Integer; //FI:W517
-begin
-  repeat
-    refCount := TRefCountedObject(obj).fRefCount;
-  until AtomicCmpExchange(TRefCountedObject(obj).fRefCount, refCount or objDestroyingFlag, refCount) = refCount;
-end;
-
 procedure TRefCountedObject.AfterConstruction;
 begin
   AtomicDecrement(fRefCount);
@@ -7762,7 +7752,7 @@ begin
   Result := AtomicDecrement(fRefCount);
   if Result = 0 then
   begin
-    __MarkDestroying(Self);
+    fRefCount := objDestroyingFlag;
     Destroy;
   end;
 end;

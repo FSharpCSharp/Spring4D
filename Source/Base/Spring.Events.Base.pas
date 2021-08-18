@@ -49,6 +49,7 @@ type
     fNotificationHandler: TNotificationHandler;
     fOnChanged: TNotifyEvent;
   const
+    objDestroyingFlag = Integer($80000000);
     DisabledFlag = Integer($40000000);
     RefCountMask = Integer($3FFFFFFF);
   {$REGION 'Property Accessors'}
@@ -432,7 +433,7 @@ begin
   Result := AtomicDecrement(fRefCount) and not DisabledFlag;
   if Result = 0 then
   begin
-    __MarkDestroying(Self);
+    fRefCount := objDestroyingFlag;
     Destroy;
   end;
 end;
