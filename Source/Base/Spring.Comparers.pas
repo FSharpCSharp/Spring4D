@@ -39,11 +39,11 @@ type
   TDefaultGenericInterface = Generics.Defaults.TDefaultGenericInterface;
 
   TComparer<T> = record
-    class function Default: IComparer<T>; static; {$IFDEF DELPHIX_TOKYO_UP}unsafe;{$ENDIF}
+    class function Default: IComparer<T>; static;
   end;
 
   TEqualityComparer<T> = record
-    class function Default: IEqualityComparer<T>; static; {$IFDEF DELPHIX_TOKYO_UP}unsafe;{$ENDIF}
+    class function Default: IEqualityComparer<T>; static;
   end;
 
   THashFunction = function(const key; len: Cardinal; seed: Integer = 0): Integer;
@@ -91,20 +91,12 @@ end;
 
 class function TComparer<T>.Default: IComparer<T>;
 begin
-  {$IFDEF DELPHIX_TOKYO_UP}
-  Pointer(Result) := _LookupVtableInfo(giComparer, TypeInfo(T), SizeOf(T));
-  {$ELSE}
   Result := IComparer<T>(_LookupVtableInfo(giComparer, TypeInfo(T), SizeOf(T)));
-  {$ENDIF}
 end;
 
 class function TEqualityComparer<T>.Default: IEqualityComparer<T>;
 begin
-  {$IFDEF DELPHIX_TOKYO_UP}
-  Pointer(Result) := _LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T));
-  {$ELSE}
   Result := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
-  {$ENDIF}
 end;
 
 type
