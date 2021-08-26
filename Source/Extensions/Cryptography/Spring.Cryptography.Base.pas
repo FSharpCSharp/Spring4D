@@ -433,7 +433,6 @@ begin
     end;
     TPaddingMode.ISO10126:
     begin
-      Randomize;
       for i := 0 to count - 2 do
         buffer[startIndex + i] := Math.RandomRange(0, 256);
       buffer[startIndex + count - 1] := Byte(count);
