@@ -4546,8 +4546,6 @@ var
   input: TArray<Integer>;
   inputLen: Integer;
 begin
-  Randomize;
-
   for n := 1 to COUNT do
   begin
     SUT := TRedBlackTree<Integer>.Create;
@@ -4752,8 +4750,6 @@ var
   input: TArray<Integer>;
   inputLen: Integer;
 begin
-  Randomize;
-
   for n := 1 to COUNT do
   begin
     SUT := TRedBlackTree<Integer, string>.Create;
