@@ -1136,6 +1136,11 @@ type
   INotifyEvent<T> = interface(IEvent<TNotifyEvent<T>>)
   end;
 
+  IInvokableNotifyEvent = interface(INotifyEvent)
+    function GetInvoke: TNotifyEvent;
+    property Invoke: TNotifyEvent read GetInvoke;
+  end;
+
   IInvokableNotifyEvent<T> = interface(INotifyEvent<T>)
     function GetInvoke: TNotifyEvent<T>;
     property Invoke: TNotifyEvent<T> read GetInvoke;
