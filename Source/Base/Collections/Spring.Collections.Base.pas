@@ -3416,12 +3416,10 @@ end;
 function TIteratorBlock<T>.ToArray: Boolean;
 begin
   Items := Source.ToArray;
-  Count := Length(Items);
+  Count := DynArrayLength(Items);
   case Kind of
     TIteratorKind.Ordered:
       TArray.Sort<T>(Items, IComparer<T>(Predicate));
-    TIteratorKind.Reversed:
-      Count := Length(Items);
     TIteratorKind.Shuffled:
       TArray.Shuffle<T>(Items, DynArrayHigh(Items));
   end;
@@ -3624,7 +3622,7 @@ begin
     TIteratorKind.Array:
     begin
       Result := fItems;
-      SetLength(Result, Length(Result));
+      SetLength(Result, DynArrayLength(Result));
       Exit;
     end;
     TIteratorKind.Ordered:
@@ -3810,7 +3808,7 @@ procedure TArrayIterator<T>.CopyTo(var values: TArray<T>; index: Integer);
 var
   count: Integer;
 begin
-  count := Length(fItems);
+  count := DynArrayLength(fItems);
   if count > 0 then
     if TType.IsManaged<T> then
       MoveManaged(@fItems[0], @values[index], TypeInfo(T), count)
