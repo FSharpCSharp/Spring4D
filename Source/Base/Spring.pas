@@ -4263,6 +4263,12 @@ begin
   Result := nil;
 end;
 
+function OutOfMemoryError: Integer;
+begin
+  SysUtils.OutOfMemoryError;
+  Result := 0;
+end;
+
 function GrowCapacity(oldCapacity: Integer): Integer;
 begin
   if oldCapacity = 0 then
@@ -4273,9 +4279,9 @@ begin
       Result := oldCapacity * 2
     else
     begin
-      Result := oldCapacity + oldCapacity div 2;
+      Result := oldCapacity + oldCapacity shr 1;
       if Result < 0 then
-        OutOfMemoryError;
+        Exit(OutOfMemoryError);
     end;
   end;
 end;
@@ -4285,14 +4291,14 @@ begin
   Result := oldCapacity;
   repeat
     if Result >= 1024 then
-      Result := Result + Result div 2
+      Result := Result + Result shr 1
     else
       if Result >= 4 then
         Result := Result * 2
       else
         Result := 4;
     if Result < 0 then
-      OutOfMemoryError;
+      Exit(OutOfMemoryError);
   until Result >= newCount;
 end;
 
