@@ -3901,7 +3901,7 @@ begin
       values[j].DoubleValue :=j;
       PDouble(@values[j].Stuff[0])^ := 2 * j;
       PDouble(@values[j].Stuff[8])^ := -3 * j;
-      values[j].Text := FloatToStr(6 * j + 2);
+      values[j].Text := IntToStr(6 * j + 2);
     end;
     TArray.Shuffle<TManagedRec>(values);
     TArray.StableSort<TManagedRec>(values, comparison);
@@ -3912,7 +3912,7 @@ begin
       CheckEquals(j, values[j].DoubleValue);
       CheckEquals(2 * j, PDouble(@values[j].Stuff[0])^);
       CheckEquals(-3 * j, PDouble(@values[j].Stuff[8])^);
-      CheckEquals(FloatToStr(6 * j + 2), values[j].Text);
+      CheckEquals(IntToStr(6 * j + 2), values[j].Text);
     end;
   end;
 end;
