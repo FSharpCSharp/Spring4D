@@ -826,7 +826,7 @@ function GetHashCode_UString(const inst: Pointer; const value: string): Integer;
 begin
   Result := NativeInt(value);
   if Result <> 0 then
-    Result := DefaultHashFunction(PPointer(Result)^, PInteger(PByte(value) - 4)^ * SizeOf(Char));
+    Result := DefaultHashFunction(PPointer(value)^, PInteger(PByte(value) - 4)^ * SizeOf(Char));
 end;
 
 function Compare_Variant_Complex(checkEquality: Boolean; const left, right: PVariant): Integer;
