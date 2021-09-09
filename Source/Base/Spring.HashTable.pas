@@ -589,8 +589,8 @@ begin
       end;
     tkUString:
     begin
-      hashCode := PNativeInt(@key)^;
-      if hashCode <> 0 then
+      hashCode := 0;
+      if PPointer(@key)^ <> nil then
       {$R-}
         hashCode := DefaultHashFunction(PPointer(@key)^^, PInteger(PByte((@key)^) - 4)^ * SizeOf(Char)) and not RemovedFlag;
       {$IFDEF RANGECHECKS_ON}{$R+}{$ENDIF}

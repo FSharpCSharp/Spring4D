@@ -823,10 +823,13 @@ end;
 {$ENDIF}
 
 function GetHashCode_UString(const inst: Pointer; const value: string): Integer;
+var
+  hashCode: NativeInt;
 begin
-  Result := NativeInt(value);
-  if Result <> 0 then
-    Result := DefaultHashFunction(PPointer(value)^, PInteger(PByte(value) - 4)^ * SizeOf(Char));
+  hashCode := NativeInt(value);
+  if hashCode <> 0 then
+    hashCode := DefaultHashFunction(PPointer(hashCode)^, PInteger(@PByte(value)[-4])^ * SizeOf(Char));
+  Result := hashCode;
 end;
 
 function Compare_Variant_Complex(checkEquality: Boolean; const left, right: PVariant): Integer;

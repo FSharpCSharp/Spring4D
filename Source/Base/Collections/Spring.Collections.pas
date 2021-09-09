@@ -3493,7 +3493,7 @@ type
       const resultSelector: Func<TFirst, TSecond, TResult>): IEnumerable<TResult>; overload; static;
   end;
 
-  TStringComparer = class(TCustomComparer<string>)
+  TStringComparer = class(TObject, IComparer<string>, IEqualityComparer<string>)
   private
     fLocaleOptions: TLocaleOptions;
     fIgnoreCase: Boolean;
@@ -3501,9 +3501,13 @@ type
       fOrdinal: TStringComparer;
       fOrdinalIgnoreCase: TStringComparer;
   protected
-    function Compare(const Left, Right: string): Integer; override;
-    function Equals(const Left, Right: string): Boolean; override;
-    function GetHashCode(const Value: string): Integer; override;
+    function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
+    function _AddRef: Integer; stdcall;
+    function _Release: Integer; stdcall;
+
+    function Compare(const left, right: string): Integer; reintroduce;
+    function Equals(const left, right: string): Boolean; reintroduce;
+    function GetHashCode(const value: string): Integer; reintroduce;
   public
     constructor Create(localeOptions: TLocaleOptions; ignoreCase: Boolean);
     class constructor Create;
@@ -3553,9 +3557,6 @@ implementation
 
 uses
   Character,
-{$IFDEF DELPHIXE8_UP}
-  System.Hash,
-{$ENDIF}
   Rtti,
   Spring.Collections.Base,
   Spring.Collections.Dictionaries,
@@ -3567,6 +3568,7 @@ uses
   Spring.Collections.Queues,
   Spring.Collections.Sets,
   Spring.Collections.Stacks,
+  Spring.Comparers,
   Spring.ResourceStrings;
 
 
@@ -7580,68 +7582,89 @@ begin
   FreeAndNil(fOrdinalIgnoreCase);
 end;
 
-function TStringComparer.Compare(const Left, Right: string): Integer;
-var
-  L, R: string;
+function TStringComparer.Compare(const left, right: string): Integer;
 begin
   if fIgnoreCase then
-  begin
-{$IFNDEF DELPHIXE4_UP}
-    L := TCharacter.ToUpper(Left);
-    R := TCharacter.ToUpper(Right);
-{$ELSE}
-    L := Char.ToUpper(Left);
-    R := Char.ToUpper(Right);
-{$ENDIF}
-  end else
-  begin
-    L := Left;
-    R := Right;
-  end;
-
-  Result := CompareStr(L, R, fLocaleOptions);
-end;
-
-function TStringComparer.Equals(const Left, Right: string): Boolean;
-var
-  L, R: string;
-begin
-  if fIgnoreCase then
-  begin
-{$IFNDEF DELPHIXE4_UP}
-    L := TCharacter.ToUpper(Left);
-    R := TCharacter.ToUpper(Right);
-{$ELSE}
-    L := Char.ToUpper(Left);
-    R := Char.ToUpper(Right);
-{$ENDIF}
-  end else
-  begin
-    L := Left;
-    R := Right;
-  end;
-
-  Result := SameStr(L, R, fLocaleOptions);
-end;
-
-function TStringComparer.GetHashCode(const Value: string): Integer;
-var
-  s: string;
-begin
-  if fIgnoreCase then
-{$IFNDEF DELPHIXE4_UP}
-    S := TCharacter.ToUpper(Value)
-{$ELSE}
-    S := Char.ToUpper(Value)
-{$ENDIF}
+    Result := AnsiCompareText(left, right)
   else
-    S := Value;
+    Result := AnsiCompareStr(left, right);
+end;
 
-{$IFDEF DELPHIXE8_UP}
-  Result := THashBobJenkins.GetHashValue(S);
-{$ELSE}
-  Result := BobJenkinsHash(PChar(S)^, SizeOf(Char) * Length(S), 0);
-{$ENDIF}
+function TStringComparer.Equals(const left, right: string): Boolean;
+begin
+  if fIgnoreCase then
+    Result := AnsiSameText(left, right)
+  else
+    Result := AnsiSameStr(left, right);
+end;
+
+function TStringComparer.GetHashCode(const value: string): Integer;
+const
+  FNV_Prime = 16777619;
+  FNV_OffsetBasis = Integer($811C9DC5); // 2166136261
+  NotAsciiMask = $FF80FF80;
+  LowerCaseMask = $00200020;
+
+  // for inlining when compiled as package - System.Length does not in that case
+  function Length(const s: string): NativeInt; inline;
+  begin
+    Result := IntPtr(s);
+    if Result <> 0 then
+      Result := PInteger(@PByte(Result)[-4])^;
+  end;
+
+  function GetHashCodeIgnoreCaseSlow(const value: string): Integer;
+  var
+    s: string;
+    len, i: NativeInt;
+    c: Integer;
+  begin
+    s := AnsiUpperCase(value);
+    len := Length(s);
+    Result := FNV_OffsetBasis;
+    i := 0;
+    while len > 0 do
+    begin
+      c := PIntegerArray(s)[i];
+      c := c or LowerCaseMask;
+      Result := Result xor c;
+      {$Q-}
+      Result := Result * FNV_PRIME;
+      {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+      Inc(i);
+      Dec(len, 2);
+    end;
+  end;
+
+label
+  NotAscii;
+var
+  len, i: NativeInt;
+  hashCode, c: Integer;
+begin
+  len := Length(value);
+  if fIgnoreCase then
+  begin
+    hashCode := FNV_OffsetBasis;
+    i := 0;
+    while len > 0 do
+    begin
+      c := PIntegerArray(value)[i];
+      if c and NotAsciiMask <> 0 then goto NotAscii;
+      c := c or LowerCaseMask;
+      hashCode := hashCode xor c;
+      {$Q-}
+      hashCode := hashCode * FNV_PRIME;
+      {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+      Inc(i);
+      Dec(len, 2);
+    end;
+    Exit(hashCode);
+  NotAscii:
+    Result := GetHashCodeIgnoreCaseSlow(value);
+  end
+  else
+    Result := DefaultHashFunction(Pointer(value)^, len * SizeOf(Char));
 end;
 
 class function TStringComparer.Ordinal: TStringComparer;
@@ -7652,6 +7675,24 @@ end;
 class function TStringComparer.OrdinalIgnoreCase: TStringComparer;
 begin
   Result := fOrdinalIgnoreCase;
+end;
+
+function TStringComparer.QueryInterface(const IID: TGUID; out Obj): HResult;
+begin
+  if GetInterface(IID, Obj) then
+    Result := S_OK
+  else
+    Result := E_NOINTERFACE;
+end;
+
+function TStringComparer._AddRef: Integer;
+begin
+  Result := -1;
+end;
+
+function TStringComparer._Release: Integer;
+begin
+  Result := -1;
 end;
 
 {$ENDREGION}
