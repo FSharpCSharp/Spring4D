@@ -185,6 +185,8 @@ type
     function Min(const comparer: IComparer<T>): T; overload;
     function Min(const comparer: TComparison<T>): T; overload;
 
+    function Memoize: IEnumerable<T>;
+
     function Ordered: IEnumerable<T>; overload;
     function Ordered(const comparer: IComparer<T>): IEnumerable<T>; overload;
     function Ordered(const comparer: TComparison<T>): IEnumerable<T>; overload;
@@ -260,7 +262,7 @@ type
 
   TIteratorKind = (
     Partition, &Array,
-    Concat, Ordered, Reversed, Shuffled,
+    Concat, Memoize, Ordered, Reversed, Shuffled,
     SkipWhile, SkipWhileIndex,
     TakeWhile, TakeWhileIndex,
     Where, WhereIndex, Select);
@@ -292,6 +294,7 @@ type
 
     function GetEnumerator: Boolean;
     function GetEnumeratorAndSkip: Boolean;
+    function GetEnumeratorMemoize: Boolean;
 
     function _Release: Integer; stdcall;
     function MoveNext: Boolean;
@@ -307,6 +310,15 @@ type
     fKind: TIteratorKind;
 
     function GetCountFast: Integer;
+  end;
+
+  TMemoizeIterator<T> = record
+    // only used via pointer internally
+    // field layout has to match with TIteratorBase
+    Source: IEnumerable;
+    Enumerator: IEnumerator<T>;
+    Items: TArray<T>;
+    Index, Count: Integer;
   end;
 
   TIteratorBase<T> = class abstract(TEnumerableBase<T>)
@@ -361,6 +373,7 @@ type
     function GetCurrent: T;
 
     function MoveNextConcat: Boolean;
+    function MoveNextMemoize: Boolean;
     function MoveNextOrdered: Boolean;
     function MoveNextReversed: Boolean;
     function MoveNextSkipWhile: Boolean;
@@ -1503,6 +1516,16 @@ end;
 function TEnumerableBase<T>.Min(const comparer: TComparison<T>): T;
 begin
   Result := IEnumerable<T>(this).Min(IComparer<T>(PPointer(@comparer)^));
+end;
+
+function TEnumerableBase<T>.Memoize: IEnumerable<T>;
+begin
+  if (GetInterfaceEntry(ICollectionOfTGuid) <> nil)
+    or (GetInterfaceEntry(IReadOnlyCollectionOfTGuid) <> nil) then
+    Result := IEnumerable<T>(this)
+  else
+    Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
+      0, 0, nil, TIteratorKind.Memoize);
 end;
 
 function TEnumerableBase<T>.Ordered: IEnumerable<T>;
@@ -3040,6 +3063,21 @@ begin
   end;
 end;
 
+function TIteratorBlock.GetEnumeratorMemoize: Boolean;
+begin
+  if PIteratorBase(Predicate).fCount = 0 then
+  begin
+  {$IFDEF MSWINDOWS}
+    IEnumerableInternal(Source).GetEnumerator(IEnumerator(PIteratorBase(Predicate).fPredicate));
+  {$ELSE}
+    IEnumerator(PIteratorBase(Predicate).fPredicate) := Source.GetEnumerator;
+  {$ENDIF}
+    PIteratorBase(Predicate).fCount := PIteratorBase(Predicate).fCount or not CountMask;
+  end;
+  DoMoveNext := Methods.MoveNext;
+  Result := DoMoveNext(@Self);
+end;
+
 function TIteratorBlock.MoveNextEmpty: Boolean;
 begin
   Result := False;
@@ -3072,6 +3110,8 @@ begin
     Count := iterator.fCount;
     Kind := iterator.fKind;
     Methods.Finalize := @TIteratorBlock<T>.Finalize;
+    if Kind = Memoize then
+      Pointer(Predicate) := @iterator.fSource;
   end;
   rec.InitMethods;
   rec.InitVtable;
@@ -3117,6 +3157,16 @@ begin
     begin
       Methods.MoveNext := @TIteratorBlock<T>.MoveNextConcat;
       DoMoveNext := @TIteratorBlock.GetEnumerator;
+    end;
+    TIteratorKind.Memoize:
+    begin
+      if Count = 0 then
+      begin
+        Methods.MoveNext := @TIteratorBlock<T>.MoveNextMemoize;
+        DoMoveNext := @TIteratorBlock.GetEnumeratorMemoize;
+      end
+      else
+        DoMoveNext := @TIteratorBlock<T>.MoveNextMemoize;
     end;
     TIteratorKind.Ordered:
     begin
@@ -3179,7 +3229,10 @@ function TIteratorBlock<T>.Finalize: Boolean;
 begin
   Enumerator := nil;
   Source := nil;
-  Predicate := nil;
+  if Kind <> Memoize then
+    Predicate := nil
+  else
+    Pointer(Predicate) := nil;
   Items := nil;
 {$IFDEF DELPHIXE7_UP}
   if IsManagedType(T) then
@@ -3280,6 +3333,44 @@ begin
       Dec(Count);
     end;
   end;
+end;
+
+function TIteratorBlock<T>.MoveNextMemoize: Boolean;
+var
+  iterator: ^TMemoizeIterator<T>;
+  count, capacity: NativeInt;
+begin
+  iterator := Pointer(Predicate);
+  count := iterator.Count and CountMask;
+  if Index >= count then
+  begin
+    if iterator.Enumerator = nil then
+      Exit(False);
+
+    if not iterator.Enumerator.MoveNext then
+    begin
+      iterator.Enumerator := nil;
+      Exit(False);
+    end;
+
+    capacity := DynArrayLength(iterator.Items);
+    if count >= capacity then
+    begin
+      capacity := GrowCapacity(capacity);
+      SetLength(iterator.Items, capacity);
+    end;
+    {$IF defined(DELPHIXE7_UP) and defined(MSWINDOWS)}
+    if IsManagedType(T) then
+      IEnumeratorInternal(iterator.Enumerator).GetCurrent(iterator.Items[count])
+    else
+    {$IFEND}
+    iterator.Items[count] := iterator.Enumerator.Current;
+    Inc(iterator.Count);
+  end;
+
+  Current := iterator.Items[Index];
+  Inc(Index);
+  Result := True;
 end;
 
 function TIteratorBlock<T>.MoveNextOrdered: Boolean;

@@ -657,6 +657,14 @@ type
     function Min(const comparer: TComparison<T>): T; overload;
 
     /// <summary>
+    ///   Creates a sequence that lazily caches the source as it is iterated
+    ///   for the first time, reusing the cache thereafter for future
+    ///   re-iterations. If the source is already cached or buffered then it
+    ///   is returned verbatim.
+    /// </summary>
+    function Memoize: IEnumerable<T>;
+
+    /// <summary>
     ///   Sorts the elements of a sequence in ascending order using the default
     ///   comparer for their type.
     /// </summary>
