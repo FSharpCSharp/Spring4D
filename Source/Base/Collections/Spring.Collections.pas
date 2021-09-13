@@ -3374,6 +3374,12 @@ type
     class procedure InternalFrom_Interface_DynArray(source: Pointer; var result; elementType: PTypeInfo); static;
     class procedure InternalFrom_Interface_OpenArray(source: Pointer; count: Integer; var result; elementType: PTypeInfo); static;
   public
+    class function Aggregate<TSource, TAccumulate>(const source: IEnumerable<TSource>;
+      const seed: TAccumulate; const func: Func<TAccumulate, TSource, TAccumulate>): TAccumulate; overload; static;
+    class function Aggregate<TSource, TAccumulate, TResult>(const source: IEnumerable<TSource>;
+      const seed: TAccumulate; const func: Func<TAccumulate, TSource, TAccumulate>;
+      const resultSelector: Func<TAccumulate, TResult>): TResult; overload; static;
+
     class function CombinePredicates<T>(const predicate1, predicate2: Predicate<T>): Predicate<T>; static;
 
     /// <summary>
@@ -3434,6 +3440,22 @@ type
 
     class function SelectMany<T, TResult>(const source: IEnumerable<T>;
       const selector: Func<T, IEnumerable<TResult>>): IEnumerable<TResult>; overload; static;
+
+    class function Sum(const source: IEnumerable<Integer>): Integer; overload; static;
+    class function Sum(const source: IEnumerable<Int64>): Int64; overload; static;
+    class function Sum(const source: IEnumerable<Single>): Single; overload; static;
+    class function Sum(const source: IEnumerable<Double>): Double; overload; static;
+    class function Sum(const source: IEnumerable<Currency>): Currency; overload; static;
+    class function Sum<TSource>(const source: IEnumerable<TSource>;
+      const selector: Func<TSource, Integer>): Integer; overload; static;
+    class function Sum<TSource>(const source: IEnumerable<TSource>;
+      const selector: Func<TSource, Int64>): Int64; overload; static;
+    class function Sum<TSource>(const source: IEnumerable<TSource>;
+      const selector: Func<TSource, Single>): Single; overload; static;
+    class function Sum<TSource>(const source: IEnumerable<TSource>;
+      const selector: Func<TSource, Double>): Double; overload; static;
+    class function Sum<TSource>(const source: IEnumerable<TSource>;
+      const selector: Func<TSource, Currency>): Currency; overload; static;
 
     class function ToDictionary<TSource, TKey>(const source: IEnumerable<TSource>;
       const keySelector: Func<TSource, TKey>): IDictionary<TKey, TSource>; overload; static;
@@ -7232,6 +7254,40 @@ end;
 
 {$REGION 'TEnumerable'}
 
+class function TEnumerable.Aggregate<TSource, TAccumulate>(
+  const source: IEnumerable<TSource>; const seed: TAccumulate;
+  const func: Func<TAccumulate, TSource, TAccumulate>): TAccumulate;
+var
+  enumerator: IEnumerator<TSource>;
+begin
+  if not Assigned(source) then RaiseHelper.ArgumentNil(ExceptionArgument.source);
+  if not Assigned(func) then RaiseHelper.ArgumentNil(ExceptionArgument.func);
+
+  Result := seed;
+  enumerator := source.GetEnumerator;
+  while enumerator.MoveNext do
+    Result := func(Result, enumerator.Current);
+end;
+
+class function TEnumerable.Aggregate<TSource, TAccumulate, TResult>(
+  const source: IEnumerable<TSource>; const seed: TAccumulate;
+  const func: Func<TAccumulate, TSource, TAccumulate>;
+  const resultSelector: Func<TAccumulate, TResult>): TResult;
+var
+  enumerator: IEnumerator<TSource>;
+  res: TAccumulate;
+begin
+  if not Assigned(source) then RaiseHelper.ArgumentNil(ExceptionArgument.source);
+  if not Assigned(func) then RaiseHelper.ArgumentNil(ExceptionArgument.func);
+  if not Assigned(resultSelector) then RaiseHelper.ArgumentNil(ExceptionArgument.resultSelector);
+
+  res := seed;
+  enumerator := source.GetEnumerator;
+  while enumerator.MoveNext do
+    res := func(res, enumerator.Current);
+  Result := resultSelector(res);
+end;
+
 class function TEnumerable.CombinePredicates<T>(const predicate1,
   predicate2: Predicate<T>): Predicate<T>;
 begin
@@ -7457,6 +7513,136 @@ class function TEnumerable.SelectMany<T, TResult>(const source: IEnumerable<T>;
   const selector: Func<T, IEnumerable<TResult>>): IEnumerable<TResult>;
 begin
   Result := TSelectManyIterator<T, TResult>.Create(source, selector);
+end;
+
+class function TEnumerable.Sum(const source: IEnumerable<Integer>): Integer;
+var
+  enumerator: IEnumerator<Integer>;
+begin
+  if not Assigned(source) then RaiseHelper.ArgumentNil(ExceptionArgument.source);
+
+  Result := 0;
+  enumerator := source.GetEnumerator;
+  while enumerator.MoveNext do
+    Result := Result + enumerator.Current;
+end;
+
+class function TEnumerable.Sum(const source: IEnumerable<Int64>): Int64;
+var
+  enumerator: IEnumerator<Int64>;
+begin
+  if not Assigned(source) then RaiseHelper.ArgumentNil(ExceptionArgument.source);
+
+  Result := 0;
+  enumerator := source.GetEnumerator;
+  while enumerator.MoveNext do
+    Result := Result + enumerator.Current;
+end;
+
+class function TEnumerable.Sum(const source: IEnumerable<Single>): Single;
+var
+  enumerator: IEnumerator<Single>;
+begin
+  if not Assigned(source) then RaiseHelper.ArgumentNil(ExceptionArgument.source);
+
+  Result := 0;
+  enumerator := source.GetEnumerator;
+  while enumerator.MoveNext do
+    Result := Result + enumerator.Current;
+end;
+
+class function TEnumerable.Sum(const source: IEnumerable<Double>): Double;
+var
+  enumerator: IEnumerator<Double>;
+begin
+  if not Assigned(source) then RaiseHelper.ArgumentNil(ExceptionArgument.source);
+
+  Result := 0;
+  enumerator := source.GetEnumerator;
+  while enumerator.MoveNext do
+    Result := Result + enumerator.Current;
+end;
+
+class function TEnumerable.Sum(const source: IEnumerable<Currency>): Currency;
+var
+  enumerator: IEnumerator<Currency>;
+begin
+  if not Assigned(source) then RaiseHelper.ArgumentNil(ExceptionArgument.source);
+
+  Result := 0;
+  enumerator := source.GetEnumerator;
+  while enumerator.MoveNext do
+    Result := Result + enumerator.Current;
+end;
+
+class function TEnumerable.Sum<TSource>(const source: IEnumerable<TSource>;
+  const selector: Func<TSource, Integer>): Integer;
+var
+  enumerator: IEnumerator<TSource>;
+begin
+  if not Assigned(source) then RaiseHelper.ArgumentNil(ExceptionArgument.source);
+  if not Assigned(selector) then RaiseHelper.ArgumentNil(ExceptionArgument.selector);
+
+  Result := 0;
+  enumerator := source.GetEnumerator;
+  while enumerator.MoveNext do
+    Result := Result + selector(enumerator.Current);
+end;
+
+class function TEnumerable.Sum<TSource>(const source: IEnumerable<TSource>;
+  const selector: Func<TSource, Int64>): Int64;
+var
+  enumerator: IEnumerator<TSource>;
+begin
+  if not Assigned(source) then RaiseHelper.ArgumentNil(ExceptionArgument.source);
+  if not Assigned(selector) then RaiseHelper.ArgumentNil(ExceptionArgument.selector);
+
+  Result := 0;
+  enumerator := source.GetEnumerator;
+  while enumerator.MoveNext do
+    Result := Result + selector(enumerator.Current);
+end;
+
+class function TEnumerable.Sum<TSource>(const source: IEnumerable<TSource>;
+  const selector: Func<TSource, Single>): Single;
+var
+  enumerator: IEnumerator<TSource>;
+begin
+  if not Assigned(source) then RaiseHelper.ArgumentNil(ExceptionArgument.source);
+  if not Assigned(selector) then RaiseHelper.ArgumentNil(ExceptionArgument.selector);
+
+  Result := 0;
+  enumerator := source.GetEnumerator;
+  while enumerator.MoveNext do
+    Result := Result + selector(enumerator.Current);
+end;
+
+class function TEnumerable.Sum<TSource>(const source: IEnumerable<TSource>;
+  const selector: Func<TSource, Double>): Double;
+var
+  enumerator: IEnumerator<TSource>;
+begin
+  if not Assigned(source) then RaiseHelper.ArgumentNil(ExceptionArgument.source);
+  if not Assigned(selector) then RaiseHelper.ArgumentNil(ExceptionArgument.selector);
+
+  Result := 0;
+  enumerator := source.GetEnumerator;
+  while enumerator.MoveNext do
+    Result := Result + selector(enumerator.Current);
+end;
+
+class function TEnumerable.Sum<TSource>(const source: IEnumerable<TSource>;
+  const selector: Func<TSource, Currency>): Currency;
+var
+  enumerator: IEnumerator<TSource>;
+begin
+  if not Assigned(source) then RaiseHelper.ArgumentNil(ExceptionArgument.source);
+  if not Assigned(selector) then RaiseHelper.ArgumentNil(ExceptionArgument.selector);
+
+  Result := 0;
+  enumerator := source.GetEnumerator;
+  while enumerator.MoveNext do
+    Result := Result + selector(enumerator.Current);
 end;
 
 class function TEnumerable.ToDictionary<TSource, TKey>(
