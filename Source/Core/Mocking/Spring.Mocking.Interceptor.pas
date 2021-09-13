@@ -133,7 +133,7 @@ begin
     else if values[i].IsInstance and values[i].IsEmpty then
       Result := Result + 'nil'
     else
-      Result := Result + values[i].ToString;
+      Result := Result + FormatValue(values[i]);
   end;
 end;
 

@@ -3382,7 +3382,12 @@ begin
     end;
     tkArray, tkDynArray:
       Result := FormatArray(value);
-    tkChar, tkString, tkWChar, tkLString, tkWString, tkUString:
+    tkChar, tkWChar:
+      if TValueData(value).FAsUWord < 20 then
+        Result := '#' + IntToStr(TValueData(value).FAsUWord)
+      else
+        Result := QuotedStr(value.ToString);
+    tkString, tkLString, tkWString, tkUString:
       Result := QuotedStr(value.ToString);
     tkClassRef:
       Result := value.AsClass.ClassName;
@@ -5659,11 +5664,12 @@ begin
     Result := RawEquals(left.TypeInfo.RttiType);
 end;
 
-function EqualsDynArray2DynArray(const left, right: TValue): Boolean;
+function EqualsArray2Array(const left, right: TValue): Boolean;
 var
   len, i: Integer;
 begin
-  if PPointer(left.GetReferenceToRawData)^ = PPointer(right.GetReferenceToRawData)^ then
+  if (left.Kind = tkDynArray) and (right.Kind = tkDynArray)
+    and (PPointer(left.GetReferenceToRawData)^ = PPointer(right.GetReferenceToRawData)^) then
     Exit(True);
   len := left.GetArrayLength;
   if len <> right.GetArrayLength then
@@ -5872,9 +5878,9 @@ const
       // tkString, tkSet, tkClass, tkMethod, tkWChar,
       EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
       // tkLString, tkWString, tkVariant, tkArray, tkRecord,
-      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      EqualsFail, EqualsFail, EqualsFail, EqualsArray2Array, EqualsFail,
       // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
-      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      EqualsFail, EqualsFail, EqualsArray2Array, EqualsFail, EqualsFail,
       // tkPointer, tkProcedure
       EqualsFail, EqualsFail {$IF Declared(tkMRecord)}, EqualsFail{$IFEND}
     ),
@@ -5924,9 +5930,9 @@ const
       // tkString, tkSet, tkClass, tkMethod, tkWChar,
       EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
       // tkLString, tkWString, tkVariant, tkArray, tkRecord,
-      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      EqualsFail, EqualsFail, EqualsFail, EqualsArray2Array, EqualsFail,
       // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
-      EqualsFail, EqualsFail, EqualsDynArray2DynArray, EqualsFail, EqualsFail,
+      EqualsFail, EqualsFail, EqualsArray2Array, EqualsFail, EqualsFail,
       // tkPointer, tkProcedure
       EqualsFail, EqualsFail {$IF Declared(tkMRecord)}, EqualsFail{$IFEND}
     ),

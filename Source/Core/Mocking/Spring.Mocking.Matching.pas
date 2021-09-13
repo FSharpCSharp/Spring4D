@@ -280,8 +280,15 @@ procedure SetIndexArray(typeInfo: PTypeInfo; index: Integer; var Result);
 const
   len: NativeInt = 1;
 begin
-  DynArraySetLength(PPointer(@Result)^, typeInfo, 1, @len);
-  TMatcherFactory.SetIndex(typeInfo.TypeData.DynArrElType^, index, PPointer(@Result)^^);
+  case typeInfo.Kind of
+    tkArray:
+      TMatcherFactory.SetIndex(typeInfo.TypeData.ArrayData.ElType^, index, Result);
+    tkDynArray:
+    begin
+      DynArraySetLength(PPointer(@Result)^, typeInfo, 1, @len);
+      TMatcherFactory.SetIndex(typeInfo.TypeData.DynArrElType^, index, PPointer(@Result)^^);
+    end;
+  end;
 end;
 
 procedure SetIndexVariant(typeInfo: PTypeInfo; index: Integer; var Result); //FI:O804
@@ -361,7 +368,7 @@ const
   Handlers: array[TTypeKind] of function(const v: TValue): Integer = (
     GetIndexFail, GetIndexOrdinal, GetIndexOrdinal, GetIndexOrdinal, GetIndexFloat,
     GetIndexFail, GetIndexOrdinal, GetIndexObject, GetIndexFail, GetIndexString,
-    GetIndexString, GetIndexString, GetIndexVariant, GetIndexFail, GetIndexRecord,
+    GetIndexString, GetIndexString, GetIndexVariant, GetIndexArray, GetIndexRecord,
     GetIndexInterface, GetIndexOrdinal, GetIndexArray, GetIndexString, GetIndexFail,
     GetIndexPointer, GetIndexFail {$IF Declared(tkMRecord)}, GetIndexFail{$IFEND});
 begin
@@ -373,7 +380,7 @@ const
   Handlers: array[TTypeKind] of procedure (typeInfo: PTypeInfo; index: Integer; var Result) = (
     SetIndexFail, SetIndexOrdinal, SetIndexOrdinal, SetIndexOrdinal, SetIndexFloat,
     SetIndexFail, SetIndexOrdinal, SetIndexObject, SetIndexFail, SetIndexString,
-    SetIndexString, SetIndexString, SetIndexVariant, SetIndexFail, SetIndexRecord,
+    SetIndexString, SetIndexString, SetIndexVariant, SetIndexArray, SetIndexRecord,
     SetIndexInterface, SetIndexOrdinal, SetIndexArray, SetIndexString, SetIndexFail,
     SetIndexPointer, SetIndexFail {$IF Declared(tkMRecord)}, SetIndexFail{$IFEND});
 begin

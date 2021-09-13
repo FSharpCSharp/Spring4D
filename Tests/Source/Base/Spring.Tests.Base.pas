@@ -469,6 +469,8 @@ type
 
     procedure EqualsReturnsTrueForEqualTValue;
 
+    procedure EqualsReturnsTrueForEqualArrays;
+
     procedure FromVariantProperlyHandlesVariantArrays;
 
     procedure ConvertStringToIntegerFailsForInvalidString;
@@ -2998,6 +3000,30 @@ begin
   fSUT := TValue.From<Pointer>(Self);
   fValue := TValue.From<Pointer>(Self);
   DoCheckEquals;
+end;
+
+procedure TTestValueHelper.EqualsReturnsTrueForEqualArrays;
+type
+  TCharArray8 = array[0..7] of Char;
+var
+  chars: TArray<Char>;
+begin
+  fSUT := TValue.From<TCharArray8>('abcdefgh');
+  fValue := TValue.From<TCharArray8>('abcdefgh');
+  DoCheckEquals;
+
+  chars := TArray<Char>.Create('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h');
+  fValue := TValue.From<TArray<Char>>(chars);
+  DoCheckEquals;
+
+  fSUT := TValue.From<TArray<Char>>(chars);
+  DoCheckEquals;
+
+  fValue := TValue.From<TCharArray8>('abcdefgh');
+  DoCheckEquals;
+
+  fValue := TValue.From<TCharArray8>('abcdefg');
+  DoCheckEquals(False);
 end;
 
 procedure TTestValueHelper.EqualsReturnsTrueForEqualTValue;
