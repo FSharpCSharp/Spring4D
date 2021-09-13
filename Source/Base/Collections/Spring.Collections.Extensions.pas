@@ -235,7 +235,7 @@ type
     TEnumerator = record
       Vtable: Pointer;
       RefCount: Integer;
-      fCurrent, fMax: Integer;
+      fCurrent, fEnd: Integer;
       function GetCurrent: Integer;
       function MoveNext: Boolean;
       function _Release: Integer; stdcall;
@@ -1559,8 +1559,8 @@ begin
     RefCount := 1;
     {$Q-}
     fCurrent := start - 1;
+    fEnd := start + count;
     {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
-    fMax := fCurrent + count;
   end;
 end;
 
@@ -1570,9 +1570,15 @@ begin
 end;
 
 function TRangeIterator.TEnumerator.MoveNext: Boolean;
+var
+  current: Integer;
 begin
-  Result := fCurrent < fMax;
-  Inc(fCurrent, Byte(Result));
+  current := fCurrent;
+  {$Q-}
+  Inc(current);
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+  fCurrent := current;
+  Result := current <> fEnd;
 end;
 
 function TRangeIterator.TEnumerator._Release: Integer;
