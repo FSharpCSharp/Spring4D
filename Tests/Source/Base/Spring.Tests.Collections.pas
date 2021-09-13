@@ -123,6 +123,7 @@ type
     procedure TestIsSupersetOf;
     procedure TestOverlaps;
     procedure TestExtract;
+    procedure Issue368;
   end;
 
   TTestIntegerList = class(TTestCase)
@@ -1221,6 +1222,34 @@ begin
   CheckEquals(Length(values), collection.Count);
   for value in values do
     CheckTrue(collection.Contains(value));
+end;
+
+procedure TTestNormalHashSet.Issue368;
+begin
+  fSet1 := Tcollections.CreateSet<Integer>;
+
+  CheckTrue(fSet1.Add(0));
+  CheckEquals(1, fSet1.Count);
+  CheckTrue(fSet1.Remove(0));
+  CheckEquals(0, fSet1.Count);
+  CheckTrue(fSet1.Add(0));
+  CheckEquals(1, fSet1.Count);
+  CheckTrue(fSet1.Remove(0));
+  CheckEquals(0, fSet1.Count);
+  CheckTrue(fSet1.Add(8));
+
+  CheckTrue(fSet1.Add(1));
+  CheckTrue(fSet1.Add(2));
+  CheckTrue(fSet1.Add(3));
+  CheckEquals(4, fSet1.Count);
+  CheckTrue(fSet1.Remove(3));
+  CheckEquals(3, fSet1.Count);
+  CheckTrue(fSet1.Add(4));
+  CheckTrue(fSet1.Add(5));
+  CheckTrue(fSet1.Add(6));
+  CheckEquals(6, fSet1.Capacity);
+
+  CheckFalse(fSet1.Contains(7));
 end;
 
 procedure TTestNormalHashSet.NotifyChange(Sender: TObject; const item: Integer;

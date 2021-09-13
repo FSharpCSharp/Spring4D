@@ -156,7 +156,7 @@ type
 
   TStackData = record
     hashTable: PHashTable;
-    hashCode, perturb: Integer;
+    hashCode, perturb, bucketIndex: Integer;
   end;
 
 const
@@ -405,8 +405,8 @@ begin
 
     // repopulate the bucket array
     SetLength(fBuckets, newBucketCount);
-    FillChar(fBuckets[0], newBucketCount * SizeOf(Integer), $FF);
   end;
+  FillChar(fBuckets[0], newBucketCount * SizeOf(Integer), $FF);
 
   item := fItems;
   mask := PInteger(@PByte(Buckets)[-SizeOf(NativeInt)])^ - 1;
@@ -466,12 +466,15 @@ begin
 findAgain:
   hashCode := stackData.hashCode;
   stackData.perturb := hashCode;
+  stackData.bucketIndex := -1;
   mask := PInteger(@PByte(stackData.hashTable.Buckets)[-SizeOf(NativeInt)])^ - 1;
   bucketIndex := hashCode and mask;
   goto loopStart;
 
 deletedFound:
-  if options and InsertNonExisting <> 0 then goto notFound;
+  if options and InsertNonExisting <> 0 then
+    if stackData.bucketIndex < 0 then
+      stackData.bucketIndex := bucketIndex;
 
   repeat
     // lookup Item and deal with collisions
@@ -488,9 +491,7 @@ deletedFound:
     loopStart:
       hashTable := stackData.hashTable;
       itemIndex := hashTable.Buckets[bucketIndex];
-      if itemIndex = UsedBucket then
-        if options and InsertNonExisting <> 0 then goto notFound
-        else Continue;
+      if itemIndex = UsedBucket then goto deletedFound;
       if itemIndex = EmptyBucket then goto notFound;
       if (itemIndex xor hashCode) and not mask = 0 then Break;
     until False;
@@ -543,6 +544,8 @@ deletedFound:
           {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
 
           itemIndex := hashTable.ItemCount;
+          if stackData.bucketIndex >= 0 then
+            bucketIndex := stackData.bucketIndex;
           hashTable.Buckets[bucketIndex] := itemIndex or (hashCode and not mask);
           Inc(hashTable.fCount);
           Inc(hashTable.fItemCount);
@@ -605,12 +608,15 @@ begin
 
 findAgain:
   stackData.perturb := hashCode;
+  stackData.bucketIndex := -1;
   mask := PInteger(@PByte(stackData.hashTable.Buckets)[-SizeOf(NativeInt)])^ - 1;
   bucketIndex := hashCode and mask;
   goto loopStart;
 
 deletedFound:
-  if options and InsertNonExisting <> 0 then goto notFound;
+  if options and InsertNonExisting <> 0 then
+    if stackData.bucketIndex < 0 then
+      stackData.bucketIndex := bucketIndex;
 
   repeat
     // lookup Item and deal with collisions
@@ -704,6 +710,8 @@ deletedFound:
           {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
 
           itemIndex := hashTable.fItemCount;
+          if stackData.bucketIndex >= 0 then
+            bucketIndex := stackData.bucketIndex;
           hashTable.Buckets[bucketIndex] := itemIndex or (hashCode and not mask);
           Inc(hashTable.fCount);
           Inc(hashTable.fItemCount);
