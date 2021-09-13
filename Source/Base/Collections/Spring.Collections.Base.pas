@@ -1716,30 +1716,28 @@ begin
 end;
 
 function TEnumerableBase<T>.Sum: T;
-var
-  enumerator: IEnumerator<T>;
-  item: T;
 begin
-  Result := Default(T);
-  enumerator := IEnumerable<T>(this).GetEnumerator;
-  while enumerator.MoveNext do
-  begin
-    {$IFDEF RSP31615}
-    if IsManagedType(T) then
-      IEnumeratorInternal(enumerator).GetCurrent(item)
-    else
+  if TypeInfo(T) = TypeInfo(Integer) then
+    PInteger(@Result)^ := TEnumerable.Sum(IEnumerable<Integer>(this))
+  else if TypeInfo(T) = TypeInfo(Int64) then
+    PInt64(@Result)^ := TEnumerable.Sum(IEnumerable<Int64>(this))
+  else if TypeInfo(T) = TypeInfo(NativeInt) then
+    {$IFDEF CPU32BITS}
+    PInteger(@Result)^ := TEnumerable.Sum(IEnumerable<Integer>(this))
+    {$ELSE}
+    PInt64(@Result)^ := TEnumerable.Sum(IEnumerable<Int64>(this))
     {$ENDIF}
-    item := enumerator.Current;
-    case TType.Kind<T> of
-      tkInteger: PInteger(@Result)^ := PInteger(@Result)^ + PInteger(@item)^;
-      tkInt64: PInt64(@Result)^ := PInt64(@Result)^ + PInt64(@item)^;
-      tkFloat:
-      case GetTypeData(TypeInfo(T)).FloatType of
-        ftSingle: PSingle(@Result)^ := PSingle(@Result)^ + PSingle(@item)^;
-        ftDouble: PDouble(@Result)^ := PDouble(@Result)^ + PDouble(@item)^;
-      end;
-    end;
-  end;
+  else if TypeInfo(T) = TypeInfo(System.Single) then
+    PSingle(@Result)^ := TEnumerable.Sum(IEnumerable<System.Single>(this))
+  else if TypeInfo(T) = TypeInfo(Double) then
+    PDouble(@Result)^ := TEnumerable.Sum(IEnumerable<Double>(this))
+  else if TypeInfo(T) = TypeInfo(Currency) then
+    PCurrency(@Result)^ := TEnumerable.Sum(IEnumerable<Currency>(this))
+  else
+    // if T is not of any of the above types this way of calling Sum is not supported
+    // consider using TEnumerable.Sum with a selector function to turn the values
+    // to any of the supported types for calculating the sum
+    RaiseHelper.NotSupported;
 end;
 
 function TEnumerableBase<T>.Take(count: Integer): IEnumerable<T>;
