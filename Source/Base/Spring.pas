@@ -4791,7 +4791,7 @@ begin
 {$IFDEF USE_VMTAUTOTABLE}
   InitTables := TObjectList<TInitTable>.Create;
 {$ELSE}
-  InitTables := TObjectDictionary<TClass,TInitTable>.Create([doOwnsValues]);
+  InitTables := TObjectDictionary<TClass,TInitTable>.Create([Generics.Collections.doOwnsValues]);
 {$ENDIF}
 end;
 

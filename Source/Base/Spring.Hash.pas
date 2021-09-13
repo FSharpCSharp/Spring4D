@@ -28,6 +28,8 @@ unit Spring.Hash;
 
 interface
 
+{$O+,W-,Q-,R-}
+
 function MurmurHash3(const key; len: Cardinal; seed: Integer = 0): Integer;
 
 function MurmurHash3_Int32(const key: Integer): Integer; //inline;
@@ -60,10 +62,10 @@ begin
   if len >= 16 then
   begin
     limit := pEnd - 16;
-    v1 := Seed + Prime1 + Prime2;
-    v2 := Seed + Prime2;
-    v3 := Seed;
-    v4 := Seed - Prime1;
+    v1 := Cardinal(seed) + Prime1 + Prime2;
+    v2 := Cardinal(seed) + Prime2;
+    v3 := Cardinal(seed);
+    v4 := Cardinal(seed) - Prime1;
 
     repeat
       v1 := Prime1 * RotateLeft(v1 + Prime2 * PCardinal(data)[0], 13);
@@ -79,13 +81,13 @@ begin
               RotateLeft(v4, 18);
   end
   else
-    Result := Seed + Prime5;
+    Result := Cardinal(seed) + Prime5;
 
   Inc(Result, len);
 
   while data <= pEnd - 4 do
   begin
-    Result := Result + PCardinal(data)^ * Prime3;
+    Result := Cardinal(Result) + PCardinal(data)^ * Prime3;
     Result := RotateLeft(Result, 17) * Prime4;
     Inc(data, 4);
   end;
@@ -98,9 +100,9 @@ begin
   end;
 
   Result := Result xor (Result shr 15);
-  Result := Result * Prime2;
+  Result := Cardinal(Result) * Prime2;
   Result := Result xor (Result shr 13);
-  Result := Result * Prime3;
+  Result := Cardinal(Result) * Prime3;
   Result := Result xor (Result shr 16);
 end;
 {$ELSEIF defined(CPUX86)}
@@ -339,15 +341,19 @@ const
   f1 = $85EBCA6B;
   f2 = $C2B2AE35;
 {$IF not defined(ASSEMBLER)}
+var
+  res: Cardinal;
 begin
-  Result := RotateLeft(key * c1, r1);
-  Result := RotateLeft(Result * c2, r2);
+  res := Cardinal(key);
+  res := RotateLeft(res * c1, r1);
+  res := RotateLeft(res * c2, r2);
 
-  Result := (Result * m + n) xor 4;
+  res := (res * m + n) xor 4;
 
-  Result := (Result xor (Result shr 16)) * f1;
-  Result := (Result xor (Result shr 13)) * f2;
-  Result := Result xor (Result shr 16);
+  res := (res xor (res shr 16)) * f1;
+  res := (res xor (res shr 13)) * f2;
+  res := res xor (res shr 16);
+  Result := res;
 end;
 {$ELSEIF defined(CPUX86)}
 asm
@@ -420,9 +426,9 @@ begin
     k := RotateLeft(k, r1);
     k := k * c2;
 
-    Result := Result xor k;
+    Result := Cardinal(Result) xor k;
     Result := RotateLeft(Result, r2);
-    Result := Result * m + n;
+    Result := Cardinal(Result) * m + n;
 
     Inc(data);
   end;
@@ -447,16 +453,16 @@ begin
       k := k * c1;
       k := RotateLeft(k, r1);
       k := k * c2;
-      Result := Result xor k;
+      Result := Cardinal(Result) xor k;
     end;
   end;
 
-  Result := Result xor len;
+  Result := Cardinal(Result) xor len;
 
   Result := Result xor (Result shr 16);
-  Result := Result * f1;
+  Result := Cardinal(Result) * f1;
   Result := Result xor (Result shr 13);
-  Result := Result * f2;
+  Result := Cardinal(Result) * f2;
   Result := Result xor (Result shr 16);
 end;
 {$ELSEIF defined(CPUX86)}
