@@ -282,6 +282,12 @@ type
     function AsObject: TObject;
 
     /// <summary>
+    ///   Creates a new array which is filled with the elements in the
+    ///   collection.
+    /// </summary>
+    function ToArray: TArray<T>;
+
+    /// <summary>
     ///   Returns the specified comparer for this instance.
     /// </summary>
     /// <returns>
@@ -773,12 +779,6 @@ type
     ///   function.
     /// </summary>
     function TakeWhile(const predicate: Func<T, Integer, Boolean>): IEnumerable<T>; overload;
-
-    /// <summary>
-    ///   Creates a new array which is filled with the elements in the
-    ///   collection.
-    /// </summary>
-    function ToArray: TArray<T>;
 
     /// <summary>
     ///   Try getting the element at a specified index in a sequence.

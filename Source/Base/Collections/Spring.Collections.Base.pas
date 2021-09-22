@@ -45,6 +45,12 @@ type
   {$IFDEF MSWINDOWS}
   IEnumerableInternal = interface
     procedure GetEnumerator(var result);
+    function GetCount: Integer;
+    function GetElementType: PTypeInfo;
+    function GetIsEmpty: Boolean;
+    function GetCountFast: Integer;
+    function AsObject: TObject;
+    procedure ToArray(var result);
   end;
   IEnumeratorInternal = interface
     procedure GetCurrent(var result);
@@ -3504,7 +3510,11 @@ end;
 
 function TIteratorBlock<T>.ToArray: Boolean;
 begin
+  {$IFDEF MSWINDOWS}
+  IEnumerableInternal(Source).ToArray(Items);
+  {$ELSE}
   Items := Source.ToArray;
+  {$ENDIF}
   Count := DynArrayLength(Items);
   case Kind of
     TIteratorKind.Ordered:
