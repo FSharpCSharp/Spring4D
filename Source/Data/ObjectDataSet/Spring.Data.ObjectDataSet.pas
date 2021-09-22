@@ -911,7 +911,10 @@ end;
 procedure TObjectDataSet.SetDataList(const value: IObjectList);
 begin
   fDataList := value;
-  fItemTypeInfo := fDataList.ElementType;
+  if Assigned(fDataList) then
+    fItemTypeInfo := fDataList.ElementType
+  else
+    fItemTypeInfo := nil;
   IndexList.DataList := fDataList;
   RegisterChangeHandler;
   if Active then
