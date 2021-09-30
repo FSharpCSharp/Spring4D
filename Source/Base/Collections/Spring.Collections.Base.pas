@@ -108,7 +108,6 @@ type
     function GetCountFast: Integer;
     function GetIsEmpty: Boolean;
   {$ENDREGION}
-    function IsCountInRange(min, max, limit: Integer): Boolean;
   public
     class function NewInstance: TObject; override;
 
@@ -913,15 +912,50 @@ begin
   TEnumerableBase(Result).this := Pointer(PByte(Result) + GetInterfaceEntry(IEnumerableOfTGuid).IOffset);
 end;
 
-function TEnumerableBase.Any: Boolean;
+function IsCountInRange(const this: IEnumerable; min, max, limit: Integer): Boolean;
+
+  function SkipAndCountSlow(const this: IEnumerable; limit: Integer): Integer;
+  var
+    enumerator: IEnumerator;
+  begin
+    Result := 0;
+    enumerator := this.GetEnumerator;
+    while (Result < limit) and enumerator.MoveNext do
+      Inc(Result);
+  end;
+
+var
+  count: Integer;
 begin
-  Result := IsCountInRange(1, MaxInt, 1);
+  count := this.GetCountFast;
+  if count < 0 then
+    count := SkipAndCountSlow(this, limit);
+  Result := {$B+}(count >= min) and (count <= max);{$B-}
+end;
+
+function HasAnyItems(const this: IEnumerable): Boolean;
+var
+  enumerator: IEnumerator;
+begin
+  enumerator := this.GetEnumerator;
+  Result := enumerator.MoveNext;
+end;
+
+function TEnumerableBase.Any: Boolean;
+var
+  count: Integer;
+begin
+  count := IEnumerable(this).GetCountFast;
+  if count >= 0 then
+    Result := count > 0
+  else
+    Result := HasAnyItems(IEnumerable(this));
 end;
 
 function TEnumerableBase.AtLeast(count: Integer): Boolean;
 begin
   if count >= 0 then
-    Result := IsCountInRange(count, MaxInt, count)
+    Result := IsCountInRange(IEnumerable(this), count, MaxInt, count)
   else
     Result := RaiseHelper.ArgumentOutOfRange(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
 end;
@@ -929,7 +963,7 @@ end;
 function TEnumerableBase.AtMost(count: Integer): Boolean;
 begin
   if count >= 0 then
-    Result := IsCountInRange(0, count, count + 1)
+    Result := IsCountInRange(IEnumerable(this), 0, count, count + 1)
   else
     Result := RaiseHelper.ArgumentOutOfRange(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
 end;
@@ -938,7 +972,7 @@ function TEnumerableBase.Between(min, max: Integer): Boolean;
 begin
   if min >= 0 then
     if max >= min then
-      Result := IsCountInRange(min, max, max + 1)
+      Result := IsCountInRange(IEnumerable(this), min, max, max + 1)
     else
       Result := RaiseHelper.ArgumentOutOfRange(ExceptionArgument.max)
   else
@@ -948,7 +982,7 @@ end;
 function TEnumerableBase.Exactly(count: Integer): Boolean;
 begin
   if count >= 0 then
-    Result := IsCountInRange(count, count, count + 1)
+    Result := IsCountInRange(IEnumerable(this), count, count, count + 1)
   else
     Result := RaiseHelper.ArgumentOutOfRange(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
 end;
@@ -972,29 +1006,14 @@ begin
 end;
 
 function TEnumerableBase.GetIsEmpty: Boolean;
-begin
-  Result := IsCountInRange(0, 0, 1);
-end;
-
-function TEnumerableBase.IsCountInRange(min, max, limit: Integer): Boolean;
-
-  function SkipAndCountSlow(const this: IEnumerable; limit: Integer): Integer;
-  var
-    enumerator: IEnumerator;
-  begin
-    Result := 0;
-    enumerator := this.GetEnumerator;
-    while (Result < limit) and enumerator.MoveNext do
-      Inc(Result);
-  end;
-
 var
   count: Integer;
 begin
   count := IEnumerable(this).GetCountFast;
-  if count < 0 then
-    count := SkipAndCountSlow(IEnumerable(this), limit);
-  Result := {$B+}(count >= min) and (count <= max);{$B-}
+  if count >= 0 then
+    Result := count = 0
+  else
+    Result := not HasAnyItems(IEnumerable(this));
 end;
 
 function TEnumerableBase.GetCountFast: Integer;

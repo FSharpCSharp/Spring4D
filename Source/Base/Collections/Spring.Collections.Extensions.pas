@@ -1509,11 +1509,19 @@ end;
 
 function TRangeIterator.ToArray: TArray<Integer>;
 var
-  i: Integer;
+  i, current: Integer;
+  values: PInteger;
 begin
   SetLength(Result, fCount);
+  values := Pointer(Result);
+  current := fStart;
   for i := 0 to fCount - 1 do
-    Result[i] := fStart + i;
+  begin
+    {$POINTERMATH ON}
+    values[i] := current;
+    {$POINTERMATH OFF}
+    Inc(current);
+  end;
 end;
 
 function TRangeIterator.TryGetElementAt(var value: Integer; index: Integer): Boolean;
