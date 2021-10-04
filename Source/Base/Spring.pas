@@ -2542,15 +2542,15 @@ type
     class procedure Reverse_Ref(const values: PByte; right: NativeInt; size: Integer); static;
     class procedure Reverse_Generic<T>(var values: array of T); static;
 
-    class procedure Shuffle_Int8(const values: PInt8; right: NativeInt); static;
-    class procedure Shuffle_Int16(const values: PInt16; right: NativeInt); static;
-    class procedure Shuffle_Int24(const values: PInt24; right: NativeInt); static;
-    class procedure Shuffle_Int32(const values: PInt32; right: NativeInt); static;
-    class procedure Shuffle_Int64(const values: PInt64; right: NativeInt); static;
-    class procedure Shuffle_Single(const values: PSingle; right: NativeInt); static;
-    class procedure Shuffle_Double(const values: PDouble; right: NativeInt); static;
-    class procedure Shuffle_Extended(const values: PExtended; right: NativeInt); static;
-    class procedure Shuffle_Method(const values: PMethodPointer; right: NativeInt); static;
+    class procedure Shuffle_Int8(const values: PInt8; hi: NativeInt); static;
+    class procedure Shuffle_Int16(const values: PInt16; hi: NativeInt); static;
+    class procedure Shuffle_Int24(const values: PInt24; hi: NativeInt); static;
+    class procedure Shuffle_Int32(const values: PInt32; hi: NativeInt); static;
+    class procedure Shuffle_Int64(const values: PInt64; hi: NativeInt); static;
+    class procedure Shuffle_Single(const values: PSingle; hi: NativeInt); static;
+    class procedure Shuffle_Double(const values: PDouble; hi: NativeInt); static;
+    class procedure Shuffle_Extended(const values: PExtended; hi: NativeInt); static;
+    class procedure Shuffle_Method(const values: PMethodPointer; hi: NativeInt); static;
     class procedure Shuffle_Ref(const values: PByte; hi: NativeInt; size: Integer); static;
     class procedure Shuffle_Generic<T>(var values: array of T); static;
   public
@@ -11782,13 +11782,15 @@ var
   left: NativeInt;
   temp: Int8;
 begin
-  for left := 0 to ((right + 1) shr 1) - 1 do
+  left := 0;
+  while left < right do
   begin
     {$POINTERMATH ON}
     temp := values[left];
     values[left] := values[right];
     values[right] := temp;
     {$POINTERMATH OFF}
+    Inc(left);
     Dec(right);
   end;
 end;
@@ -11798,13 +11800,15 @@ var
   left: NativeInt;
   temp: Int16;
 begin
-  for left := 0 to ((right + 1) shr 1) - 1 do
+  left := 0;
+  while left < right do
   begin
     {$POINTERMATH ON}
     temp := values[left];
     values[left] := values[right];
     values[right] := temp;
     {$POINTERMATH OFF}
+    Inc(left);
     Dec(right);
   end;
 end;
@@ -11814,13 +11818,15 @@ var
   left: NativeInt;
   temp: Int24;
 begin
-  for left := 0 to ((right + 1) shr 1) - 1 do
+  left := 0;
+  while left < right do
   begin
     {$POINTERMATH ON}
     temp := values[left];
     values[left] := values[right];
     values[right] := temp;
     {$POINTERMATH OFF}
+    Inc(left);
     Dec(right);
   end;
 end;
@@ -11830,13 +11836,15 @@ var
   left: NativeInt;
   temp: Int32;
 begin
-  for left := 0 to ((right + 1) shr 1) - 1 do
+  left := 0;
+  while left < right do
   begin
     {$POINTERMATH ON}
     temp := values[left];
     values[left] := values[right];
     values[right] := temp;
     {$POINTERMATH OFF}
+    Inc(left);
     Dec(right);
   end;
 end;
@@ -11846,13 +11854,15 @@ var
   left: NativeInt;
   temp: Int64;
 begin
-  for left := 0 to ((right + 1) shr 1) - 1 do
+  left := 0;
+  while left < right do
   begin
     {$POINTERMATH ON}
     temp := values[left];
     values[left] := values[right];
     values[right] := temp;
     {$POINTERMATH OFF}
+    Inc(left);
     Dec(right);
   end;
 end;
@@ -11862,13 +11872,15 @@ var
   left: NativeInt;
   temp: Single;
 begin
-  for left := 0 to ((right + 1) shr 1) - 1 do
+  left := 0;
+  while left < right do
   begin
     {$POINTERMATH ON}
     temp := values[left];
     values[left] := values[right];
     values[right] := temp;
     {$POINTERMATH OFF}
+    Inc(left);
     Dec(right);
   end;
 end;
@@ -11878,13 +11890,15 @@ var
   left: NativeInt;
   temp: Double;
 begin
-  for left := 0 to ((right + 1) shr 1) - 1 do
+  left := 0;
+  while left < right do
   begin
     {$POINTERMATH ON}
     temp := values[left];
     values[left] := values[right];
     values[right] := temp;
     {$POINTERMATH OFF}
+    Inc(left);
     Dec(right);
   end;
 end;
@@ -11894,13 +11908,15 @@ var
   left: NativeInt;
   temp: Extended;
 begin
-  for left := 0 to ((right + 1) shr 1) - 1 do
+  left := 0;
+  while left < right do
   begin
     {$POINTERMATH ON}
     temp := values[left];
     values[left] := values[right];
     values[right] := temp;
     {$POINTERMATH OFF}
+    Inc(left);
     Dec(right);
   end;
 end;
@@ -11910,13 +11926,15 @@ var
   left: NativeInt;
   temp: TMethodPointer;
 begin
-  for left := 0 to ((right + 1) shr 1) - 1 do
+  left := 0;
+  while left < right do
   begin
     {$POINTERMATH ON}
     temp := values[left];
     values[left] := values[right];
     values[right] := temp;
     {$POINTERMATH OFF}
+    Inc(left);
     Dec(right);
   end;
 end;
@@ -11925,9 +11943,11 @@ class procedure TArray.Reverse_Ref(const values: PByte; right: NativeInt; size: 
 var
   left: NativeInt;
 begin
-  for left := 0 to ((right + 1) shr 1) - 1 do
+  left := 0;
+  while left < right do
   begin
-    BinarySwap(@values[left*size], @values[right*size], size);
+    BinarySwap(@values[left * size], @values[right * size], size);
+    Inc(left);
     Dec(right);
   end;
 end;
@@ -11937,12 +11957,16 @@ var
   left, right: NativeInt;
   temp: T;
 begin
+  left := 0;
   right := High(values);
-  for left := 0 to ((right + 1) shr 1) - 1 do
+  while left < right do
   begin
+    {$POINTERMATH ON}
     temp := values[left];
     values[left] := values[right];
     values[right] := temp;
+    {$POINTERMATH OFF}
+    Inc(left);
     Dec(right);
   end;
 end;
@@ -12033,154 +12057,145 @@ begin
   Reverse<T>(@values[index], count - 1);
 end;
 
-class procedure TArray.Shuffle_Int8(const values: PInt8; right: NativeInt);
+class procedure TArray.Shuffle_Int8(const values: PInt8; hi: NativeInt);
 var
-  left, i: NativeInt;
+  i, randomIndex: NativeInt;
   temp: Int8;
 begin
-  for left := 0 to right - 2 do
+  for i := hi downto 1 do
   begin
-    i := Random(right) + left;
-    Dec(right);
+    randomIndex := Random(i + 1);
     {$POINTERMATH ON}
-    temp := values[left];
-    values[left] := values[i];
+    temp := values[randomIndex];
+    values[randomIndex] := values[i];
     values[i] := temp;
     {$POINTERMATH OFF}
   end;
 end;
 
-class procedure TArray.Shuffle_Int16(const values: PInt16; right: NativeInt);
+class procedure TArray.Shuffle_Int16(const values: PInt16; hi: NativeInt);
 var
-  left, i: NativeInt;
+  i, randomIndex: NativeInt;
   temp: Int16;
 begin
-  for left := 0 to right - 2 do
+  for i := hi downto 1 do
   begin
-    i := Random(right) + left;
-    Dec(right);
+    randomIndex := Random(i + 1);
     {$POINTERMATH ON}
-    temp := values[left];
-    values[left] := values[i];
+    temp := values[randomIndex];
+    values[randomIndex] := values[i];
     values[i] := temp;
     {$POINTERMATH OFF}
   end;
 end;
 
-class procedure TArray.Shuffle_Int24(const values: PInt24; right: NativeInt);
+class procedure TArray.Shuffle_Int24(const values: PInt24; hi: NativeInt);
 var
-  left, i: NativeInt;
+  i, randomIndex: NativeInt;
   temp: Int24;
 begin
-  for left := 0 to right - 2 do
+  for i := hi downto 1 do
   begin
-    i := Random(right) + left;
-    Dec(right);
+    randomIndex := Random(i + 1);
     {$POINTERMATH ON}
-    temp := values[left];
-    values[left] := values[i];
+    temp := values[randomIndex];
+    values[randomIndex] := values[i];
     values[i] := temp;
     {$POINTERMATH OFF}
   end;
 end;
 
-class procedure TArray.Shuffle_Int32(const values: PInt32; right: NativeInt);
+class procedure TArray.Shuffle_Int32(const values: PInt32; hi: NativeInt);
 var
-  left, i: NativeInt;
+  i, randomIndex: NativeInt;
   temp: Int32;
 begin
-  for left := 0 to right - 2 do
+  for i := hi downto 1 do
   begin
-    i := Random(right) + left;
-    Dec(right);
+    randomIndex := Random(i + 1);
     {$POINTERMATH ON}
-    temp := values[left];
-    values[left] := values[i];
+    temp := values[randomIndex];
+    values[randomIndex] := values[i];
     values[i] := temp;
     {$POINTERMATH OFF}
   end;
 end;
 
-class procedure TArray.Shuffle_Int64(const values: PInt64; right: NativeInt);
+class procedure TArray.Shuffle_Int64(const values: PInt64; hi: NativeInt);
 var
-  left, i: NativeInt;
+  i, randomIndex: NativeInt;
   temp: Int64;
 begin
-  for left := 0 to right - 2 do
+  for i := hi downto 1 do
   begin
-    i := Random(right) + left;
-    Dec(right);
+    randomIndex := Random(i + 1);
     {$POINTERMATH ON}
-    temp := values[left];
-    values[left] := values[i];
+    temp := values[randomIndex];
+    values[randomIndex] := values[i];
     values[i] := temp;
     {$POINTERMATH OFF}
   end;
 end;
 
-class procedure TArray.Shuffle_Single(const values: PSingle; right: NativeInt);
+class procedure TArray.Shuffle_Single(const values: PSingle; hi: NativeInt);
 var
-  left, i: NativeInt;
+  i, randomIndex: NativeInt;
   temp: Single;
 begin
-  for left := 0 to right - 2 do
+  for i := hi downto 1 do
   begin
-    i := Random(right) + left;
-    Dec(right);
+    randomIndex := Random(i + 1);
     {$POINTERMATH ON}
-    temp := values[left];
-    values[left] := values[i];
+    temp := values[randomIndex];
+    values[randomIndex] := values[i];
     values[i] := temp;
     {$POINTERMATH OFF}
   end;
 end;
 
-class procedure TArray.Shuffle_Double(const values: PDouble; right: NativeInt);
+class procedure TArray.Shuffle_Double(const values: PDouble; hi: NativeInt);
 var
-  left, i: NativeInt;
+  i, randomIndex: NativeInt;
   temp: Double;
 begin
-  for left := 0 to right - 2 do
+  for i := hi downto 1 do
   begin
-    i := Random(right) + left;
-    Dec(right);
+    randomIndex := Random(i + 1);
     {$POINTERMATH ON}
-    temp := values[left];
-    values[left] := values[i];
+    temp := values[randomIndex];
+    values[randomIndex] := values[i];
     values[i] := temp;
     {$POINTERMATH OFF}
   end;
 end;
 
-class procedure TArray.Shuffle_Extended(const values: PExtended; right: NativeInt);
+class procedure TArray.Shuffle_Extended(const values: PExtended; hi: NativeInt);
 var
-  left, i: NativeInt;
+  i, randomIndex: NativeInt;
   temp: Extended;
 begin
-  for left := 0 to right - 2 do
+  for i := hi downto 1 do
   begin
-    i := Random(right) + left;
-    Dec(right);
+    randomIndex := Random(i + 1);
     {$POINTERMATH ON}
-    temp := values[left];
-    values[left] := values[i];
+    temp := values[randomIndex];
+    values[randomIndex] := values[i];
     values[i] := temp;
     {$POINTERMATH OFF}
   end;
 end;
 
-class procedure TArray.Shuffle_Method(const values: PMethodPointer; right: NativeInt);
+class procedure TArray.Shuffle_Method(const values: PMethodPointer; hi: NativeInt);
 var
-  left, i: NativeInt;
+  i, randomIndex: NativeInt;
   temp: TMethodPointer;
 begin
-  for left := 0 to right - 2 do
+  for i := hi downto 1 do
   begin
-    i := Random(right) + left;
-    Dec(right);
+    randomIndex := Random(i + 1);
     {$POINTERMATH ON}
-    temp := values[left];
-    values[left] := values[i];
+    temp := values[randomIndex];
+    values[randomIndex] := values[i];
     values[i] := temp;
     {$POINTERMATH OFF}
   end;
@@ -12188,31 +12203,28 @@ end;
 
 class procedure TArray.Shuffle_Ref(const values: PByte; hi: NativeInt; size: Integer);
 var
-  left, i: NativeInt;
+  i, randomIndex: NativeInt;
 begin
-  for left := 0 to hi - 2 do
+  for i := hi downto 1 do
   begin
-    i := Random(hi) + left;
-    Dec(hi);
-    BinarySwap(@values[left*size], @values[i*size], size);
+    randomIndex := Random(i + 1);
+    BinarySwap(@values[randomIndex * size], @values[i * size], size);
   end;
 end;
 
 class procedure TArray.Shuffle_Generic<T>(var values: array of T);
 var
-  count, index, i: Integer;
+  i, randomIndex: NativeInt;
   temp: T;
 begin
-  count := Length(values);
-  index := 0;
-  while count > 1 do
+  for i := High(values) downto 1 do
   begin
-    i := Random(count) + index;
-    temp := values[index];
-    values[index] := values[i];
+    randomIndex := Random(i + 1);
+    {$POINTERMATH ON}
+    temp := values[randomIndex];
+    values[randomIndex] := values[i];
     values[i] := temp;
-    Inc(index);
-    Dec(count);
+    {$POINTERMATH OFF}
   end;
 end;
 
