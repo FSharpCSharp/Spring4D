@@ -3259,6 +3259,7 @@ type
     class function CreateStringList(const comparer: TComparison<string>): IList<string>; overload; static;
     class function CreateStringList(const values: array of string): IList<string>; overload; static;
     class function CreateStringList(const values: IEnumerable<string>): IList<string>; overload; static;
+    class function CreateStringList(const strings: TStrings; ownsObject: Boolean): IList<string>; overload; static;
 
     class function CreateSortedList<T>: IList<T>; overload; static;
     class function CreateSortedList<T>(const comparer: IComparer<T>): IList<T>; overload; static;
@@ -5020,6 +5021,12 @@ class function TCollections.CreateStringList(
 begin
   CreateList_String(nil, Result, TypeInfo(string));
   Result.AddRange(values);
+end;
+
+class function TCollections.CreateStringList(const strings: TStrings;
+  ownsObject: Boolean): IList<string>;
+begin
+  Result := TStringsAdapter.Create(strings, ownsObject);
 end;
 
 class function TCollections.CreateObservableList<T>(

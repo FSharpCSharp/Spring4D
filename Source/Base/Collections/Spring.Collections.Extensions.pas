@@ -29,6 +29,7 @@ unit Spring.Collections.Extensions;
 interface
 
 uses
+  Classes,
   Generics.Defaults,
   SysUtils,
   Types,
@@ -843,6 +844,108 @@ type
     function TryMoveNext(var current: T): Boolean; override;
   public
     constructor Create(const count: Func<Integer>; const items: Func<Integer, T>);
+  end;
+
+  // in this unit and not Spring.Collections.Lists because of some
+  // compiler glitch on older versions related to units referencing
+  // each other in a particular order
+  TStringsAdapter = class(TCollectionBase<string>, IInterface,
+    IEnumerable<string>, IReadOnlyCollection<string>, IReadOnlyList<string>,
+    ICollection<string>, IList<string>)
+  private type
+  {$REGION 'Nested Types'}
+    PEnumerator = ^TEnumerator;
+    TEnumerator = record
+      Vtable: Pointer;
+      RefCount: Integer;
+      TypeInfo: PTypeInfo;
+      fSource: TStringsAdapter;
+      fIndex, fCount: Integer;
+      fVersion: Integer;
+      function GetCurrent: string;
+      function GetCurrentStringList: string;
+      function MoveNext: Boolean;
+      class var Enumerator_Vtable: TEnumeratorVtable;
+    end;
+  {$ENDREGION}
+  private
+    fStrings: TStrings;
+    fVersion: Integer;
+    fIsStringList: Boolean;
+    fOwnsObject: Boolean;
+  {$REGION 'Property Accessors'}
+    function GetCapacity: Integer;
+    function GetCount: Integer;
+    function GetCountFast: Integer;
+    function GetItem(index: Integer): string;
+    function GetOwnsObjects: Boolean;
+    procedure SetCapacity(value: Integer);
+    procedure SetCount(value: Integer);
+    procedure SetItem(index: Integer; const value: string);
+    procedure SetOwnsObjects(value: Boolean);
+  {$ENDREGION}
+    procedure DeleteRangeInternal(index, count: Integer; doClear: Boolean);
+    function AsReadOnly: IReadOnlyList<string>;
+    function TryGet(var value: string; index: Integer): Boolean;
+  public
+    constructor Create(const strings: TStrings; ownsObject: Boolean);
+    procedure BeforeDestruction; override;
+
+  {$REGION 'Implements IEnumerable<string>'}
+    function GetEnumerator: IEnumerator<string>;
+
+    function ToArray: TArray<string>;
+
+    function TryGetElementAt(var value: string; index: Integer): Boolean;
+    function TryGetFirst(var value: string): Boolean; overload;
+    function TryGetLast(var value: string): Boolean; overload;
+    function TryGetSingle(var value: string): Boolean; overload;
+  {$ENDREGION}
+
+  {$REGION 'Implements ICollections<string>'}
+    function Remove(const item: string): Boolean;
+    function Extract(const item: string): string;
+
+    procedure Clear;
+  {$ENDREGION}
+
+  {$REGION 'Implements IList<string>'}
+    function Add(const item: string): Integer; overload;
+
+    procedure Insert(index: Integer; const item: string);
+    procedure InsertRange(index: Integer; const values: array of string); overload;
+    procedure InsertRange(index: Integer; const values: IEnumerable<string>); overload;
+
+    procedure Delete(index: Integer);
+    procedure DeleteRange(index, count: Integer);
+
+    function ExtractAt(index: Integer): string;
+    function ExtractRange(index, count: Integer): TArray<string>; overload;
+
+    function GetRange(index, count: Integer): IList<string>;
+
+    procedure Exchange(index1, index2: Integer);
+    procedure Move(sourceIndex, targetIndex: Integer);
+
+    function IndexOf(const item: string): Integer; overload;
+    function IndexOf(const item: string; index: Integer): Integer; overload;
+    function IndexOf(const item: string; index, count: Integer): Integer; overload;
+
+    function LastIndexOf(const item: string): Integer; overload;
+    function LastIndexOf(const item: string; index: Integer): Integer; overload;
+    function LastIndexOf(const item: string; index, count: Integer): Integer; overload;
+
+    procedure Reverse; overload;
+    procedure Reverse(index, count: Integer); overload;
+
+    procedure Sort; overload;
+    procedure Sort(const comparer: IComparer<string>); overload;
+    procedure Sort(const comparer: TComparison<string>); overload;
+    procedure Sort(const comparer: TComparison<string>; index, count: Integer); overload;
+    procedure Sort(const comparer: IComparer<string>; index, count: Integer); overload;
+
+    procedure TrimExcess;
+  {$ENDREGION}
   end;
 
 implementation
@@ -3177,6 +3280,551 @@ begin
     current := fItems(fIndex);
     Inc(fIndex);
   end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TStringsAdapter'}
+
+type
+  TStringsAccess = class(TStrings);
+  TStringListAccess = class(TStringList);
+  TStringListAccess2 = class(TStrings)
+  private
+    FList: PStringItem;
+  end;
+
+function HasStringListGet(const strings: TStrings): Boolean;
+var
+  get: function (Index: Integer): string of object;
+begin
+  get := TStringsAccess(strings).Get;
+  Result := TMethod(get).Code = @TStringListAccess.Get;
+end;
+
+constructor TStringsAdapter.Create(const strings: TStrings; ownsObject: Boolean);
+begin
+  if not Assigned(strings) then RaiseHelper.ArgumentNil(ExceptionArgument.source);
+
+  fStrings := strings;
+  fIsStringList := HasStringListGet(strings);
+  fOwnsObject := ownsObject;
+end;
+
+function TStringsAdapter.Add(const item: string): Integer;
+begin
+  {$Q-}
+  Inc(fVersion);
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+
+  Result := fStrings.Add(item);
+
+  DoNotify(item, caAdded);
+end;
+
+function TStringsAdapter.AsReadOnly: IReadOnlyList<string>;
+begin
+  Result := Self;
+end;
+
+procedure TStringsAdapter.BeforeDestruction;
+begin
+  if fOwnsObject then
+    fStrings.Free;
+  inherited BeforeDestruction;
+end;
+
+procedure TStringsAdapter.Clear;
+begin
+  fStrings.Clear;
+end;
+
+procedure TStringsAdapter.Delete(index: Integer);
+var
+  oldItem: string;
+begin
+  CheckIndex(index, fStrings.Count);
+
+  oldItem := fStrings[index];
+
+  {$Q-}
+  Inc(fVersion);
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+  fStrings.Delete(index);
+
+  DoNotify(oldItem, caRemoved);
+end;
+
+procedure TStringsAdapter.DeleteRange(index, count: Integer);
+begin
+  DeleteRangeInternal(index, count, False);
+end;
+
+procedure TStringsAdapter.DeleteRangeInternal(index, count: Integer; doClear: Boolean);
+var
+  oldItems: TArray<string>;
+  i: Integer;
+begin
+  CheckRange(index, count, fStrings.Count);
+
+  if count = 0 then
+    Exit;
+
+  SetLength(oldItems, count);
+
+  {$Q-}
+  Inc(fVersion);
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+
+  for i := count downto 1 do
+  begin
+    oldItems[count - i] := fStrings[index];
+    fStrings.Delete(index);
+  end;
+
+  if doClear then
+    Reset;
+
+  if Assigned(Notify) then
+    for i := 0 to DynArrayHigh(oldItems) do
+      Notify(Self, oldItems[i], caRemoved);
+end;
+
+procedure TStringsAdapter.Exchange(index1, index2: Integer);
+begin
+  if Cardinal(index1) >= Cardinal(fStrings.Count) then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.index1);
+  if Cardinal(index2) >= Cardinal(fStrings.Count) then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.index2);
+
+  {$Q-}
+  Inc(fVersion);
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+  fStrings.Exchange(index1, index2);
+
+  if Assigned(Notify) then
+  begin
+    Notify(Self, fStrings[index2], caMoved);
+    Notify(Self, fStrings[index1], caMoved);
+  end;
+end;
+
+function TStringsAdapter.Extract(const item: string): string;
+var
+  index: Integer;
+begin
+  index := IndexOf(item, 0, fStrings.Count);
+  if index >= 0 then
+    Result := ExtractAt(index)
+  else
+    Result := ''
+end;
+
+function TStringsAdapter.ExtractAt(index: Integer): string;
+begin
+  CheckIndex(index, fStrings.Count);
+
+  Result := fStrings[index];
+
+  {$Q-}
+  Inc(fVersion);
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+  fStrings.Delete(index);
+
+  DoNotify(Result, caExtracted);
+end;
+
+function TStringsAdapter.ExtractRange(index, count: Integer): TArray<string>;
+var
+  i: Integer;
+begin
+  CheckRange(index, count, fStrings.Count);
+
+  SetLength(Result, count);
+  if count > 0 then
+  begin
+    {$Q-}
+    Inc(fVersion);
+    {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+    i := 0;
+
+    repeat
+      Result[i] := fStrings[index];
+      fStrings.Delete(index);
+      DoNotify(Result[i], caExtracted);
+      Inc(i);
+      Dec(count);
+    until count = 0;
+  end;
+end;
+
+function TStringsAdapter.GetCapacity: Integer;
+begin
+  Result := fStrings.Capacity;
+end;
+
+function TStringsAdapter.GetCount: Integer;
+begin
+  Result := fStrings.Count;
+end;
+
+function TStringsAdapter.GetCountFast: Integer;
+begin
+  Result := fStrings.Count;
+end;
+
+function TStringsAdapter.GetEnumerator: IEnumerator<string>;
+var
+  getCurrent: Pointer;
+begin
+  _AddRef;
+  if fIsStringList then
+    getCurrent := @TEnumerator.GetCurrentStringList
+  else
+    getCurrent := @TEnumerator.GetCurrent;
+  with PEnumerator(TEnumeratorBlock.Create(@Result, @TEnumerator.Enumerator_Vtable,
+    TypeInfo(TEnumerator), getCurrent, @TEnumerator.MoveNext))^ do
+  begin
+    fSource := Self;
+    fCount := fStrings.Count;
+    fVersion := Self.fVersion;
+  end;
+end;
+
+function TStringsAdapter.GetItem(index: Integer): string;
+begin
+  CheckIndex(index, fStrings.Count);
+
+  if fIsStringList then
+    {$POINTERMATH ON}
+    Result := TStringListAccess2(fStrings).FList[index].FString
+    {$POINTERMATH OFF}
+  else
+    Result := fStrings[index];
+end;
+
+function TStringsAdapter.GetOwnsObjects: Boolean;
+begin
+  Result := False;
+end;
+
+function TStringsAdapter.GetRange(index, count: Integer): IList<string>;
+var
+  i: Integer;
+begin
+  CheckRange(index, count, fStrings.Count);
+
+  Result := TCollections.CreateList<string>;
+  Result.Count := count;
+  for i := 0 to count - 1 do
+  begin
+    Result[i] := fStrings[index];
+    Inc(index);
+  end;
+end;
+
+function TStringsAdapter.IndexOf(const item: string): Integer;
+begin
+  Result := fStrings.IndexOf(item);
+end;
+
+function TStringsAdapter.IndexOf(const item: string; index: Integer): Integer;
+begin
+  Result := IndexOf(item, index, fStrings.Count - index);
+end;
+
+function TStringsAdapter.IndexOf(const item: string; index, count: Integer): Integer;
+var
+  i: Integer;
+begin
+  CheckRange(index, count, fStrings.Count);
+
+  for i := index to index + count - 1 do
+    if TStringsAccess(fStrings).CompareStrings(fStrings[i], item) = 0 then
+      Exit(i);
+  Result := -1;
+end;
+
+procedure TStringsAdapter.Insert(index: Integer; const item: string);
+begin
+  CheckIndex(index, fStrings.Count + 1);
+
+  {$Q-}
+  Inc(fVersion);
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+  fStrings.Insert(index, item);
+
+  DoNotify(item, caAdded);
+end;
+
+procedure TStringsAdapter.InsertRange(index: Integer; const values: array of string);
+var
+  i: Integer;
+begin
+  if Cardinal(index) > Cardinal(fStrings.Count) then RaiseHelper.ArgumentOutOfRange_Index;
+
+  if High(values) >= 0 then
+  begin
+    {$Q-}
+    Inc(fVersion);
+    {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+
+    for i := 0 to High(values) do
+    begin
+      fStrings.Insert(index, values[i]);
+      DoNotify(values[i], caAdded);
+      Inc(index);
+    end;
+  end;
+end;
+
+procedure TStringsAdapter.InsertRange(index: Integer;
+  const values: IEnumerable<string>);
+var
+  enumerator: IEnumerator<string>;
+  item: string;
+begin
+  if Cardinal(index) > Cardinal(fStrings.Count) then RaiseHelper.ArgumentOutOfRange_Index;
+  if not Assigned(values) then RaiseHelper.ArgumentNil(ExceptionArgument.values);
+
+  enumerator := values.GetEnumerator;
+  if enumerator.MoveNext then
+  begin
+    {$Q-}
+    Inc(fVersion);
+    {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+
+    repeat
+      item := enumerator.Current;
+      fStrings.Insert(index, item);
+      DoNotify(item, caAdded);
+      Inc(index);
+    until not enumerator.MoveNext;
+  end;
+end;
+
+function TStringsAdapter.LastIndexOf(const item: string): Integer;
+var
+  listCount: Integer;
+begin
+  listCount := fStrings.Count;
+  if listCount > 0 then
+    Result := LastIndexOf(item, listCount - 1, listCount)
+  else
+    Result := -1;
+end;
+
+function TStringsAdapter.LastIndexOf(const item: string; index: Integer): Integer;
+begin
+  CheckIndex(index, fStrings.Count);
+
+  Result := LastIndexOf(item, index, index + 1);
+end;
+
+function TStringsAdapter.LastIndexOf(const item: string; index, count: Integer): Integer;
+var
+  i: Integer;
+begin
+  CheckIndex(index, fStrings.Count);
+  if Cardinal(count) > Cardinal(index + 1) then RaiseHelper.ArgumentOutOfRange_Count;
+
+  for i := index downto index - count + 1 do
+    if TStringsAccess(fStrings).CompareStrings(fStrings[i], item) = 0 then
+      Exit(i);
+  Result := -1;
+end;
+
+procedure TStringsAdapter.Move(sourceIndex, targetIndex: Integer);
+begin
+  if Cardinal(sourceIndex) >= Cardinal(fStrings.Count) then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.sourceIndex);
+  if Cardinal(targetIndex) >= Cardinal(fStrings.Count) then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.targetIndex);
+
+  if sourceIndex = targetIndex then
+    Exit;
+
+  {$Q-}
+  Inc(fVersion);
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+  fStrings.Move(sourceIndex, targetIndex);
+
+  DoNotify(fStrings[targetIndex], caMoved);
+end;
+
+function TStringsAdapter.Remove(const item: string): Boolean;
+var
+  index: Integer;
+begin
+  index := fStrings.IndexOf(item);
+  if index >= 0 then
+  begin
+    {$Q-}
+    Inc(fVersion);
+    {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+
+    fStrings.Delete(index);
+    DoNotify(item, caRemoved);
+    Exit(True);
+  end;
+  Result := False;
+end;
+
+procedure TStringsAdapter.Reverse;
+begin
+  RaiseHelper.NotSupported;
+end;
+
+procedure TStringsAdapter.Reverse(index, count: Integer);
+begin
+  RaiseHelper.NotSupported;
+end;
+
+procedure TStringsAdapter.SetCapacity(value: Integer);
+begin
+  fStrings.Capacity := value;
+end;
+
+procedure TStringsAdapter.SetCount(value: Integer);
+begin
+end;
+
+procedure TStringsAdapter.SetItem(index: Integer; const value: string);
+begin
+  CheckIndex(index, fStrings.Count);
+
+  fStrings[index] := value;
+end;
+
+procedure TStringsAdapter.SetOwnsObjects(value: Boolean);
+begin
+end;
+
+procedure TStringsAdapter.Sort;
+begin
+  if (fStrings is TStringList) then
+    TStringList(fStrings).Sort;
+end;
+
+procedure TStringsAdapter.Sort(const comparer: IComparer<string>);
+begin
+  RaiseHelper.NotSupported;
+end;
+
+procedure TStringsAdapter.Sort(const comparer: IComparer<string>; index, count: Integer);
+begin
+  RaiseHelper.NotSupported;
+end;
+
+procedure TStringsAdapter.Sort(const comparer: TComparison<string>);
+begin
+  RaiseHelper.NotSupported;
+end;
+
+procedure TStringsAdapter.Sort(const comparer: TComparison<string>; index, count: Integer);
+begin
+  RaiseHelper.NotSupported;
+end;
+
+function TStringsAdapter.ToArray: TArray<string>;
+begin
+  Result := fStrings.ToStringArray;
+end;
+
+procedure TStringsAdapter.TrimExcess;
+begin
+  fStrings.Capacity := fStrings.Count;
+end;
+
+function TStringsAdapter.TryGet(var value: string; index: Integer): Boolean;
+begin
+  value := fStrings[index];
+  Result := True;
+end;
+
+function TStringsAdapter.TryGetElementAt(var value: string; index: Integer): Boolean;
+begin
+  if Cardinal(index) < Cardinal(fStrings.Count) then
+  begin
+    if fIsStringList then
+    begin
+      {$POINTERMATH ON}
+      value := TStringListAccess2(fStrings).FList[index].FString;
+      {$POINTERMATH OFF}
+      Exit(True);
+    end
+    else
+      Exit(TryGet(value, index));
+  end;
+  value := '';
+  Result := False;
+end;
+
+function TStringsAdapter.TryGetFirst(var value: string): Boolean;
+begin
+  if fStrings.Count > 0 then
+  begin
+    value := fStrings[0];
+    Exit(True);
+  end;
+  value := '';
+  Result := False;
+end;
+
+function TStringsAdapter.TryGetLast(var value: string): Boolean;
+var
+  index: Integer;
+begin
+  index := fStrings.Count - 1;
+  if index >= 0 then
+  begin
+    value := fStrings[index];
+    Exit(True);
+  end;
+  value := '';
+  Result := False;
+end;
+
+function TStringsAdapter.TryGetSingle(var value: string): Boolean;
+begin
+  if fStrings.Count = 1 then
+  begin
+    value := fStrings[0];
+    Exit(True);
+  end;
+  value := '';
+  Result := False;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TStringsAdapter.TEnumerator'}
+
+function TStringsAdapter.TEnumerator.GetCurrent: string;
+begin
+  if fVersion = fSource.fVersion then
+    Result := fSource.fStrings[fIndex - 1]
+  else
+    RaiseHelper.EnumFailedVersion;
+end;
+
+function TStringsAdapter.TEnumerator.GetCurrentStringList: string;
+begin
+  if fVersion = fSource.fVersion then
+    {$POINTERMATH ON}
+    Result := TStringListAccess2(fSource.fStrings).FList[fIndex - 1].FString
+    {$POINTERMATH OFF}
+  else
+    RaiseHelper.EnumFailedVersion;
+end;
+
+function TStringsAdapter.TEnumerator.MoveNext: Boolean;
+begin
+  if fVersion = fSource.fVersion then
+  begin
+    Result := fIndex < fCount;
+    Inc(fIndex, Ord(Result));
+  end
+  else
+    Result := RaiseHelper.EnumFailedVersion;
 end;
 
 {$ENDREGION}
