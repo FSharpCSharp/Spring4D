@@ -36,6 +36,7 @@ uses
   Spring,
   Spring.Collections,
   Spring.Collections.Events,
+  Spring.Collections.Trees,
   Spring.Events.Base,
   Spring.HashTable;
 
@@ -57,8 +58,6 @@ type
   end;
   {$ENDIF}
 
-  PEnumeratorVtable = ^TEnumeratorVtable;
-  TEnumeratorVtable = array[0..4] of Pointer;
   PEnumeratorBlock = ^TEnumeratorBlock;
   TEnumeratorBlock = record
     Vtable: Pointer;
@@ -130,7 +129,7 @@ type
     function GetElementType: PTypeInfo; virtual;
   {$ENDREGION}
     function QueryInterface(const IID: TGUID; out obj): HResult; stdcall;
-    procedure CopyTo(var values: TArray<T>; index: Integer);
+    function CopyTo(var values: TArray<T>; index: Integer): Integer;
     function TryGetElementAt(var value: T; index: Integer): Boolean;
     function TryGetFirst(var value: T): Boolean; overload;
     function TryGetFirst(var value: T; const predicate: Predicate<T>): Boolean; overload;
@@ -416,7 +415,7 @@ type
     class function Create(const values: array of T): IReadOnlyList<T>; overload; static;
 
   {$REGION 'Implements IReadOnlyCollection<T>'}
-    procedure CopyTo(var values: TArray<T>; index: Integer);
+    function CopyTo(var values: TArray<T>; index: Integer): Integer;
   {$ENDREGION}
 
   {$REGION 'Implements IReadOnlyList<T>'}
@@ -565,6 +564,55 @@ type
     function GetEnumerator: IEnumerator<T>;
     function ToArray: TArray<T>;
     function TryGetElementAt(var value: T; index: Integer): Boolean;
+  {$ENDREGION}
+  end;
+
+  TSortedKeyCollection<T> = class(TEnumerableBase<T>,
+    IEnumerable<T>, IReadOnlyCollection<T>)
+  private type
+  {$REGION 'Nested Types'}
+    PNode = ^TNode;
+    TNode = record // same layout as TRedBlackTreeBase<TKey>.TNode
+      Parent: Pointer;
+      Childs: array[0..1] of Pointer;
+      Key: T;
+    end;
+
+    PEnumerator = ^TEnumerator;
+    TEnumerator = record
+      Vtable: Pointer;
+      RefCount: Integer;
+      TypeInfo: PTypeInfo;
+      Parent: TRefCountedObject;
+      fSource: TSortedKeyCollection<T>;
+      fNode: PBinaryTreeNode;
+      fVersion: Integer;
+      function GetCurrent: T;
+      function MoveNext: Boolean;
+      class var Enumerator_Vtable: TEnumeratorVtable;
+    end;
+  {$ENDREGION}
+  private
+    fSource: TRefCountedObject;
+    fTree: TBinaryTree;
+    fVersion: PInteger;
+  {$REGION 'Property Accessors'}
+    function GetCount: Integer;
+    function GetCountFast: Integer;
+  {$ENDREGION}
+  public
+    constructor Create(const source: TRefCountedObject; const tree: TBinaryTree;
+      const version: PInteger);
+
+  {$REGION 'Implements IInterface'}
+    function _AddRef: Integer; stdcall;
+    function _Release: Integer; stdcall;
+  {$ENDREGION}
+
+  {$REGION 'Implements IEnumerable<T>'}
+    function GetEnumerator: IEnumerator<T>;
+    function Contains(const value: T): Boolean; overload;
+    function ToArray: TArray<T>;
   {$ENDREGION}
   end;
 
@@ -940,7 +988,7 @@ begin
   if count >= 0 then
     Result := IsCountInRange(IEnumerable(this), count, MaxInt, count)
   else
-    Result := RaiseHelper.ArgumentOutOfRange(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
+    Result := Boolean(RaiseHelper.ArgumentOutOfRange(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum));
 end;
 
 function TEnumerableBase.AtMost(count: Integer): Boolean;
@@ -948,7 +996,7 @@ begin
   if count >= 0 then
     Result := IsCountInRange(IEnumerable(this), 0, count, count + 1)
   else
-    Result := RaiseHelper.ArgumentOutOfRange(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
+    Result := Boolean(RaiseHelper.ArgumentOutOfRange(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum));
 end;
 
 function TEnumerableBase.Between(min, max: Integer): Boolean;
@@ -957,9 +1005,9 @@ begin
     if max >= min then
       Result := IsCountInRange(IEnumerable(this), min, max, max + 1)
     else
-      Result := RaiseHelper.ArgumentOutOfRange(ExceptionArgument.max)
+      Result := Boolean(RaiseHelper.ArgumentOutOfRange(ExceptionArgument.max))
   else
-    Result := RaiseHelper.ArgumentOutOfRange(ExceptionArgument.min, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
+    Result := Boolean(RaiseHelper.ArgumentOutOfRange(ExceptionArgument.min, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum));
 end;
 
 function TEnumerableBase.Exactly(count: Integer): Boolean;
@@ -967,7 +1015,7 @@ begin
   if count >= 0 then
     Result := IsCountInRange(IEnumerable(this), count, count, count + 1)
   else
-    Result := RaiseHelper.ArgumentOutOfRange(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
+    Result := Boolean(RaiseHelper.ArgumentOutOfRange(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum));
 end;
 
 function TEnumerableBase.GetCount: Integer;
@@ -1149,11 +1197,12 @@ begin
   Result := IEnumerable<T>(this).Contains(value, IEqualityComparer<T>(PPointer(@comparer)^));
 end;
 
-procedure TEnumerableBase<T>.CopyTo(var values: TArray<T>; index: Integer);
+function TEnumerableBase<T>.CopyTo(var values: TArray<T>; index: Integer): Integer;
 var
   enumerator: IEnumerator<T>;
 begin
   enumerator := IEnumerable<T>(this).GetEnumerator;
+  Result := 0;
   while enumerator.MoveNext do
   begin
     {$IF defined(DELPHIXE7_UP) and defined(MSWINDOWS)}
@@ -1161,8 +1210,8 @@ begin
       IEnumeratorInternal(enumerator).GetCurrent(values[index])
     else
     {$IFEND}
-    values[index] := enumerator.Current;
-    Inc(index);
+    values[index + Result] := enumerator.Current;
+    Inc(Result);
   end;
 end;
 
@@ -2505,6 +2554,128 @@ begin
         Exit(True);
       end;
     until False;
+    Result := False;
+  end
+  else
+    Result := RaiseHelper.EnumFailedVersion;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TSortedKeyCollection<T>'}
+
+constructor TSortedKeyCollection<T>.Create(const source: TRefCountedObject;
+  const tree: TBinaryTree; const version: PInteger);
+begin
+  fSource := source;
+  fTree := tree;
+  fVersion := version;
+end;
+
+function TSortedKeyCollection<T>.Contains(const value: T): Boolean;
+var
+  root: Pointer;
+  node: PBinaryTreeNode;
+  compareResult, i: Integer;
+begin
+  root := fTree.Root;
+  if not Assigned(root) then Exit(Boolean(root));
+  node := root;
+  repeat
+    compareResult := fComparer.Compare(PNode(node).Key, value);
+    if compareResult = 0 then Break;
+    i := compareResult shr 31; // left -> 0, right -> 1
+    node := PNode(node).Childs[i];
+  until not Assigned(node);
+  Result := Assigned(node);
+end;
+
+function TSortedKeyCollection<T>.GetCount: Integer;
+begin
+  Result := fTree.Count;
+end;
+
+function TSortedKeyCollection<T>.GetCountFast: Integer;
+begin
+  Result := fTree.Count;
+end;
+
+function TSortedKeyCollection<T>.GetEnumerator: IEnumerator<T>;
+begin
+  _AddRef;
+  with PEnumerator(TEnumeratorBlock.Create(@Result, @TEnumerator.Enumerator_Vtable,
+    TypeInfo(TEnumerator), @TEnumerator.GetCurrent, @TEnumerator.MoveNext))^ do
+  begin
+    Parent := Self.fSource;
+    fSource := Self;
+    fVersion := Self.fVersion^;
+  end;
+end;
+
+function TSortedKeyCollection<T>.ToArray: TArray<T>;
+var
+  tree: TBinaryTree;
+  node, next: PBinaryTreeNode;
+  i: Integer;
+begin
+  tree := fTree;
+  SetLength(Result, tree.Count);
+  next := tree.Root.LeftMost;
+  if Assigned(next) then
+  begin
+    i := 0;
+    repeat
+      node := next;
+      Result[i] := PNode(node).Key;
+      Inc(i);
+      next := node.Next;
+    until not Assigned(next);
+  end;
+end;
+
+function TSortedKeyCollection<T>._AddRef: Integer;
+begin
+  Result := fSource._AddRef;
+end;
+
+function TSortedKeyCollection<T>._Release: Integer;
+begin
+  Result := fSource._Release;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TSortedKeyCollection<T>.TEnumerator'}
+
+function TSortedKeyCollection<T>.TEnumerator.GetCurrent: T;
+begin
+  Result := PNode(fNode).Key;
+end;
+
+function TSortedKeyCollection<T>.TEnumerator.MoveNext: Boolean;
+var
+  tree: TBinaryTree;
+  node: PBinaryTreeNode;
+begin
+  tree := fSource.fTree;
+  if fVersion = fSource.fVersion^ then
+  begin
+    if (tree.Count > 0) and (fNode <> Pointer(1)) then
+    begin
+      if Assigned(fNode) then
+        node := fNode.Next
+      else
+        node := tree.Root.LeftMost;
+      if Assigned(node) then
+      begin
+        fNode := node;
+        Exit(True);
+      end;
+    end;
+
+    fNode := Pointer(1);
     Result := False;
   end
   else
@@ -3866,16 +4037,14 @@ begin
   Result := iterator;
 end;
 
-procedure TArrayIterator<T>.CopyTo(var values: TArray<T>; index: Integer);
-var
-  count: Integer;
+function TArrayIterator<T>.CopyTo(var values: TArray<T>; index: Integer): Integer;
 begin
-  count := DynArrayLength(fItems);
-  if count > 0 then
+  Result := DynArrayLength(fItems);
+  if Result > 0 then
     if TType.IsManaged<T> then
-      MoveManaged(@fItems[0], @values[index], TypeInfo(T), count)
+      MoveManaged(@fItems[0], @values[index], TypeInfo(T), Result)
     else
-      System.Move(fItems[0], values[index], SizeOf(T) * count);
+      System.Move(fItems[0], values[index], SizeOf(T) * Result);
 end;
 
 function TArrayIterator<T>.GetCount: Integer;

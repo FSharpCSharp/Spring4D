@@ -185,6 +185,16 @@ uses
   Spring.Hash,
   Spring.ResourceStrings;
 
+// copied here from Spring.pas to enable inlining
+function DynArrayLength(const A: Pointer): NativeInt; inline;
+begin
+  Result := NativeInt(A);
+  if Result <> 0 then
+    {$POINTERMATH ON}
+    Result := PNativeInt(Result)[-1];
+    {$POINTERMATH OFF}
+end;
+
 
 {$REGION 'THashTable'}
 
@@ -425,14 +435,16 @@ procedure THashTable.SetCapacity(const value: Integer);
 var
   newCapacity: Integer;
 begin
-  if value < fCount then raise EArgumentOutOfRangeException.CreateRes(@SArgumentOutOfRange_Capacity);
-
-  if value = 0 then
-    newCapacity := 0
+  if value >= fCount then
+  begin
+    newCapacity := value;
+    if (newCapacity > 0) and (newCapacity < MinCapacity) then
+      newCapacity := MinCapacity;
+    if newCapacity <> DynArrayLength(fItems) then
+      Rehash(newCapacity);
+  end
   else
-    newCapacity := Math.Max(MinCapacity, value);
-  if newCapacity <> Capacity then
-    Rehash(newCapacity);
+    RaiseHelper.ArgumentOutOfRange(ExceptionArgument.value, ExceptionResource.ArgumentOutOfRange_Capacity);
 end;
 
 procedure THashTable.SetItemsInfo(const value: PTypeInfo);

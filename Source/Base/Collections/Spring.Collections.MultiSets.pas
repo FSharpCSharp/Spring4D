@@ -171,7 +171,12 @@ type
   private type
   {$REGION 'Nested Types'}
     TEntry = TMultiSetEntry<T>;
-    PNode = TNodes<T, Integer>.PRedBlackTreeNode;
+    PNode = ^TNode;
+    TNode = packed record // same layout as TRedBlackTreeBase<T, Integer>.TNode
+      Parent, Right, Left: Pointer;
+      Key: T;
+      Count: Integer;
+    end;
 
     PEnumerator = ^TEnumerator;
     TEnumerator = record
@@ -260,7 +265,7 @@ type
     end;
   {$ENDREGION}
   private
-    fTree: TRedBlackTree<T, Integer>;
+    fTree: TRedBlackTreeBase<T, Integer>;
     fVersion: Integer;
     fItems: TItemCollection;
     fEntries: TEntryCollection;
@@ -474,8 +479,11 @@ begin
 end;
 
 function THashMultiSet<T>.Extract(const item: T): T;
+var
+  previousCount: Integer;
 begin
-  if Remove(item) then // TODO: possibly change if/when implementing ownership
+  previousCount := Remove(item, 1); // TODO: possibly change if/when implementing ownership
+  if previousCount > 0 then
     Result := item
   else
     Result := Default(T);
@@ -513,30 +521,29 @@ end;
 
 function THashMultiSet<T>.Remove(const item: T): Boolean;
 var
-  remaining: Integer;
+  previousCount: Integer;
 begin
-  remaining := Remove(item, 1);
-  Result := remaining > 0;
+  previousCount := Remove(item, 1);
+  Result := previousCount > 0;
 end;
 
 function THashMultiSet<T>.Remove(const item: T; count: Integer): Integer;
 var
   entry: THashTableEntry;
   tableItem: PItem;
-  remaining, i: Integer;
+  existingCount, i: Integer;
 begin
-  if count < 0 then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
-
-  entry.HashCode := IEqualityComparer<T>(fHashTable.Comparer).GetHashCode(item);
-  Result := Ord(THashTable(fHashTable).FindEntry(item, entry));
-  if Result > 0 then
+  if count >= 0 then
   begin
+    entry.HashCode := IEqualityComparer<T>(fHashTable.Comparer).GetHashCode(item);
+    Result := Ord(THashTable(fHashTable).FindEntry(item, entry));
+    if Result = 0 then Exit;
     tableItem := @TItems(fHashTable.Items)[entry.ItemIndex];
-    remaining := tableItem.Count;
-    if remaining <= count then
+    existingCount := tableItem.Count;
+    if existingCount <= count then
     begin
       THashTable(fHashTable).DeleteEntry(entry);
-      count := remaining;
+      count := existingCount;
     end
     else
       Dec(tableItem.Count, count);
@@ -545,8 +552,10 @@ begin
     if Assigned(Notify) then
       for i := 1 to count  do
         Notify(Self, item, caRemoved);
-    Result := remaining;
-  end;
+    Result := existingCount;
+  end
+  else
+    Result := RaiseHelper.ArgumentOutOfRange(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
 end;
 
 procedure THashMultiSet<T>.SetItemCount(const item: T; count: Integer);
@@ -760,7 +769,7 @@ end;
 
 constructor TTreeMultiSet<T>.Create(const comparer: IComparer<T>);
 begin
-  fTree := TRedBlackTree<T, Integer>.Create(comparer);
+  fTree := TRedBlackTreeBase<T, Integer>.Create(comparer);
   fItems := TItemCollection.Create(Self);
   fEntries := TEntryCollection.Create(Self);
 end;
@@ -787,7 +796,7 @@ end;
 
 function TTreeMultiSet<T>.Add(const item: T; count: Integer): Integer;
 var
-  node: PNode;
+  node: Pointer;
   i: Integer;
 begin
   if count < 0 then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
@@ -798,13 +807,14 @@ begin
   node := fTree.FindNode(item);
   if Assigned(node) then
   begin
-    Result := node.Value;
-    node.Value := Result + count;
+    Result := PNode(node).Count;
+    PNode(node).Count := Result + count;
   end
   else
   begin
+    node := fTree.AddNode(item);
+    PNode(node).Count := count;
     Result := 0;
-    fTree.Add(item, count);
   end;
   Inc(fCount, count);
 
@@ -815,7 +825,7 @@ end;
 
 procedure TTreeMultiSet<T>.Clear;
 var
-  node: PNode;
+  node: Pointer;
   count: Integer;
 begin
   if fCount > 0 then
@@ -829,9 +839,9 @@ begin
       node := fTree.Root.LeftMost;
       while Assigned(node) do
       begin
-        for count := node.Value downto 1 do
-          Notify(Self, node.Key, caRemoved);
-        node := node.Next;
+        for count := PNode(node).Count downto 1 do
+          Notify(Self, PNode(node).Key, caRemoved);
+        node := PBinaryTreeNode(node).Next;
       end;
     end;
 
@@ -841,13 +851,19 @@ begin
 end;
 
 function TTreeMultiSet<T>.Contains(const value: T): Boolean;
+var
+  node: Pointer;
 begin
-  Result := fTree.Exists(value);
+  node := fTree.FindNode(value);
+  Result := Assigned(node);
 end;
 
 function TTreeMultiSet<T>.Extract(const item: T): T;
+var
+  previousCount: Integer;
 begin
-  if Remove(item) then // TODO: possibly change if/when implementing ownership
+  previousCount := Remove(item, 1); // TODO: possibly change if/when implementing ownership
+  if previousCount > 0 then
     Result := item
   else
     Result := Default(T);
@@ -875,36 +891,46 @@ begin
 end;
 
 function TTreeMultiSet<T>.GetItemCount(const item: T): Integer;
+var
+  node: Pointer;
 begin
-  fTree.Find(item, Result);
+  node := fTree.FindNode(item);
+  if not Assigned(node) then Exit(Integer(node));
+  Result := PNode(node).Count;
 end;
 
 function TTreeMultiSet<T>.Remove(const item: T): Boolean;
+var
+  previousCount: Integer;
 begin
-  Result := Remove(item, 1) > 0;
+  previousCount := Remove(item, 1);
+  Result := previousCount > 0;
 end;
 
 function TTreeMultiSet<T>.Remove(const item: T; count: Integer): Integer;
 var
+  temp: Pointer;
   node: PNode;
   i: Integer;
 begin
   if count < 0 then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
 
+  temp := fTree.FindNode(item);
+  if not Assigned(temp) then Exit(Integer(temp));
+  node := temp;
+
   {$Q-}
   Inc(fVersion);
   {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
-  node := fTree.FindNode(item);
-  if not Assigned(node) then Exit(Integer(Pointer(node)));
 
-  Result := node.Value;
+  Result := node.Count;
   if Result <= count then
   begin
-    fTree.DeleteNode(node);
+    fTree.DeleteNode(Pointer(node));
     count := Result;
   end
   else
-    node.Value := Result - count;
+    node.Count := Result - count;
   Dec(fCount, count);
   if Assigned(Notify) then
     for i := 1 to count do
@@ -912,6 +938,8 @@ begin
 end;
 
 procedure TTreeMultiSet<T>.SetItemCount(const item: T; count: Integer);
+var
+  node: Pointer;
 begin
   if count < 0 then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
 
@@ -919,14 +947,22 @@ begin
   Inc(fVersion);
   {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   if count = 0 then
-    fTree.Delete(item)
+  begin
+    node := fTree.FindNode(item);
+    if Assigned(node) then
+      fTree.DeleteNode(node);
+  end
   else
-    fTree.AddOrSet(item, count);
+  begin
+    node := fTree.AddNode(item, True);
+    node := Pointer(IntPtr(node) and not 1);
+    PNode(node).Count := count;
+  end;
 end;
 
 function TTreeMultiSet<T>.ToArray: TArray<T>;
 var
-  node: PNode;
+  node: Pointer;
   index, count: Integer;
 begin
   SetLength(Result, fCount);
@@ -934,12 +970,12 @@ begin
   node := fTree.Root.LeftMost;
   while Assigned(node) do
   begin
-    for count := 1 to node.Value do
+    for count := 1 to PNode(node).Count do
     begin
-      Result[index] := node.Key;
+      Result[index] := PNode(node).Key;
       Inc(index);
     end;
-    node := node.Next;
+    node := PBinaryTreeNode(node).Next;
   end;
 end;
 
@@ -955,7 +991,7 @@ end;
 
 function TTreeMultiSet<T>.TEnumerator.MoveNext: Boolean;
 var
-  node: PNode;
+  node: Pointer;
 begin
   if fVersion = fSource.fVersion then
   begin
@@ -964,13 +1000,13 @@ begin
       if not Assigned(fNode) then
         node := fSource.fTree.Root.LeftMost
       else
-        node := fNode.Next;
+        node := PBinaryTreeNode(fNode).Next;
 
       Result := Assigned(node);
       if Result then
       begin
         fNode := node;
-        fRemainingCount := node.Value - 1;
+        fRemainingCount := PNode(node).Count - 1;
       end;
     end
     else
@@ -995,8 +1031,11 @@ begin
 end;
 
 function TTreeMultiSet<T>.TItemCollection.Contains(const value: T): Boolean;
+var
+  node: Pointer;
 begin
-  Result := fSource.fTree.Exists(value);
+  node := fSource.fTree.FindNode(value);
+  Result := Assigned(node);
 end;
 
 function TTreeMultiSet<T>.TItemCollection.GetCount: Integer;
@@ -1023,15 +1062,15 @@ end;
 function TTreeMultiSet<T>.TItemCollection.ToArray: TArray<T>;
 var
   i: Integer;
-  node: PNode;
+  node: Pointer;
 begin
   SetLength(Result, fSource.fTree.Count);
   i := 0;
   node := fSource.fTree.Root.LeftMost;
   while Assigned(node) do
   begin
-    Result[i] := node.Key;
-    node := node.Next;
+    Result[i] := PNode(node).Key;
+    node := PBinaryTreeNode(node).Next;
     Inc(i);
   end;
 end;
@@ -1095,13 +1134,14 @@ begin
   fSource := source;
 end;
 
-function TTreeMultiSet<T>.TEntryCollection.Contains(
-  const value: TEntry): Boolean;
+function TTreeMultiSet<T>.TEntryCollection.Contains(const value: TEntry): Boolean;
 var
+  node: Pointer;
   foundCount: Integer;
 begin
-  Result := fSource.fTree.Find(value.Item, foundCount)
-    and (value.Count = foundCount);
+  node := fSource.fTree.FindNode(value.Item);
+  if not Assigned(node) then Exit(Boolean(node));
+  Result := PNode(node).Count = value.Count;
 end;
 
 function TTreeMultiSet<T>.TEntryCollection.GetCount: Integer;
@@ -1126,8 +1166,21 @@ begin
 end;
 
 function TTreeMultiSet<T>.TEntryCollection.ToArray: TArray<TEntry>;
+var
+  tree: TBinaryTree;
+  node: PBinaryTreeNode;
+  i, count: NativeInt;
 begin
-  TArray<TPair<T,Integer>>(Result) := fSource.fTree.ToArray;
+  tree := fSource.fTree;
+  count := tree.Count;
+  SetLength(Result, count);
+  node := tree.Root.LeftMost;
+  for i := 0 to count - 1 do
+  begin
+    Result[i].Item := PNode(node).Key;
+    Result[i].Count := PNode(node).Count;
+    node := node.Next;
+  end;
 end;
 
 function TTreeMultiSet<T>.TEntryCollection._AddRef: Integer;
@@ -1148,7 +1201,7 @@ end;
 function TTreeMultiSet<T>.TEntryEnumerator.GetCurrent: TEntry;
 begin
   Result.Item := PNode(fNode).Key;
-  Result.Count := PNode(fNode).Value;
+  Result.Count := PNode(fNode).Count;
 end;
 
 function TTreeMultiSet<T>.TEntryEnumerator.MoveNext: Boolean;

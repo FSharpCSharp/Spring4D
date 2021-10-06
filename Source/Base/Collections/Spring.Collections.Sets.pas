@@ -129,7 +129,11 @@ type
     IReadOnlyCollection<T>, ICollection<T>, ISet<T>)
   private type
   {$REGION 'Nested Types'}
-    PNode = TNodes<T>.PRedBlackTreeNode;
+    PNode = ^TNode;
+    TNode = packed record // same layout as TRedBlackTreeBase<T>.TNode
+      Parent, Right, Left: PNode;
+      Key: T;
+    end;
 
     PEnumerator = ^TEnumerator;
     TEnumerator = record
@@ -145,7 +149,7 @@ type
     end;
   {$ENDREGION}
   private
-    fTree: TRedBlackTree<T>;
+    fTree: TRedBlackTreeBase<T>;
     fVersion: Integer;
   {$REGION 'Property Accessors'}
     function GetCapacity: Integer;
@@ -409,13 +413,10 @@ var
   entry: PItem;
 begin
   entry := IHashTable<T>(@fHashTable).Find(item, IgnoreExisting or InsertNonExisting);
-  if Assigned(entry) then
-  begin
-    entry.Item := item;
-    DoNotify(item, caAdded);
-    Exit(True);
-  end;
-  Result := False;
+  if not Assigned(entry) then Exit(Boolean(Pointer(entry)));
+  entry.Item := item;
+  DoNotify(item, caAdded);
+  Result := True;
 end;
 
 procedure THashSet<T>.Clear;
@@ -450,7 +451,8 @@ begin
   entry := IHashTable<T>(@fHashTable).Find(item, DeleteExisting);
   if Assigned(entry) then
   begin
-    DoNotify(entry.Item, caExtracted);
+    if Assigned(Notify) then
+      Notify(Self, entry.Item, caExtracted);
     Result := entry.Item;
     entry.Item := Default(T);
   end
@@ -486,17 +488,16 @@ end;
 
 function THashSet<T>.Remove(const item: T): Boolean;
 var
+  temp: Pointer;
   entry: PItem;
 begin
-  entry := IHashTable<T>(@fHashTable).Find(item, DeleteExisting);
-  if Assigned(entry) then
-  begin
-    DoNotify(entry.Item, caRemoved);
-    entry.Item := Default(T);
-    Result := True;
-  end
-  else
-    Result := False;
+  temp := IHashTable<T>(@fHashTable).Find(item, DeleteExisting);
+  if not Assigned(temp) then Exit(Boolean(Pointer(temp)));
+  entry := temp;
+  if Assigned(Notify) then
+    Notify(Self, entry.Item, caRemoved);
+  entry.Item := Default(T);
+  Result := True;
 end;
 
 function THashSet<T>.ToArray: TArray<T>;
@@ -563,7 +564,7 @@ procedure TSortedSet<T>.AfterConstruction;
 begin
   inherited AfterConstruction;
 
-  fTree := TRedBlackTree<T>.Create(fComparer);
+  fTree := TRedBlackTreeBase<T>.Create(fComparer);
 end;
 
 procedure TSortedSet<T>.BeforeDestruction;
@@ -579,18 +580,22 @@ begin
 end;
 
 function TSortedSet<T>.Add(const item: T): Boolean;
+var
+  node: Pointer;
 begin
+  node := fTree.AddNode(item);
+  if not Assigned(node) then Exit(Boolean(node));
   {$Q-}
   Inc(fVersion);
   {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
-  Result := fTree.Add(item);
-  if Result then
-    DoNotify(item, caAdded);
+  if Assigned(Notify) then
+    Notify(Self, PNode(node).Key, caAdded);
+  Result := True;
 end;
 
 procedure TSortedSet<T>.Clear;
 var
-  node: PNode;
+  node: Pointer;
 begin
   if fTree.Count = 0 then
     Exit;
@@ -599,25 +604,31 @@ begin
   Inc(fVersion);
   {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   if Assigned(Notify) then // optimization: if no notification needs to be send the entire tree traversal won't be done
-    for node in fTree.Root^ do
+  begin
+    node := fTree.Root.LeftMost;
+    while Assigned(node) do
       Notify(Self, PNode(node).Key, caRemoved);
+  end;
 
   fTree.Clear;
 end;
 
 function TSortedSet<T>.Contains(const item: T): Boolean;
+var
+  node: Pointer;
 begin
-  Result := Assigned(fTree.FindNode(item));
+  node := fTree.FindNode(item);
+  Result := Assigned(node);
 end;
 
 function TSortedSet<T>.Extract(const item: T): T;
 var
-  node: PNode;
+  node: Pointer;
 begin
   node := fTree.FindNode(item);
   if Assigned(node) then
   begin
-    Result := node.Key;
+    Result := PNode(node).Key;
     {$Q-}
     Inc(fVersion);
     {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
@@ -656,31 +667,31 @@ end;
 
 function TSortedSet<T>.Remove(const item: T): Boolean;
 var
-  node: PNode;
+  node: Pointer;
 begin
   node := fTree.FindNode(item);
-  Result := Assigned(node);
-  if Result then
-  begin
-    {$Q-}
-    Inc(fVersion);
-    {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
-    fTree.DeleteNode(node);
-    DoNotify(item, caRemoved);
-  end;
+  if not Assigned(node) then Exit(Boolean(node));
+  {$Q-}
+  Inc(fVersion);
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+  fTree.DeleteNode(node);
+  DoNotify(item, caRemoved);
+  Result := True;
 end;
 
 function TSortedSet<T>.ToArray: TArray<T>;
 var
+  tree: TBinaryTree;
   i: Integer;
-  node: PNode;
+  node: PBinaryTreeNode;
 begin
-  SetLength(Result, fTree.Count);
+  tree := fTree;
+  SetLength(Result, tree.Count);
   i := 0;
-  node := fTree.Root.LeftMost;
+  node := tree.Root.LeftMost;
   while Assigned(node) do
   begin
-    Result[i] := node.Key;
+    Result[i] := PNode(node).Key;
     node := node.Next;
     Inc(i);
   end;

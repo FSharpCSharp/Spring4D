@@ -138,7 +138,7 @@ type
 
     procedure Clear;
 
-    procedure CopyTo(var values: TArray<T>; index: Integer);
+    function CopyTo(var values: TArray<T>; index: Integer): Integer;
     function MoveTo(const collection: ICollection<T>; const predicate: Predicate<T>): Integer; overload;
   {$ENDREGION}
 
@@ -1497,18 +1497,28 @@ begin
   Result := False;
 end;
 
-procedure TAbstractArrayList<T>.CopyTo(var values: TArray<T>; index: Integer);
+function TAbstractArrayList<T>.CopyTo(var values: TArray<T>; index: Integer): Integer;
 var
-  itemCount: Integer;
+  len, listCount: Integer;
 begin
-  CheckRange(index, Count, DynArrayLength(values));
-
-  itemCount := Count;
-  if itemCount > 0 then
-    if ItemType.IsManaged then
-      MoveManaged(@fItems[0], @values[index], TypeInfo(T), itemCount)
+  len := DynArrayLength(values);
+  if Cardinal(index) <= Cardinal(len) then
+  begin
+    listCount := Count;
+    if index <= len - listCount then
+    begin
+      if listCount > 0 then
+        if ItemType.IsManaged then
+          MoveManaged(@fItems[0], @values[index], TypeInfo(T), listCount)
+        else
+          System.Move(fItems[0], values[index], SizeOf(T) * listCount);
+      Result := listCount;
+    end
     else
-      System.Move(fItems[0], values[index], SizeOf(T) * itemCount);
+      Result := RaiseHelper.ArgumentOutOfRange_Count;
+  end
+  else
+    Result := RaiseHelper.ArgumentOutOfRange_Index;
 end;
 
 function TAbstractArrayList<T>.ToArray: TArray<T>;

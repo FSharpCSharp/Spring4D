@@ -1530,12 +1530,12 @@ type
     class function GetArgumentOutOfRangeException(resource: ExceptionResource): EArgumentException; overload; static;
   public
     class procedure ArgumentNil(argument: ExceptionArgument); static;
-    class function ArgumentOutOfRange(argument: ExceptionArgument): Boolean; overload; static;
-    class function ArgumentOutOfRange(argument: ExceptionArgument; resource: ExceptionResource): Boolean; overload; static;
-    class function ArgumentOutOfRange(resource: ExceptionResource): Boolean; overload; static;
+    class function ArgumentOutOfRange(argument: ExceptionArgument): NativeInt; overload; static;
+    class function ArgumentOutOfRange(argument: ExceptionArgument; resource: ExceptionResource): NativeInt; overload; static;
+    class function ArgumentOutOfRange(resource: ExceptionResource): NativeInt; overload; static;
 
-    class function ArgumentOutOfRange_Count: Boolean; static;
-    class function ArgumentOutOfRange_Index: Boolean; static;
+    class function ArgumentOutOfRange_Count: NativeInt; static;
+    class function ArgumentOutOfRange_Index: NativeInt; static;
 
     class procedure DuplicateKey; static;
     class procedure KeyNotFound; static;
@@ -2881,7 +2881,7 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TTypeInfo<T>}
+  {$REGION 'TTypeInfo<T>'}
 
   TTypeInfo<T> = record
   private
@@ -8164,28 +8164,28 @@ begin
   raise EArgumentNilException.Create(GetArgumentName(argument)) at ReturnAddress;
 end;
 
-class function RaiseHelper.ArgumentOutOfRange(argument: ExceptionArgument): Boolean;
+class function RaiseHelper.ArgumentOutOfRange(argument: ExceptionArgument): NativeInt;
 begin
   raise EArgumentOutOfRangeException.Create(GetArgumentName(argument)) at ReturnAddress;
 end;
 
-class function RaiseHelper.ArgumentOutOfRange(argument: ExceptionArgument; resource: ExceptionResource): Boolean;
+class function RaiseHelper.ArgumentOutOfRange(argument: ExceptionArgument; resource: ExceptionResource): NativeInt;
 begin
   raise GetArgumentOutOfRangeException(argument, resource) at ReturnAddress;
 end;
 
-class function RaiseHelper.ArgumentOutOfRange(resource: ExceptionResource): Boolean;
+class function RaiseHelper.ArgumentOutOfRange(resource: ExceptionResource): NativeInt;
 begin
   raise GetArgumentOutOfRangeException(resource) at ReturnAddress;
 end;
 
-class function RaiseHelper.ArgumentOutOfRange_Count: Boolean;
+class function RaiseHelper.ArgumentOutOfRange_Count: NativeInt;
 begin
   raise GetArgumentOutOfRangeException(ExceptionArgument.count,
     ExceptionResource.ArgumentOutOfRange_Count) at ReturnAddress;
 end;
 
-class function RaiseHelper.ArgumentOutOfRange_Index: Boolean;
+class function RaiseHelper.ArgumentOutOfRange_Index: NativeInt;
 begin
   raise GetArgumentOutOfRangeException(ExceptionArgument.index,
     ExceptionResource.ArgumentOutOfRange_Index) at ReturnAddress;

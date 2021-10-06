@@ -405,7 +405,12 @@ type
   {$REGION 'Nested Types'}
     TKeyValuePair = TPair<TKey, TValue>;
     PKeyValuePair = ^TKeyValuePair;
-    PNode = TNodes<TKey, TValue>.PRedBlackTreeNode;
+    PNode = ^TNode;
+    TNode = packed record // same layout as TRedBlackTreeBase<TKey, TValue>.TNode
+      Parent, Right, Left: Pointer;
+      Key: TKey;
+      Value: TValue;
+    end;
 
     PEnumerator = ^TEnumerator;
     TEnumerator = record
@@ -416,36 +421,13 @@ type
       fNode: PBinaryTreeNode;
       fVersion: Integer;
       function GetCurrent: TKeyValuePair;
-      function GetCurrentKey: TKey;
       function GetCurrentValue: TValue;
       function MoveNext: Boolean;
       class var Enumerator_Vtable: TEnumeratorVtable;
-      class var KeysEnumerator_Vtable: TEnumeratorVtable;
       class var ValuesEnumerator_Vtable: TEnumeratorVtable;
     end;
 
-    TKeyCollection = class(TEnumerableBase<TKey>,
-      IEnumerable<TKey>, IReadOnlyCollection<TKey>)
-    private
-      fSource: TSortedDictionary<TKey, TValue>;
-    {$REGION 'Property Accessors'}
-      function GetCount: Integer;
-      function GetCountFast: Integer;
-    {$ENDREGION}
-    public
-      constructor Create(const source: TSortedDictionary<TKey, TValue>);
-
-    {$REGION 'Implements IInterface'}
-      function _AddRef: Integer; stdcall;
-      function _Release: Integer; stdcall;
-    {$ENDREGION}
-
-    {$REGION 'Implements IEnumerable<TKey>'}
-      function GetEnumerator: IEnumerator<TKey>;
-      function Contains(const value: TKey): Boolean; overload;
-      function ToArray: TArray<TKey>;
-    {$ENDREGION}
-    end;
+    TKeyCollection = TSortedKeyCollection<TKey>;
 
     TValueCollection = class(TEnumerableBase<TValue>,
       IEnumerable<TValue>, IReadOnlyCollection<TValue>)
@@ -471,12 +453,13 @@ type
     end;
   {$ENDREGION}
   private
-    fTree: TRedBlackTree<TKey,TValue>;
+    fTree: TRedBlackTreeBase<TKey,TValue>;
     fKeyComparer: IComparer<TKey>;
     fValueComparer: IEqualityComparer<TValue>;
     fVersion: Integer;
     fKeys: TKeyCollection;
     fValues: TValueCollection;
+    fOwnerships: TDictionaryOwnerships;
   {$REGION 'Property Accessors'}
     function GetCapacity: Integer;
     function GetCount: Integer;
@@ -487,11 +470,11 @@ type
     procedure SetCapacity(value: Integer);
     procedure SetItem(const key: TKey; const value: TValue);
   {$ENDREGION}
-    procedure KeyChanged(const item: TKey; action: TCollectionChangedAction); inline;
-    procedure ValueChanged(const item: TValue; action: TCollectionChangedAction); inline;
+    function DoRemove(const node: PNode; action: TCollectionChangedAction): Boolean;
   public
     constructor Create(const keyComparer: IComparer<TKey>;
-      const valueComparer: IEqualityComparer<TValue>);
+      const valueComparer: IEqualityComparer<TValue>;
+      ownerships: TDictionaryOwnerships);
     procedure AfterConstruction; override;
     procedure BeforeDestruction; override;
 
@@ -832,8 +815,7 @@ begin
   Result := Assigned(item);
 end;
 
-function TDictionary<TKey, TValue>.Contains(const key: TKey;
-  const value: TValue): Boolean;
+function TDictionary<TKey, TValue>.Contains(const key: TKey; const value: TValue): Boolean;
 var
   item: PItem;
 begin
@@ -1200,7 +1182,9 @@ begin
 
   Assert(newCapacity >= fCount);
 
-  IncUnchecked(fVersion);
+  {$Q-}
+  Inc(fVersion);
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
 
   newBucketCount := NextPowerOf2(newCapacity * 4 div 3 - 1); // 75% load factor
 
@@ -1352,7 +1336,9 @@ end;
 procedure TBidiDictionary<TKey, TValue>.DoAdd(keyhashCode, keyBucketIndex, valueHashCode,
   valueBucketIndex, itemIndex: Integer; const key: TKey; const value: TValue);
 begin
-  IncUnchecked(fVersion);
+  {$Q-}
+  Inc(fVersion);
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   fKeyBuckets[keyBucketIndex] := itemIndex;
   fValueBuckets[valueBucketIndex] := itemIndex;
   fItems[itemIndex].KeyHashCode := keyHashCode;
@@ -1377,7 +1363,9 @@ begin
   oldKey := fItems[itemIndex].Key;
   oldValue := fItems[itemIndex].Value;
 
-  IncUnchecked(fVersion);
+  {$Q-}
+  Inc(fVersion);
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   fKeyBuckets[keyBucketIndex] := UsedBucket;
   fValueBuckets[valueBucketIndex] := UsedBucket;
   fItems[itemIndex].Key := Default(TKey);
@@ -1404,7 +1392,9 @@ begin
   oldKeyHashCode := fItems[itemIndex].KeyHashCode;
   valueHashCode := fItems[itemIndex].ValueHashCode;
 
-  IncUnchecked(fVersion);
+  {$Q-}
+  Inc(fVersion);
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   if fItemCount = Capacity then
   begin
     Grow;
@@ -1451,7 +1441,9 @@ begin
   keyHashCode := fItems[itemIndex].KeyHashCode;
   oldValueHashCode := fItems[itemIndex].ValueHashCode;
 
-  IncUnchecked(fVersion);
+  {$Q-}
+  Inc(fVersion);
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   if fItemCount = Capacity then
   begin
     Grow;
@@ -1506,7 +1498,9 @@ begin
   oldItemCount := fItemCount;
   oldItems := fItems;
 
-  IncUnchecked(fVersion);
+  {$Q-}
+  Inc(fVersion);
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   fCount := 0;
   fItemCount := 0;
   fKeyBuckets := nil;
@@ -2361,10 +2355,14 @@ end;
 
 constructor TSortedDictionary<TKey, TValue>.Create(
   const keyComparer: IComparer<TKey>;
-  const valueComparer: IEqualityComparer<TValue>);
+  const valueComparer: IEqualityComparer<TValue>;
+  ownerships: TDictionaryOwnerships);
 begin
+  ValidateParams(TypeInfo(TKey), TypeInfo(TValue), 0, ownerships);
+
   fKeyComparer := keyComparer;
-  fValueComparer := valueComparer
+  fValueComparer := valueComparer;
+  fOwnerships := ownerships;
 end;
 
 procedure TSortedDictionary<TKey, TValue>.AfterConstruction;
@@ -2376,9 +2374,9 @@ begin
   if not Assigned(fValueComparer) then
     fValueComparer := IEqualityComparer<TValue>(_LookupVtableInfo(giEqualityComparer, TypeInfo(TValue), SizeOf(TValue)));
 
-  fTree := TRedBlackTree<TKey,TValue>.Create(fKeyComparer);
+  fTree := TRedBlackTreeBase<TKey,TValue>.Create(fKeyComparer);
 
-  fKeys := TKeyCollection.Create(Self);
+  fKeys := TKeyCollection.Create(Self, fTree, @fVersion);
   fValues := TValueCollection.Create(Self);
 end;
 
@@ -2391,30 +2389,23 @@ begin
   inherited BeforeDestruction;
 end;
 
-procedure TSortedDictionary<TKey, TValue>.KeyChanged(const item: TKey;
-  action: TCollectionChangedAction);
+procedure TSortedDictionary<TKey, TValue>.Add(const key: TKey; const value: TValue);
+var
+  node: Pointer;
 begin
-  with fOnKeyChanged do if CanInvoke then
-    Invoke(Self, item, action);
-end;
-
-procedure TSortedDictionary<TKey, TValue>.ValueChanged(const item: TValue;
-  action: TCollectionChangedAction);
-begin
-  with fOnValueChanged do if CanInvoke then
-    Invoke(Self, item, action);
-end;
-
-procedure TSortedDictionary<TKey, TValue>.Add(const key: TKey;
-  const value: TValue);
-begin
-  if fTree.Add(key, value) then
+  node := fTree.AddNode(key);
+  if Assigned(node) then
   begin
-    IncUnchecked(fVersion);
+    PNode(node).Value := value;
+    {$Q-}
+    Inc(fVersion);
+    {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
     if Assigned(Notify) then
-      DoNotify(key, value, caAdded);
-    KeyChanged(key, caAdded);
-    ValueChanged(value, caAdded);
+      Notify(Self, PKeyValuePair(@PNode(node).Key)^, caAdded);
+    with fOnKeyChanged do if CanInvoke then
+      Invoke(Self, PNode(node).Key, caAdded);
+    with fOnValueChanged do if CanInvoke then
+      Invoke(Self, PNode(node).Value, caAdded);
   end
   else
     RaiseHelper.DuplicateKey;
@@ -2433,7 +2424,7 @@ end;
 
 procedure TSortedDictionary<TKey, TValue>.Clear;
 var
-  node: PNode;
+  node, next: PBinaryTreeNode;
 begin
   if fTree.Count = 0 then
     Exit;
@@ -2442,15 +2433,18 @@ begin
   Inc(fVersion);
   {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
 
-  node := fTree.Root.LeftMost;
-  while Assigned(node) do
-  begin
-    if Assigned(Notify) then
-      DoNotify(node.Key, node.Value, caRemoved);
-    KeyChanged(node.Key, caRemoved);
-    ValueChanged(node.Value, caRemoved);
-    node := node.Next;
-  end;
+  next := fTree.Root.LeftMost;
+  if Assigned(next) then
+    repeat
+      node := next;
+      if Assigned(Notify) then
+        Notify(Self, PKeyValuePair(@PNode(node).Key)^, caRemoved);
+      with fOnKeyChanged do if CanInvoke then
+        Invoke(Self, PNode(node).Key, caRemoved);
+      with fOnValueChanged do if CanInvoke then
+        Invoke(Self, PNode(node).Value, caRemoved);
+      next := node.Next;
+    until not Assigned(next);
 
   fTree.Clear;
 end;
@@ -2458,23 +2452,25 @@ end;
 function TSortedDictionary<TKey, TValue>.Contains(const value: TKeyValuePair;
   const comparer: IEqualityComparer<TKeyValuePair>): Boolean;
 var
-  found: TValue;
+  node: Pointer;
 begin
-  Result := fTree.Find(value.Key, found)
-    and comparer.Equals(value, TKeyValuePair.Create(value.Key, found));
+  node := fTree.FindNode(value.Key);
+  if not Assigned(node) then Exit(Boolean(node));
+  Result := comparer.Equals(PKeyValuePair(@PNode(node).Key)^, value);
 end;
 
-function TSortedDictionary<TKey, TValue>.Contains(const key: TKey;
-  const value: TValue): Boolean;
+function TSortedDictionary<TKey, TValue>.Contains(const key: TKey; const value: TValue): Boolean;
 var
-  found: TValue;
+  node: Pointer;
 begin
-  Result := fTree.Find(key, found) and fValueComparer.Equals(value, found);
+  node := fTree.FindNode(key);
+  if not Assigned(node) then Exit(Boolean(node));
+  Result := fValueComparer.Equals(PNode(node).Value, value);
 end;
 
 function TSortedDictionary<TKey, TValue>.ContainsKey(const key: TKey): Boolean;
 var
-  node: PNode;
+  node: Pointer;
 begin
   node := fTree.FindNode(key);
   Result := Assigned(node);
@@ -2482,38 +2478,69 @@ end;
 
 function TSortedDictionary<TKey, TValue>.ContainsValue(const value: TValue): Boolean;
 var
-  found: TKeyValuePair;
+  temp: Pointer;
+  node: PBinaryTreeNode;
+  valueComparer: Pointer;
 begin
-  for found in fTree do
-    if fValueComparer.Equals(value, found.Value) then
-      Exit(True);
-  Result := False;
+  temp := fTree.Root.LeftMost;
+  if not Assigned(temp) then Exit(Boolean(temp));
+  repeat
+    node := temp;
+    Result := fValueComparer.Equals(PNode(node).Value, value);
+    if Result then
+      Exit;
+    temp := node.Next;
+  until not Assigned(temp);
+  Result := Boolean(temp);
 end;
 
-function TSortedDictionary<TKey, TValue>.Extract(const key: TKey;
-  const value: TValue): TKeyValuePair;
-var
-  node: PNode;
+function TSortedDictionary<TKey, TValue>.DoRemove(const node: PNode;
+  action: TCollectionChangedAction): Boolean;
 begin
-  node := fTree.FindNode(key);
-  if Assigned(node) and fValueComparer.Equals(value, node.Value) then
-  begin
-    Result.Key := node.Key;
-    Result.Value := node.Value;
-    IncUnchecked(fVersion);
-    fTree.DeleteNode(node);
-    DoNotify(Result, caExtracted);
-    KeyChanged(Result.Key, caExtracted);
-    ValueChanged(Result.Value, caExtracted);
-    Exit;
-  end;
-  Result.Key := Default(TKey);
-  Result.Value := Default(TValue);
+  {$Q-}
+  Inc(fVersion);
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+  if Assigned(Notify) then
+    Notify(Self, PKeyValuePair(@node.Key)^, action);
+  with fOnKeyChanged do if CanInvoke then
+    Invoke(Self, node.Key, action);
+{$IFDEF DELPHIXE7_UP}
+  if GetTypeKind(TKey) = tkClass then
+{$ENDIF}
+  if (action = caRemoved) and (doOwnsKeys in fOwnerships) then
+    FreeObject(node.Key);
+  with fOnValueChanged do if CanInvoke then
+    Invoke(Self, node.Value, action);
+{$IFDEF DELPHIXE7_UP}
+  if GetTypeKind(TValue) = tkClass then
+{$ENDIF}
+  if (action = caRemoved) and (doOwnsValues in fOwnerships) then
+    FreeObject(node.Value);
+
+  fTree.DeleteNode(Pointer(node));
+  Result := True;
 end;
 
 function TSortedDictionary<TKey, TValue>.Extract(const key: TKey): TValue;
 begin
   TryExtract(key, Result);
+end;
+
+function TSortedDictionary<TKey, TValue>.Extract(const key: TKey;
+  const value: TValue): TKeyValuePair;
+var
+  node: Pointer;
+begin
+  node := fTree.FindNode(key);
+  if Assigned(node) and fValueComparer.Equals(PNode(node).Value, value) then
+  begin
+    Result.Key := PNode(node).Key;
+    Result.Value := PNode(node).Value;
+    DoRemove(node, caExtracted);
+    Exit;
+  end;
+  Result.Key := Default(TKey);
+  Result.Value := Default(TValue);
 end;
 
 function TSortedDictionary<TKey, TValue>.GetCapacity: Integer;
@@ -2554,15 +2581,25 @@ begin
 end;
 
 function TSortedDictionary<TKey, TValue>.GetValueOrDefault(const key: TKey): TValue;
+var
+  node: Pointer;
 begin
-  if not fTree.Find(key, Result) then
+  node := fTree.FindNode(key);
+  if Assigned(node) then
+    Result := PNode(node).Value
+  else
     Result := Default(TValue);
 end;
 
 function TSortedDictionary<TKey, TValue>.GetValueOrDefault(const key: TKey;
   const defaultValue: TValue): TValue;
+var
+  node: Pointer;
 begin
-  if not fTree.Find(key, Result) then
+  node := fTree.FindNode(key);
+  if Assigned(node) then
+    Result := PNode(node).Value
+  else
     Result := defaultValue;
 end;
 
@@ -2573,37 +2610,24 @@ end;
 
 function TSortedDictionary<TKey, TValue>.Remove(const key: TKey): Boolean;
 var
-  node: PNode;
+  node: Pointer;
 begin
   node := fTree.FindNode(key);
-  Result := Assigned(node);
-  if Result then
-  begin
-    IncUnchecked(fVersion);
-    if Assigned(Notify) then
-      DoNotify(node.Key, node.Value, caRemoved);
-    KeyChanged(node.Key, caRemoved);
-    ValueChanged(node.Value, caRemoved);
-    fTree.DeleteNode(node);
-  end;
+  if not Assigned(node) then Exit(Boolean(node));
+  Result := DoRemove(node, caRemoved);
 end;
 
 function TSortedDictionary<TKey, TValue>.Remove(const key: TKey;
   const value: TValue): Boolean;
 var
-  node: PNode;
+  temp, node: Pointer;
 begin
-  node := fTree.FindNode(key);
-  Result := Assigned(node) and fValueComparer.Equals(value, node.Value);
-  if Result then
-  begin
-    IncUnchecked(fVersion);
-    if Assigned(Notify) then
-      DoNotify(node.Key, node.Value, caRemoved);
-    KeyChanged(node.Key, caRemoved);
-    ValueChanged(node.Value, caRemoved);
-    fTree.DeleteNode(node);
-  end;
+  temp := fTree.FindNode(key);
+  if not Assigned(temp) then Exit(Boolean(temp));
+  node := temp;
+  Result := fValueComparer.Equals(value, PNode(node).Value);
+  if not Result then Exit;
+  Result := DoRemove(node, caRemoved);
 end;
 
 procedure TSortedDictionary<TKey, TValue>.SetCapacity(value: Integer);
@@ -2613,44 +2637,54 @@ end;
 
 procedure TSortedDictionary<TKey, TValue>.SetItem(const key: TKey; const value: TValue);
 var
+  temp: Pointer;
   node: PNode;
+  existingNode: Boolean;
 begin
-  IncUnchecked(fVersion);
-  node := fTree.FindNode(key);
-  if Assigned(node) then
+  {$Q-}
+  Inc(fVersion);
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+  temp := fTree.AddNode(key, True);
+  node := temp;
+  node := Pointer(IntPtr(node) and not 1); // clear lowest bit
+
+  existingNode := Odd(IntPtr(temp)); // an existing node
+  if existingNode then
   begin
     if Assigned(Notify) then
-      DoNotify(key, node.Value, caRemoved);
-    ValueChanged(node.Value, caRemoved);
-    node.Value := value;
-    if Assigned(Notify) then
-      DoNotify(key, value, caAdded);
-    ValueChanged(value, caAdded);
-  end
-  else
-  begin
-    fTree.Add(key, value);
-    if Assigned(Notify) then
-      DoNotify(key, value, caAdded);
-    KeyChanged(key, caAdded);
-    ValueChanged(value, caAdded);
+      Notify(Self, PKeyValuePair(@node.Key)^, caRemoved);
+    with fOnValueChanged do if CanInvoke then
+      Invoke(Self, node.Value, caRemoved);
   end;
+
+  node.Value := value;
+
+  if Assigned(Notify) then
+    Notify(Self, PKeyValuePair(@node.Key)^, caAdded);
+  if not existingNode then
+    with fOnKeyChanged do if CanInvoke then
+      Invoke(Self, node.Key, caAdded);
+  with fOnValueChanged do if CanInvoke then
+    Invoke(Self, node.Value, caAdded);
 end;
 
 function TSortedDictionary<TKey, TValue>.ToArray: TArray<TKeyValuePair>;
 var
-  node: PNode;
+  node, next: PBinaryTreeNode;
   target: PKeyValuePair;
 begin
   SetLength(Result, fTree.Count);
-  target := Pointer(Result);
-  node := fTree.Root.LeftMost;
-  while Assigned(node) do
+  next := fTree.Root.LeftMost;
+  if Assigned(next) then
   begin
-    target.Key := node.Key;
-    target.Value :=  node.Value;
-    node := node.Next;
-    Inc(target);
+    target := Pointer(Result);
+    repeat
+      node := next;
+      target.Key := PNode(node).Key;
+      target.Value := PNode(node).Value;
+      Inc(target);
+      next := node.Next;
+    until not Assigned(next);
   end;
 end;
 
@@ -2659,48 +2693,62 @@ begin
   fTree.TrimExcess;
 end;
 
-function TSortedDictionary<TKey, TValue>.TryAdd(const key: TKey;
-  const value: TValue): Boolean;
+function TSortedDictionary<TKey, TValue>.TryAdd(const key: TKey; const value: TValue): Boolean;
+var
+  temp: Pointer;
+  node: PNode;
 begin
-  if not fTree.Add(key, value) then
-    Exit(False);
-  IncUnchecked(fVersion);
+  temp := fTree.AddNode(key);
+  if not Assigned(temp) then Exit(Boolean(temp));
+
+  node := temp;
+  {$Q-}
+  Inc(fVersion);
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+  node.Value := value;
   if Assigned(Notify) then
-    DoNotify(key, value, caAdded);
-  KeyChanged(key, caAdded);
-  ValueChanged(value, caAdded);
+    Notify(Self, PKeyValuePair(@node.Key)^, caAdded);
+  with fOnKeyChanged do if CanInvoke then
+    Invoke(Self, node.Key, caAdded);
+  with fOnValueChanged do if CanInvoke then
+    Invoke(Self, node.Value, caAdded);
   Result := True;
 end;
 
 function TSortedDictionary<TKey, TValue>.TryExtract(const key: TKey; var value: TValue): Boolean;
 var
-  node: PNode;
+  node: Pointer;
 begin
   node := fTree.FindNode(key);
-  Result := Assigned(node);
-  if Result then
+  if Assigned(node) then
   begin
-    value := node.Value;
-    IncUnchecked(fVersion);
-    fTree.DeleteNode(node);
-    if Assigned(Notify) then
-      DoNotify(key, value, caExtracted);
-    KeyChanged(key, caExtracted);
-    ValueChanged(value, caExtracted);
-  end
-  else
-    value := Default(TValue);
+    value := PNode(node).Value;
+    Result := DoRemove(node, caExtracted);
+    Exit;
+  end;
+  value := Default(TValue);
+  Result := False;
 end;
 
 function TSortedDictionary<TKey, TValue>.TryGetValue(const key: TKey;
   var value: TValue): Boolean;
+var
+  node: Pointer;
 begin
-  Result := fTree.Find(key, value);
+  node := fTree.FindNode(key);
+  if Assigned(node) then
+  begin
+    value := PNode(node).Value;
+    Exit(True);
+  end;
+  value := Default(TValue);
+  Result := False;
 end;
 
 function TSortedDictionary<TKey, TValue>.TryUpdateValue(const key: TKey;
   const newValue: TValue; var oldValue: TValue): Boolean;
 var
+  temp: Pointer;
   node: PNode;
 begin
   if fTree.fCount = 0 then
@@ -2709,23 +2757,27 @@ begin
     Exit(False);
   end;
 
-  node := fTree.FindNode(key);
-  Result := Assigned(node);
+  temp := fTree.FindNode(key);
+  Result := Assigned(temp);
   if Result then
   begin
-    oldValue := node.Value;
-
-    IncUnchecked(fVersion);
+    node := temp;
+    {$Q-}
+    Inc(fVersion);
+    {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
 
     if Assigned(Notify) then
-      DoNotify(key, oldValue, caRemoved);
-    ValueChanged(oldValue, caRemoved);
+      Notify(Self, PKeyValuePair(@node.Key)^, caRemoved);
+    with fOnValueChanged do if CanInvoke then
+      Invoke(Self, node.Value, caRemoved);
 
+    oldValue := node.Value;
     node.Value := newValue;
 
     if Assigned(Notify) then
-      DoNotify(key, newValue, caAdded);
-    ValueChanged(newValue, caAdded);
+      Notify(Self, PKeyValuePair(@node.Key)^, caAdded);
+    with fOnValueChanged do if CanInvoke then
+      Invoke(Self, node.Value, caAdded);
   end
   else
     oldValue := Default(TValue);
@@ -2740,11 +2792,6 @@ function TSortedDictionary<TKey, TValue>.TEnumerator.GetCurrent: TKeyValuePair;
 begin
   Result.Key := PNode(fNode).Key;
   Result.Value := PNode(fNode).Value;
-end;
-
-function TSortedDictionary<TKey, TValue>.TEnumerator.GetCurrentKey: TKey;
-begin
-  Result := PNode(fNode).Key;
 end;
 
 function TSortedDictionary<TKey, TValue>.TEnumerator.GetCurrentValue: TValue;
@@ -2777,70 +2824,6 @@ begin
   end
   else
     Result := RaiseHelper.EnumFailedVersion;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TSortedDictionary<TKey, TValue>.TKeyCollection'}
-
-constructor TSortedDictionary<TKey, TValue>.TKeyCollection.Create(
-  const source: TSortedDictionary<TKey, TValue>);
-begin
-  fSource := source;
-end;
-
-function TSortedDictionary<TKey, TValue>.TKeyCollection.Contains(
-  const value: TKey): Boolean;
-begin
-  Result := fSource.fTree.Exists(value);
-end;
-
-function TSortedDictionary<TKey, TValue>.TKeyCollection.GetCount: Integer;
-begin
-  Result := fSource.fTree.Count;
-end;
-
-function TSortedDictionary<TKey, TValue>.TKeyCollection.GetCountFast: Integer;
-begin
-  Result := fSource.fTree.Count;
-end;
-
-function TSortedDictionary<TKey, TValue>.TKeyCollection.GetEnumerator: IEnumerator<TKey>;
-begin
-  _AddRef;
-  with PEnumerator(TEnumeratorBlock.Create(@Result, @TEnumerator.KeysEnumerator_Vtable,
-    TypeInfo(TEnumerator), @TEnumerator.GetCurrentKey, @TEnumerator.MoveNext))^ do
-  begin
-    fSource := Self.fSource;
-    fVersion := fSource.fVersion;
-  end;
-end;
-
-function TSortedDictionary<TKey, TValue>.TKeyCollection.ToArray: TArray<TKey>;
-var
-  i: Integer;
-  node: PNode;
-begin
-  SetLength(Result, fSource.fTree.Count);
-  i := 0;
-  node := fSource.fTree.Root.LeftMost;
-  while Assigned(node) do
-  begin
-    Result[i] := node.Key;
-    node := node.Next;
-    Inc(i);
-  end;
-end;
-
-function TSortedDictionary<TKey, TValue>.TKeyCollection._AddRef: Integer;
-begin
-  Result := fSource._AddRef;
-end;
-
-function TSortedDictionary<TKey, TValue>.TKeyCollection._Release: Integer;
-begin
-  Result := fSource._Release;
 end;
 
 {$ENDREGION}
@@ -2883,17 +2866,22 @@ end;
 
 function TSortedDictionary<TKey, TValue>.TValueCollection.ToArray: TArray<TValue>;
 var
+  tree: TBinaryTree;
+  node, next: PBinaryTreeNode;
   i: Integer;
-  node: PNode;
 begin
-  SetLength(Result, fSource.fTree.Count);
-  i := 0;
-  node := fSource.fTree.Root.LeftMost;
-  while Assigned(node) do
+  tree := fSource.fTree;
+  SetLength(Result, tree.Count);
+  next := tree.Root.LeftMost;
+  if Assigned(next) then
   begin
-    Result[i] := node.Value;
-    node := node.Next;
-    Inc(i);
+    i := 0;
+    repeat
+      node := next;
+      Result[i] := PNode(node).Value;
+      Inc(i);
+      next := node.Next;
+    until not Assigned(next);
   end;
 end;
 

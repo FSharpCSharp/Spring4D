@@ -885,7 +885,10 @@ type
     /// <param name="index">
     ///   The zero-based index in array at which copying begins.
     /// </param>
-    procedure CopyTo(var values: TArray<T>; index: Integer);
+    /// <returns>
+    ///   The number of elements that were copied.
+    /// </returns>
+    function CopyTo(var values: TArray<T>; index: Integer): Integer;
   end;
 
   IReadOnlyList<T> = interface;
@@ -931,7 +934,10 @@ type
     /// <param name="index">
     ///   The zero-based index in array at which copying begins.
     /// </param>
-    procedure CopyTo(var values: TArray<T>; index: Integer);
+    /// <returns>
+    ///   The number of elements that were copied.
+    /// </returns>
+    function CopyTo(var values: TArray<T>; index: Integer): Integer;
 
     /// <summary>
     ///   Moves the elements of the ICollection&lt;T&gt; to the specified
@@ -3302,6 +3308,17 @@ type
     class function CreateTreeMultiMap<TKey, TValue>(const keyComparer: IEqualityComparer<TKey>; ownerships: TDictionaryOwnerships = []): IMultiMap<TKey, TValue>; overload; static;
     class function CreateTreeMultiMap<TKey, TValue>(const keyComparer: IEqualityComparer<TKey>; const valueComparer: IComparer<TValue>; ownerships: TDictionaryOwnerships = []): IMultiMap<TKey, TValue>; overload; static;
 
+    class function CreateSortedMultiMap<TKey, TValue>(ownerships: TDictionaryOwnerships = []): IMultiMap<TKey, TValue>; overload; static;
+    class function CreateSortedMultiMap<TKey, TValue>(const keyComparer: IComparer<TKey>; ownerships: TDictionaryOwnerships = []): IMultiMap<TKey, TValue>; overload; static;
+
+    class function CreateSortedHashMultiMap<TKey, TValue>(ownerships: TDictionaryOwnerships = []): IMultiMap<TKey, TValue>; overload; static;
+    class function CreateSortedHashMultiMap<TKey, TValue>(const keyComparer: IComparer<TKey>; ownerships: TDictionaryOwnerships = []): IMultiMap<TKey, TValue>; overload; static;
+    class function CreateSortedHashMultiMap<TKey, TValue>(const keyComparer: IComparer<TKey>; const valueComparer: IEqualityComparer<TValue>; ownerships: TDictionaryOwnerships = []): IMultiMap<TKey, TValue>; overload; static;
+
+    class function CreateSortedTreeMultiMap<TKey, TValue>(ownerships: TDictionaryOwnerships = []): IMultiMap<TKey, TValue>; overload; static;
+    class function CreateSortedTreeMultiMap<TKey, TValue>(const keyComparer: IComparer<TKey>; ownerships: TDictionaryOwnerships = []): IMultiMap<TKey, TValue>; overload; static;
+    class function CreateSortedTreeMultiMap<TKey, TValue>(const keyComparer: IComparer<TKey>; const valueComparer: IComparer<TValue>; ownerships: TDictionaryOwnerships = []): IMultiMap<TKey, TValue>; overload; static;
+
     class function CreateBidiDictionary<TKey, TValue>: IBidiDictionary<TKey, TValue>; overload; static;
     class function CreateBidiDictionary<TKey, TValue>(ownerships: TDictionaryOwnerships): IBidiDictionary<TKey, TValue>; overload; static;
     class function CreateBidiDictionary<TKey, TValue>(capacity: Integer; ownerships: TDictionaryOwnerships = []): IBidiDictionary<TKey, TValue>; overload; static;
@@ -3363,9 +3380,10 @@ type
     class function CreateSortedMultiSet<T>(const values: IEnumerable<T>): IMultiSet<T>; overload; static;
 
     class function CreateSortedDictionary<TKey, TValue>: IDictionary<TKey, TValue>; overload; static;
-    class function CreateSortedDictionary<TKey, TValue>(const keyComparer: IComparer<TKey>): IDictionary<TKey, TValue>; overload; static;
-    class function CreateSortedDictionary<TKey, TValue>(const valueComparer: IEqualityComparer<TValue>): IDictionary<TKey, TValue>; overload; static;
-    class function CreateSortedDictionary<TKey, TValue>(const keyComparer: IComparer<TKey>; const valueComparer: IEqualityComparer<TValue>): IDictionary<TKey, TValue>; overload; static;
+    class function CreateSortedDictionary<TKey, TValue>(ownerships: TDictionaryOwnerships): IDictionary<TKey, TValue>; overload; static;
+    class function CreateSortedDictionary<TKey, TValue>(const keyComparer: IComparer<TKey>; ownerships: TDictionaryOwnerships = []): IDictionary<TKey, TValue>; overload; static;
+    class function CreateSortedDictionary<TKey, TValue>(const valueComparer: IEqualityComparer<TValue>; ownerships: TDictionaryOwnerships = []): IDictionary<TKey, TValue>; overload; static;
+    class function CreateSortedDictionary<TKey, TValue>(const keyComparer: IComparer<TKey>; const valueComparer: IEqualityComparer<TValue>; ownerships: TDictionaryOwnerships = []): IDictionary<TKey, TValue>; overload; static;
   end;
 
   TEnumerable = class
@@ -3567,6 +3585,9 @@ type
   AutoInitAttribute = class(ManagedAttribute)
     constructor Create(ownsObjects: Boolean = True);
   end;
+
+  PEnumeratorVtable = ^TEnumeratorVtable;
+  TEnumeratorVtable = array[0..4] of Pointer;
 
 function GetElementType(typeInfo: PTypeInfo): PTypeInfo;
 
@@ -7238,26 +7259,35 @@ end;
 
 class function TCollections.CreateSortedDictionary<TKey, TValue>: IDictionary<TKey, TValue>;
 begin
-  Result := TSortedDictionary<TKey, TValue>.Create(nil, nil);
+  Result := TSortedDictionary<TKey, TValue>.Create(nil, nil, []);
 end;
 
 class function TCollections.CreateSortedDictionary<TKey, TValue>(
-  const keyComparer: IComparer<TKey>): IDictionary<TKey, TValue>;
+  ownerships: TDictionaryOwnerships): IDictionary<TKey, TValue>;
 begin
-  Result := TSortedDictionary<TKey, TValue>.Create(keyComparer, nil);
-end;
-
-class function TCollections.CreateSortedDictionary<TKey, TValue>(
-  const valueComparer: IEqualityComparer<TValue>): IDictionary<TKey, TValue>;
-begin
-  Result := TSortedDictionary<TKey, TValue>.Create(nil, valueComparer);
+  Result := TSortedDictionary<TKey, TValue>.Create(nil, nil, ownerships);
 end;
 
 class function TCollections.CreateSortedDictionary<TKey, TValue>(
   const keyComparer: IComparer<TKey>;
-  const valueComparer: IEqualityComparer<TValue>): IDictionary<TKey, TValue>;
+  ownerships: TDictionaryOwnerships): IDictionary<TKey, TValue>;
 begin
-  Result := TSortedDictionary<TKey, TValue>.Create(keyComparer, valueComparer);
+  Result := TSortedDictionary<TKey, TValue>.Create(keyComparer, nil, ownerships);
+end;
+
+class function TCollections.CreateSortedDictionary<TKey, TValue>(
+  const valueComparer: IEqualityComparer<TValue>;
+  ownerships: TDictionaryOwnerships): IDictionary<TKey, TValue>;
+begin
+  Result := TSortedDictionary<TKey, TValue>.Create(nil, valueComparer, ownerships);
+end;
+
+class function TCollections.CreateSortedDictionary<TKey, TValue>(
+  const keyComparer: IComparer<TKey>;
+  const valueComparer: IEqualityComparer<TValue>;
+  ownerships: TDictionaryOwnerships): IDictionary<TKey, TValue>;
+begin
+  Result := TSortedDictionary<TKey, TValue>.Create(keyComparer, valueComparer, ownerships);
 end;
 
 class function TCollections.CreateSortedMultiSet<T>: IMultiSet<T>;
@@ -7269,6 +7299,61 @@ class function TCollections.CreateSortedMultiSet<T>(
   const comparer: IComparer<T>): IMultiSet<T>;
 begin
   Result := TTreeMultiSet<T>.Create(comparer);
+end;
+
+class function TCollections.CreateSortedMultiMap<TKey, TValue>(
+  ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>;
+begin
+  Result := TSortedListMultiMap<TKey, TValue>.Create(nil, ownerships);
+end;
+
+class function TCollections.CreateSortedMultiMap<TKey, TValue>(
+  const keyComparer: IComparer<TKey>;
+  ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>;
+begin
+  Result := TSortedListMultiMap<TKey, TValue>.Create(keyComparer, ownerships);
+end;
+
+class function TCollections.CreateSortedHashMultiMap<TKey, TValue>(
+  ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>;
+begin
+  Result := TSortedHashMultiMap<TKey, TValue>.Create(nil, nil, ownerships);
+end;
+
+class function TCollections.CreateSortedHashMultiMap<TKey, TValue>(
+  const keyComparer: IComparer<TKey>;
+  ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>;
+begin
+  Result := TSortedHashMultiMap<TKey, TValue>.Create(keyComparer, nil, ownerships);
+end;
+
+class function TCollections.CreateSortedHashMultiMap<TKey, TValue>(
+  const keyComparer: IComparer<TKey>;
+  const valueComparer: IEqualityComparer<TValue>;
+  ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>;
+begin
+  Result := TSortedHashMultiMap<TKey, TValue>.Create(keyComparer, valueComparer, ownerships);
+end;
+
+class function TCollections.CreateSortedTreeMultiMap<TKey, TValue>(
+  ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>;
+begin
+  Result := TSortedTreeMultiMap<TKey, TValue>.Create(nil, nil, ownerships);
+end;
+
+class function TCollections.CreateSortedTreeMultiMap<TKey, TValue>(
+  const keyComparer: IComparer<TKey>;
+  ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>;
+begin
+  Result := TSortedTreeMultiMap<TKey, TValue>.Create(keyComparer, nil, ownerships);
+end;
+
+class function TCollections.CreateSortedTreeMultiMap<TKey, TValue>(
+  const keyComparer: IComparer<TKey>;
+  const valueComparer: IComparer<TValue>;
+  ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>;
+begin
+  Result := TSortedTreeMultiMap<TKey, TValue>.Create(keyComparer, valueComparer, ownerships);
 end;
 
 class function TCollections.CreateSortedMultiSet<T>(

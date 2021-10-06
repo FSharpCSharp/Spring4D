@@ -70,7 +70,7 @@ type
   {$ENDREGION}
 
   {$REGION 'Implements IReadOnlyCollection<T>'}
-    procedure CopyTo(var values: TArray<T>; index: Integer);
+    function CopyTo(var values: TArray<T>; index: Integer): Integer;
   {$ENDREGION}
 
   {$REGION 'Implements IReadOnlyList<T>'}
@@ -272,7 +272,7 @@ type
   {$ENDREGION}
 
   {$REGION 'Implements IReadOnlyCollection<Integer>'}
-    procedure CopyTo(var values: TArray<Integer>; index: Integer);
+    function CopyTo(var values: TArray<Integer>; index: Integer): Integer;
   {$ENDREGION}
 
   {$REGION 'Implements IReadOnlyList<Integer>'}
@@ -969,8 +969,9 @@ begin
   fInstance := nil;
 end;
 
-procedure TEmptyEnumerable<T>.CopyTo(var values: TArray<T>; index: Integer);
+function TEmptyEnumerable<T>.CopyTo(var values: TArray<T>; index: Integer): Integer;
 begin
+  Result := 0;
 end;
 
 function TEmptyEnumerable<T>.GetCount: Integer;
@@ -1525,7 +1526,7 @@ begin
   fCount := count;
 end;
 
-procedure TRangeIterator.CopyTo(var values: TArray<Integer>; index: Integer);
+function TRangeIterator.CopyTo(var values: TArray<Integer>; index: Integer): Integer;
 var
   i: Integer;
 begin
@@ -1534,6 +1535,7 @@ begin
     values[index] := fStart + i;
     Inc(index);
   end;
+  Result := fCount;
 end;
 
 function TRangeIterator.GetCount: Integer;

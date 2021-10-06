@@ -336,6 +336,7 @@ type
     procedure TestQueueTryDequeue;
     procedure TestQueueTryPeek;
     procedure TestQueueTrimExcess;
+    procedure TestEnumerator;
   end;
 
   TTestDequeOfInteger = class(TTestCase)
@@ -558,6 +559,8 @@ type
     procedure SetUp; override;
     procedure TearDown; override;
 
+    procedure FillData;
+
     procedure ValueChanged(Sender: TObject; const Item: Integer;
       Action: TCollectionChangedAction);
     procedure ValueChangedObj(Sender: TObject; const Item: TObject;
@@ -569,6 +572,8 @@ type
 
     procedure TestContains;
     procedure TestEnumerator;
+
+    procedure TestKeys; virtual;
 
     procedure TestInternalEventHandlersDetached;
     procedure TestValueChangedCalledProperly;
@@ -597,6 +602,36 @@ type
   end;
 
   TTestTreeMultiMap = class(TTestSetMultiMapBase)
+  protected
+    procedure SetUp; override;
+  published
+    procedure TestValues; override;
+    procedure TestValuesToArray; override;
+  end;
+
+  TTestSortedMultiMapBase = class(TTestMultiMapBase)
+  published
+    procedure TestKeys; override;
+    procedure TestValues; override;
+    procedure TestValuesToArray; override;
+  end;
+
+  TTestSortedListMultiMap = class(TTestSortedMultiMapBase)
+  protected
+    procedure SetUp; override;
+  end;
+
+  TTestSortedSetMultiMapBase = class(TTestSortedMultiMapBase)
+  published
+    procedure AddDuplicates;
+  end;
+
+  TTestSortedHashMultiMap = class(TTestSortedSetMultiMapBase)
+  protected
+    procedure SetUp; override;
+  end;
+
+  TTestSortedTreeMultiMap = class(TTestSortedSetMultiMapBase)
   protected
     procedure SetUp; override;
   published
@@ -1037,6 +1072,7 @@ implementation
 uses
   Spring.Collections.MultiMaps,
   Spring.Collections.MultiSets,
+  Spring.Collections.Queues,
   Rtti, // H2443
   StrUtils,
   SysUtils,
@@ -1046,6 +1082,8 @@ type
   TListMultiMap = TListMultiMap<Integer,Integer>;
   THashMultiSet = THashMultiSet<string>;
   TTreeMultiSet = TTreeMultiSet<string>;
+  TSortedListMultiMap = TSortedListMultiMap<Integer,Integer>;
+  TIntQueue = TQueue<Integer>;
 
 const
   MaxItems = 1000;
@@ -2633,6 +2671,25 @@ begin
   CheckEquals(MaxItems, value);
 end;
 
+procedure TTestQueueOfInteger.TestEnumerator;
+var
+  value, i: Integer;
+begin
+  SUT.Enqueue(3);
+  SUT.Enqueue(4);
+  SUT.Enqueue(1);
+  SUT.Enqueue(2);
+  SUT.Enqueue(SUT.Dequeue);
+  SUT.Enqueue(SUT.Dequeue);
+  i := 1;
+  for value in SUT do
+  begin
+    CheckEquals(i, value);
+    Inc(i);
+  end;
+  CheckEquals(5, i);
+end;
+
 {$ENDREGION}
 
 
@@ -3920,7 +3977,19 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TTestMultiMap'}
+{$REGION 'TTestMultiMapBase'}
+
+procedure TTestMultiMapBase.FillData;
+begin
+  SUT.Add(3, 4);
+  SUT.Add(3, 1);
+  SUT.Add(1, 2);
+  SUT.Add(1, 7);
+  SUT.Add(4, 6);
+  SUT.Add(4, 3);
+  SUT.Add(2, 8);
+  SUT.Add(2, 5);
+end;
 
 procedure TTestMultiMapBase.SetUp;
 begin
@@ -3984,6 +4053,7 @@ begin
   CheckEquals(2, enumerator.Current.Key);
   CheckEquals(3, enumerator.Current.Value);
   CheckFalse(enumerator.MoveNext);
+  CheckFalse(enumerator.MoveNext);
 end;
 
 procedure TTestMultiMapBase.TestExtractValues;
@@ -4025,6 +4095,13 @@ begin
   items := nil;
 end;
 
+procedure TTestMultiMapBase.TestKeys;
+begin
+  FillData;
+
+  CheckTrue(SUT.Keys.EqualsTo([3, 1, 4, 2]));
+end;
+
 procedure TTestMultiMapBase.TestValueChangedCalledProperly;
 begin
   SUT.OnValueChanged.Add(ValueChanged);
@@ -4042,28 +4119,14 @@ end;
 
 procedure TTestMultiMapBase.TestValues;
 begin
-  SUT.Add(1, 2);
-  SUT.Add(1, 7);
-  SUT.Add(2, 8);
-  SUT.Add(2, 5);
-  SUT.Add(3, 4);
-  SUT.Add(3, 1);
-  SUT.Add(4, 6);
-  SUT.Add(4, 3);
+  FillData;
 
-  CheckTrue(SUT.Values.EqualsTo([2, 7, 8, 5, 4, 1, 6, 3]));
+  CheckTrue(SUT.Values.EqualsTo([4, 1, 2, 7, 6, 3, 8, 5]));
 end;
 
 procedure TTestMultiMapBase.TestValuesOrdered;
 begin
-  SUT.Add(1, 2);
-  SUT.Add(1, 7);
-  SUT.Add(2, 8);
-  SUT.Add(2, 5);
-  SUT.Add(3, 4);
-  SUT.Add(3, 1);
-  SUT.Add(4, 6);
-  SUT.Add(4, 3);
+  FillData;
 
   CheckTrue(SUT.Values.Ordered.EqualsTo([1, 2, 3, 4, 5, 6, 7, 8]));
 end;
@@ -4072,24 +4135,17 @@ procedure TTestMultiMapBase.TestValuesToArray;
 var
   values: TArray<Integer>;
 begin
-  SUT.Add(1, 2);
-  SUT.Add(1, 7);
-  SUT.Add(2, 8);
-  SUT.Add(2, 5);
-  SUT.Add(3, 4);
-  SUT.Add(3, 1);
-  SUT.Add(4, 6);
-  SUT.Add(4, 3);
+  FillData;
 
   values := SUT.Values.ToArray;
-  CheckEquals(2, values[0]);
-  CheckEquals(7, values[1]);
-  CheckEquals(8, values[2]);
-  CheckEquals(5, values[3]);
-  CheckEquals(4, values[4]);
-  CheckEquals(1, values[5]);
-  CheckEquals(6, values[6]);
-  CheckEquals(3, values[7]);
+  CheckEquals(4, values[0]);
+  CheckEquals(1, values[1]);
+  CheckEquals(2, values[2]);
+  CheckEquals(7, values[3]);
+  CheckEquals(6, values[4]);
+  CheckEquals(3, values[5]);
+  CheckEquals(8, values[6]);
+  CheckEquals(5, values[7]);
 end;
 
 procedure TTestMultiMapBase.ValueChanged(Sender: TObject; const Item: Integer;
@@ -4227,31 +4283,130 @@ end;
 
 procedure TTestTreeMultiMap.TestValues;
 begin
-  SUT.Add(1, 2);
-  SUT.Add(1, 7);
-  SUT.Add(2, 8);
-  SUT.Add(2, 5);
-  SUT.Add(3, 4);
-  SUT.Add(3, 1);
-  SUT.Add(4, 6);
-  SUT.Add(4, 3);
+  FillData;
 
   // items in each value collection are sorted due to them being rbtrees
-  CheckTrue(SUT.Values.EqualsTo([2, 7, 5, 8, 1, 4, 3, 6]));
+  CheckTrue(SUT.Values.EqualsTo([1, 4, 2, 7, 3, 6, 5, 8]));
 end;
 
 procedure TTestTreeMultiMap.TestValuesToArray;
 var
   values: TArray<Integer>;
 begin
+  FillData;
+
+  // items in each value collection are sorted due to them being rbtrees
+  values := SUT.Values.ToArray;
+  CheckEquals(1, values[0]);
+  CheckEquals(4, values[1]);
+  CheckEquals(2, values[2]);
+  CheckEquals(7, values[3]);
+  CheckEquals(3, values[4]);
+  CheckEquals(6, values[5]);
+  CheckEquals(5, values[6]);
+  CheckEquals(8, values[7]);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestSortedMultiMapBase'}
+
+procedure TTestSortedMultiMapBase.TestKeys;
+begin
+  FillData;
+
+  CheckTrue(SUT.Keys.EqualsTo([1, 2, 3, 4]));
+end;
+
+procedure TTestSortedMultiMapBase.TestValues;
+begin
+  FillData;
+
+  CheckTrue(SUT.Values.EqualsTo([2, 7, 8, 5, 4, 1, 6, 3]));
+end;
+
+procedure TTestSortedMultiMapBase.TestValuesToArray;
+var
+  values: TArray<Integer>;
+begin
+  FillData;
+
+  values := SUT.Values.ToArray;
+  CheckEquals(2, values[0]);
+  CheckEquals(7, values[1]);
+  CheckEquals(8, values[2]);
+  CheckEquals(5, values[3]);
+  CheckEquals(4, values[4]);
+  CheckEquals(1, values[5]);
+  CheckEquals(6, values[6]);
+  CheckEquals(3, values[7]);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestSortedListMultiMap'}
+
+procedure TTestSortedListMultiMap.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateSortedMultiMap<Integer,Integer>;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestSortedSetMultiMapBase'}
+
+procedure TTestSortedSetMultiMapBase.AddDuplicates;
+begin
+  SUT.Add(1, 1);
   SUT.Add(1, 2);
-  SUT.Add(1, 7);
-  SUT.Add(2, 8);
-  SUT.Add(2, 5);
-  SUT.Add(3, 4);
-  SUT.Add(3, 1);
-  SUT.Add(4, 6);
-  SUT.Add(4, 3);
+  CheckEquals(2, SUT.Count);
+  CheckEquals(2, SUT[1].Count);
+  CheckFalse(SUT.Add(1, 1));
+  CheckEquals(2, SUT.Count);
+  CheckEquals(2, SUT[1].Count);
+
+  CheckFalse(SUT.TryAdd(1, 1));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestSortedHashMultiMap'}
+
+procedure TTestSortedHashMultiMap.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateSortedHashMultiMap<Integer,Integer>;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestSortedTreeMultiMap'}
+
+procedure TTestSortedTreeMultiMap.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateSortedTreeMultiMap<Integer,Integer>;
+end;
+
+procedure TTestSortedTreeMultiMap.TestValues;
+begin
+  FillData;
+
+  // items in each value collection are sorted due to them being rbtrees
+  CheckTrue(SUT.Values.EqualsTo([2, 7, 5, 8, 1, 4, 3, 6]));
+end;
+
+procedure TTestSortedTreeMultiMap.TestValuesToArray;
+var
+  values: TArray<Integer>;
+begin
+  FillData;
 
   // items in each value collection are sorted due to them being rbtrees
   values := SUT.Values.ToArray;
@@ -5485,6 +5640,7 @@ begin
 end;
 
 {$ENDREGION}
+
 
 {$REGION 'TEnumerableTestCase.TBreakingSequence<T>'}
 
