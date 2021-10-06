@@ -62,7 +62,6 @@ type
       fIndex: Integer;
       fVersion: Integer;
       fEnumerator: IEnumerator<T>;
-      fCurrent: T;
       function GetCurrent: T;
       function MoveNext: Boolean;
       class var Enumerator_Vtable: TEnumeratorVtable;
@@ -144,7 +143,7 @@ type
       fIndex: Integer;
       fVersion: Integer;
       fEnumerator: IEnumerator<TValue>;
-      fCurrent: TKeyValuePair;
+      fItem: PItem;
       function GetCurrent: TKeyValuePair;
       function MoveNext: Boolean;
       class var Enumerator_Vtable: TEnumeratorVtable;
@@ -415,7 +414,7 @@ end;
 
 function TValueCollection<T>.TEnumerator.GetCurrent: T;
 begin
-  Result := fCurrent;
+  Result := fEnumerator.Current;
 end;
 
 function TValueCollection<T>.TEnumerator.MoveNext: Boolean;
@@ -427,10 +426,10 @@ begin
   if fVersion = hashTable.Version then
   begin
     repeat
-      if Assigned(fEnumerator) and fEnumerator.MoveNext then
+      if Assigned(fEnumerator) then
       begin
-        fCurrent := fEnumerator.Current;
-        Exit(True);
+        Result := fEnumerator.MoveNext;
+        if Result then Exit;
       end;
 
       repeat
@@ -441,14 +440,17 @@ begin
           if PInteger(item)^ >= 0 then
           begin
             Inc(item, fHashTable.ItemSize - SizeOf(Pointer));
+            {$IFDEF MSWINDOWS}
+            IEnumerableInternal(PPointer(item)^).GetEnumerator(IEnumerator(fEnumerator));
+            {$ELSE}
             fEnumerator := ICollection<T>(PPointer(item)^).GetEnumerator;
+            {$ENDIF}
             Break;
           end;
         end
         else
         begin
           fEnumerator := nil;
-          fCurrent := Default(T);
           Exit(False);
         end;
       until False;
@@ -923,7 +925,8 @@ end;
 
 function TMultiMapBase<TKey, TValue>.TEnumerator.GetCurrent: TKeyValuePair;
 begin
-  Result := fCurrent;
+  Result.Key := fItem.Key;
+  Result.Value := fEnumerator.Current;
 end;
 
 function TMultiMapBase<TKey, TValue>.TEnumerator.MoveNext: Boolean;
@@ -935,10 +938,10 @@ begin
   if fVersion = hashTable.Version then
   begin
     repeat
-      if Assigned(fEnumerator) and fEnumerator.MoveNext then
+      if Assigned(fEnumerator) then
       begin
-        fCurrent.Value := fEnumerator.Current;
-        Exit(True);
+        Result := fEnumerator.MoveNext;
+        if Result then Exit;
       end;
 
       repeat
@@ -948,7 +951,7 @@ begin
           Inc(fIndex);
           if item.HashCode >= 0 then
           begin
-            fCurrent.Key := item.Key;
+            fItem := item;
             fEnumerator := item.Values.GetEnumerator;
             Break;
           end;
@@ -956,7 +959,6 @@ begin
         else
         begin
           fEnumerator := nil;
-          fCurrent := Default(TKeyValuePair);
           Exit(False);
         end;
       until False;

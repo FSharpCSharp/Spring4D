@@ -55,9 +55,6 @@ type
   IEnumeratorInternal = interface
     procedure GetCurrent(var result);
   end;
-
-  // see https://quality.embarcadero.com/browse/RSP-31615
-  {$IF defined(DELPHIX_SYDNEY_UP)}{$DEFINE RSP31615}{$IFEND}
   {$ENDIF}
 
   PEnumeratorVtable = ^TEnumeratorVtable;
@@ -520,19 +517,6 @@ type
       const match: Predicate<T>): Integer; overload;
   end;
 
-  THashTableEnumerator = class(TRefCountedObject)
-  protected
-    fSource: TRefCountedObject;
-    fHashTable: PHashTable;
-    fIndex: Integer;
-    fVersion: Integer;
-    fItem: PByte;
-  public
-    constructor Create(const source: TRefCountedObject; hashTable: PHashTable); overload;
-    procedure BeforeDestruction; override;
-    function MoveNext: Boolean;
-  end;
-
   TInnerCollection<T> = class sealed(TEnumerableBase<T>,
     IEnumerable<T>, IReadOnlyCollection<T>)
   private type
@@ -548,7 +532,7 @@ type
       fSource: TInnerCollection<T>;
       fIndex: Integer;
       fVersion: Integer;
-      fCurrent: T;
+      fItem: ^T;
       function GetCurrent: T;
       function MoveNext: Boolean;
       class var Enumerator_Vtable: TEnumeratorVtable;
@@ -596,7 +580,6 @@ type
         fSource: TCircularArrayBuffer<T>;
         fIndex, fCount: Integer;
         fVersion: Integer;
-        fCurrent: T;
         function GetCurrent: T;
         function MoveNext: Boolean;
         class var Enumerator_Vtable: TEnumeratorVtable;
@@ -2369,45 +2352,6 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'THashTableEnumerator'}
-
-constructor THashTableEnumerator.Create(const source: TRefCountedObject;
-  hashTable: PHashTable);
-begin
-  fSource := source;
-  fSource._AddRef;
-  fHashTable := hashTable;
-  fVersion := fHashTable.Version;
-end;
-
-procedure THashTableEnumerator.BeforeDestruction;
-begin
-  fSource._Release;
-end;
-
-function THashTableEnumerator.MoveNext: Boolean;
-begin
-  if fVersion = fHashTable.Version then
-  begin
-    while True do
-    begin
-      if fIndex >= fHashTable.ItemCount then
-        Break;
-
-      fItem := fHashTable.Items + fIndex * fHashTable.ItemSize;
-      Inc(fIndex);
-      if PInteger(fItem)^ >= 0 then
-        Exit(True);
-    end;
-    Result := False;
-  end
-  else
-    Result := RaiseHelper.EnumFailedVersion;
-end;
-
-{$ENDREGION}
-
-
 {$REGION 'TInnerCollection<T>'}
 
 class function TInnerCollection<T>.Create(const source: TRefCountedObject;
@@ -2536,7 +2480,7 @@ end;
 
 function TInnerCollection<T>.TEnumerator.GetCurrent: T;
 begin
-  Result := fCurrent;
+  Result := fItem^;
 end;
 
 function TInnerCollection<T>.TEnumerator.MoveNext: Boolean;
@@ -2557,11 +2501,10 @@ begin
       Inc(fIndex);
       if PInteger(item)^ >= 0 then
       begin
-        fCurrent := PT(item + offset)^;
+        fItem := Pointer(item + offset);
         Exit(True);
       end;
     until False;
-    fCurrent := Default(T);
     Result := False;
   end
   else
@@ -2632,6 +2575,7 @@ begin
   begin
     fSource := Self;
     fCount := Self.Count;
+    fIndex := Self.fHead - 1;
     fVersion := Self.fVersion;
   end;
 end;
@@ -2893,31 +2837,31 @@ end;
 
 function TCircularArrayBuffer<T>.TEnumerator.GetCurrent: T;
 begin
-  Result := fCurrent;
+  Result := fSource.fItems[fIndex];
 end;
 
 function TCircularArrayBuffer<T>.TEnumerator.MoveNext: Boolean;
 var
   source: TCircularArrayBuffer<T>;
-  index: Integer;
+  capacity: Integer;
 begin
   source := fSource;
   if fVersion = source.fVersion then
   begin
-    index := fIndex;
-    if index < fCount then
+    if fCount > 0 then
     begin
-      Inc(index, source.fHead);
-      if index >= source.fCapacity then
-        Dec(index, source.fCapacity);
-      fCurrent := source.fItems[index];
+      capacity := source.fCapacity;
+      Dec(fCount);
       Inc(fIndex);
-      Exit(True);
-    end;
-    fCurrent := Default(T);
-    Exit(False);
-  end;
-  Result := RaiseHelper.EnumFailedVersion;
+      if fIndex >= capacity then
+        Dec(fIndex, capacity);
+      Result := True;
+    end
+    else
+      Result := False;
+  end
+  else
+    Result := RaiseHelper.EnumFailedVersion;
 end;
 
 {$ENDREGION}
@@ -3032,11 +2976,9 @@ asm
   pop edx
   ret
 @@ExitFalse:
-  mov eax,[esp]
-  mov edx,offset [TIteratorBlock.MoveNextEmpty]
-  mov TIteratorBlock(eax).DoMoveNext,edx
+  pop eax
+  mov TIteratorBlock(eax).DoMoveNext, offset [TIteratorBlock.MoveNextEmpty]
   call TIteratorBlock(eax).Methods.Finalize
-  pop edx
 end;
 {$ELSE}
 begin
@@ -3561,8 +3503,9 @@ begin
       Result := fSource.GetCountFast;
       if Result >= 0 then
       begin
-        count := IEnumerable(fPredicate).GetCountFast;
-        if count >= 0 then
+        count := Result;
+        Result := IEnumerable(fPredicate).GetCountFast;
+        if Result >= 0 then
           {$Q+}
           Inc(Result, count);
           {$IFNDEF OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
@@ -3580,8 +3523,8 @@ begin
         begin
           Dec(Result, fIndex);
           if Result < 0 then
-            Result := 0;
-          if Cardinal(Result) > Cardinal(fCount) then
+            Result := 0
+          else if Cardinal(Result) > Cardinal(fCount) then
             Result := fCount;
         end;
       end;

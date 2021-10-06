@@ -83,7 +83,7 @@ type
       fItemIndex: Integer;
       fRemainingCount: Integer;
       fVersion: Integer;
-      fCurrent: T;
+      fItem: PItem;
       function GetCurrent: T;
       function MoveNext: Boolean;
       class var Enumerator_Vtable: TEnumeratorVtable;
@@ -122,7 +122,7 @@ type
       fSource: THashMultiSet<T>;
       fItemIndex: Integer;
       fVersion: Integer;
-      fCurrent: TEntry;
+      fItem: PItem;
       function GetCurrent: TEntry;
       function MoveNext: Boolean;
       class var Enumerator_Vtable: TEnumeratorVtable;
@@ -210,17 +210,17 @@ type
     {$ENDREGION}
     end;
 
-    TItemEnumerator = class(TRefCountedObject, IEnumerator<T>)
-    private
+    PItemEnumerator = ^TItemEnumerator;
+    TItemEnumerator = record
+      Vtable: Pointer;
+      RefCount: Integer;
+      TypeInfo: PTypeInfo;
       fSource: TTreeMultiSet<T>;
-      fCurrentNode: PNode;
-      fFinished: Boolean;
+      fNode: PBinaryTreeNode;
       fVersion: Integer;
       function GetCurrent: T;
-    public
-      constructor Create(const source: TTreeMultiSet<T>);
-      destructor Destroy; override;
       function MoveNext: Boolean;
+      class var Enumerator_Vtable: TEnumeratorVtable;
     end;
 
     TEntryCollection = class(TEnumerableBase<TEntry>,
@@ -246,17 +246,17 @@ type
     {$ENDREGION}
     end;
 
-    TEntryEnumerator = class(TRefCountedObject, IEnumerator<TEntry>)
-    private
+    PEntryEnumerator = ^TEntryEnumerator;
+    TEntryEnumerator = record
+      Vtable: Pointer;
+      RefCount: Integer;
+      TypeInfo: PTypeInfo;
       fSource: TTreeMultiSet<T>;
-      fCurrentNode: PNode;
-      fFinished: Boolean;
+      fNode: PBinaryTreeNode;
       fVersion: Integer;
       function GetCurrent: TEntry;
-    public
-      constructor Create(const source: TTreeMultiSet<T>);
-      destructor Destroy; override;
       function MoveNext: Boolean;
+      class var Enumerator_Vtable: TEnumeratorVtable;
     end;
   {$ENDREGION}
   private
@@ -270,8 +270,6 @@ type
     function GetItemCount(const item: T): Integer;
     procedure SetItemCount(const item: T; count: Integer);
   {$ENDREGION}
-    function DoMoveNext(var currentNode: PNode; var finished: Boolean;
-      iteratorVersion: Integer): Boolean;
   protected
     function CreateMultiSet: IMultiSet<T>; override;
   public
@@ -614,36 +612,35 @@ end;
 
 function THashMultiSet<T>.TEnumerator.GetCurrent: T;
 begin
-  Result := fCurrent;
+  Result := fItem.Item;
 end;
 
 function THashMultiSet<T>.TEnumerator.MoveNext: Boolean;
 var
   hashTable: PHashTable;
-  entry: PItem;
+  item: PItem;
 begin
   hashTable := @fSource.fHashTable;
   if fVersion = hashTable.Version then
   begin
-    if fRemainingCount = 0 then
-      while fItemIndex < hashTable.ItemCount do
-      begin
-        entry := @TItems(hashTable.Items)[fItemIndex];
-        Inc(fItemIndex);
-        if entry.HashCode >= 0 then
-        begin
-          fCurrent := entry.Item;
-          fRemainingCount := entry.Count - 1;
-          Exit(True);
-        end;
-      end
-    else
+    if fRemainingCount > 0 then
     begin
       Dec(fRemainingCount);
       Exit(True);
     end;
 
-    fCurrent := Default(T);   // TODO: review
+    while fItemIndex < hashTable.ItemCount do
+    begin
+      item := @TItems(hashTable.Items)[fItemIndex];
+      Inc(fItemIndex);
+      if item.HashCode >= 0 then
+      begin
+        fItem := item;
+        fRemainingCount := item.Count - 1;
+        Exit(True);
+      end;
+    end;
+
     Result := False;
   end
   else
@@ -727,30 +724,29 @@ end;
 
 function THashMultiSet<T>.TEntryEnumerator.GetCurrent: TEntry;
 begin
-  Result := fCurrent;
+  Result.Item := fItem.Item;
+  Result.Count := fItem.Count;
 end;
 
 function THashMultiSet<T>.TEntryEnumerator.MoveNext: Boolean;
 var
   hashTable: PHashTable;
-  entry: PItem;
+  item: PItem;
 begin
   hashTable := @fSource.fHashTable;
   if fVersion = hashTable.Version then
   begin
     while fItemIndex < hashTable.ItemCount do
     begin
-      entry := @TItems(hashTable.Items)[fItemIndex];
+      item := @TItems(hashTable.Items)[fItemIndex];
       Inc(fItemIndex);
-      if entry.HashCode >= 0 then
+      if item.HashCode >= 0 then
       begin
-        fCurrent.Item := entry.Item;
-        fCurrent.Count := entry.Count;
+        fItem := item;
         Exit(True);
       end;
     end;
 
-    fCurrent := Default(TEntry);
     Result := False;
   end
   else
@@ -781,25 +777,6 @@ end;
 function TTreeMultiSet<T>.CreateMultiSet: IMultiSet<T>;
 begin
   Result := TTreeMultiSet<T>.Create(fTree.Comparer);
-end;
-
-function TTreeMultiSet<T>.DoMoveNext(var currentNode: PNode;
-  var finished: Boolean; iteratorVersion: Integer): Boolean;
-begin
-  if iteratorVersion = fVersion then
-  begin
-    if (fTree.Count = 0) or finished then
-      Exit(False);
-
-    if not Assigned(currentNode) then
-      currentNode := fTree.Root.LeftMost
-    else
-      currentNode := currentNode.Next;
-    Result := Assigned(currentNode);
-    finished := not Result;
-  end
-  else
-    Result := RaiseHelper.EnumFailedVersion;
 end;
 
 function TTreeMultiSet<T>.Add(const item: T): Boolean;
@@ -1034,7 +1011,13 @@ end;
 
 function TTreeMultiSet<T>.TItemCollection.GetEnumerator: IEnumerator<T>;
 begin
-  Result := TItemEnumerator.Create(fSource);
+  fSource._AddRef;
+  with PItemEnumerator(TEnumeratorBlock.Create(@Result, @TItemEnumerator.Enumerator_Vtable,
+    TypeInfo(TItemEnumerator), @TItemEnumerator.GetCurrent, @TItemEnumerator.MoveNext))^ do
+  begin
+    fSource := Self.fSource;
+    fVersion := fSource.fVersion;
+  end;
 end;
 
 function TTreeMultiSet<T>.TItemCollection.ToArray: TArray<T>;
@@ -1068,27 +1051,37 @@ end;
 
 {$REGION 'TTreeMultiSet<T>.TItemEnumerator'}
 
-constructor TTreeMultiSet<T>.TItemEnumerator.Create(
-  const source: TTreeMultiSet<T>);
-begin
-  fSource := source;
-  fSource._AddRef;
-  fVersion := fSource.fVersion;
-end;
-
-destructor TTreeMultiSet<T>.TItemEnumerator.Destroy;
-begin
-  fSource._Release;
-end;
-
 function TTreeMultiSet<T>.TItemEnumerator.GetCurrent: T;
 begin
-  Result := fCurrentNode.Key;
+  Result := PNode(fNode).Key;
 end;
 
 function TTreeMultiSet<T>.TItemEnumerator.MoveNext: Boolean;
+var
+  tree: TBinaryTree;
+  node: PBinaryTreeNode;
 begin
-  Result := fSource.DoMoveNext(fCurrentNode, fFinished, fVersion);
+  tree := fSource.fTree;
+  if fVersion = fSource.fVersion then
+  begin
+    if (tree.Count > 0) and (fNode <> Pointer(1)) then
+    begin
+      if Assigned(fNode) then
+        node := fNode.Next
+      else
+        node := tree.Root.LeftMost;
+      if Assigned(node) then
+      begin
+        fNode := node;
+        Exit(True);
+      end;
+    end;
+
+    fNode := Pointer(1);
+    Exit(False);
+  end
+  else
+    Result := RaiseHelper.EnumFailedVersion;
 end;
 
 {$ENDREGION}
@@ -1123,7 +1116,13 @@ end;
 
 function TTreeMultiSet<T>.TEntryCollection.GetEnumerator: IEnumerator<TEntry>;
 begin
-  Result := TEntryEnumerator.Create(fSource);
+  fSource._AddRef;
+  with PEntryEnumerator(TEnumeratorBlock.Create(@Result, @TEntryEnumerator.Enumerator_Vtable,
+    TypeInfo(TEntryEnumerator), @TEntryEnumerator.GetCurrent, @TEntryEnumerator.MoveNext))^ do
+  begin
+    fSource := Self.fSource;
+    fVersion := fSource.fVersion;
+  end;
 end;
 
 function TTreeMultiSet<T>.TEntryCollection.ToArray: TArray<TEntry>;
@@ -1146,28 +1145,38 @@ end;
 
 {$REGION 'TTreeMultiSet<T>.TEntryEnumerator'}
 
-constructor TTreeMultiSet<T>.TEntryEnumerator.Create(
-  const source: TTreeMultiSet<T>);
-begin
-  fSource := source;
-  fSource._AddRef;
-  fVersion := fSource.fVersion;
-end;
-
-destructor TTreeMultiSet<T>.TEntryEnumerator.Destroy;
-begin
-  fSource._Release;
-end;
-
 function TTreeMultiSet<T>.TEntryEnumerator.GetCurrent: TEntry;
 begin
-  Result.Item := fCurrentNode.Key;
-  Result.Count := fCurrentNode.Value;
+  Result.Item := PNode(fNode).Key;
+  Result.Count := PNode(fNode).Value;
 end;
 
 function TTreeMultiSet<T>.TEntryEnumerator.MoveNext: Boolean;
+var
+  tree: TBinaryTree;
+  node: PBinaryTreeNode;
 begin
-  Result := fSource.DoMoveNext(fCurrentNode, fFinished, fVersion);
+  tree := fSource.fTree;
+  if fVersion = fSource.fVersion then
+  begin
+    if (tree.Count > 0) and (fNode <> Pointer(1)) then
+    begin
+      if Assigned(fNode) then
+        node := fNode.Next
+      else
+        node := tree.Root.LeftMost;
+      if Assigned(node) then
+      begin
+        fNode := node;
+        Exit(True);
+      end;
+    end;
+
+    fNode := Pointer(1);
+    Result := False;
+  end
+  else
+    Result := RaiseHelper.EnumFailedVersion;
 end;
 
 {$ENDREGION}

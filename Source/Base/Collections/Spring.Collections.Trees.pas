@@ -111,7 +111,8 @@ type
     function GetHeight: Integer;
     function GetRoot: PNode; inline;
   {$ENDREGION}
-
+  public
+    property Count: Integer read fCount;
     property Root: PNode read GetRoot;
   end;
 

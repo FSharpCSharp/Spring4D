@@ -84,7 +84,7 @@ type
       fHashTable: PHashTable;
       fIndex: Integer;
       fVersion: Integer;
-      fCurrent: T;
+      fItem: PItem;
       function GetCurrent: T;
       function MoveNext: Boolean;
       class var Enumerator_Vtable: TEnumeratorVtable;
@@ -137,9 +137,8 @@ type
       RefCount: Integer;
       TypeInfo: PTypeInfo;
       fSource: TSortedSet<T>;
-      fNode: PNode;
+      fNode: PBinaryTreeNode;
       fVersion: Integer;
-      fCurrent: T;
       function GetCurrent: T;
       function MoveNext: Boolean;
       class var Enumerator_Vtable: TEnumeratorVtable;
@@ -521,7 +520,7 @@ end;
 
 function THashSet<T>.TEnumerator.GetCurrent: T;
 begin
-  Result := fCurrent;
+  Result := fItem.Item;
 end;
 
 function THashSet<T>.TEnumerator.MoveNext: Boolean;
@@ -540,11 +539,10 @@ begin
       Inc(fIndex);
       if item.HashCode >= 0 then
       begin
-        fCurrent := item.Item;
+        fItem := item;
         Exit(True);
       end;
     until False;
-    fCurrent := Default(T);
     Result := False;
   end
   else
@@ -695,26 +693,28 @@ end;
 
 function TSortedSet<T>.TEnumerator.GetCurrent: T;
 begin
-  Result := fCurrent;
+  Result := PNode(fNode).Key;
 end;
 
 function TSortedSet<T>.TEnumerator.MoveNext: Boolean;
+var
+  node: Pointer;
 begin
   if fVersion = fSource.fVersion then
   begin
-    if NativeUInt(fNode) = 1 then
-      Exit(False);
-    if not Assigned(fNode) then
-      fNode := fSource.fTree.Root.LeftMost
-    else
-      fNode := fNode.Next;
-    if Assigned(fNode) then
+    if fNode <> Pointer(1) then
     begin
-      fCurrent := fNode.Key;
-      Exit(True);
+      if Assigned(fNode) then
+        node := fNode.Next
+      else
+        node := fSource.fTree.Root.LeftMost;
+      if Assigned(node) then
+      begin
+        fNode := node;
+        Exit(True);
+      end;
+      fNode := Pointer(1);
     end;
-    NativeUInt(fNode) := 1;
-    fCurrent := Default(T);
     Result := False;
   end
   else

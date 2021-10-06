@@ -3800,28 +3800,30 @@ end;
 
 function TStringsAdapter.TEnumerator.GetCurrent: string;
 begin
-  if fVersion = fSource.fVersion then
-    Result := fSource.fStrings[fIndex - 1]
-  else
-    RaiseHelper.EnumFailedVersion;
+  Result := fSource.fStrings[fIndex - 1];
 end;
 
 function TStringsAdapter.TEnumerator.GetCurrentStringList: string;
+var
+  items: PStringItem;
+  index: Integer;
 begin
-  if fVersion = fSource.fVersion then
-    {$POINTERMATH ON}
-    Result := TStringListAccess2(fSource.fStrings).FList[fIndex - 1].FString
-    {$POINTERMATH OFF}
-  else
-    RaiseHelper.EnumFailedVersion;
+  index := fIndex;
+  items := TStringListAccess2(fSource.fStrings).FList;
+  {$POINTERMATH ON}
+  Result := items[index - 1].FString;
+  {$POINTERMATH OFF}
 end;
 
 function TStringsAdapter.TEnumerator.MoveNext: Boolean;
+var
+  index: Integer;
 begin
   if fVersion = fSource.fVersion then
   begin
-    Result := fIndex < fCount;
-    Inc(fIndex, Ord(Result));
+    index := fIndex;
+    fIndex := index + 1;
+    Result := index < fCount;
   end
   else
     Result := RaiseHelper.EnumFailedVersion;

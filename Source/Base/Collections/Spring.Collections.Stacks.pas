@@ -54,9 +54,7 @@ type
         RefCount: Integer;
         TypeInfo: PTypeInfo;
         fSource: TAbstractStack<T>;
-        fIndex, fCount: Integer;
-        fVersion: Integer;
-        fCurrent: T;
+        fIndex, fVersion: Integer;
         function GetCurrent: T;
         function MoveNext: Boolean;
         class var Enumerator_Vtable: TEnumeratorVtable;
@@ -197,7 +195,6 @@ begin
     TypeInfo(TEnumerator), @TEnumerator.GetCurrent, @TEnumerator.MoveNext))^ do
   begin
     fSource := Self;
-    fCount := Self.Count;
     fVersion := Self.fVersion;
   end;
 end;
@@ -377,27 +374,18 @@ end;
 
 function TAbstractStack<T>.TEnumerator.GetCurrent: T;
 begin
-  Result := fCurrent;
+  Result := fSource.fItems[fIndex - 1];
 end;
 
 function TAbstractStack<T>.TEnumerator.MoveNext: Boolean;
-var
-  source: TAbstractStack<T>;
 begin
-  source := fSource;
-  if fVersion = source.fVersion then
+  if fVersion = fSource.fVersion then
   begin
-    if fIndex < fCount then
-    begin
-      fCurrent := source.fItems[fIndex];
-      Inc(fIndex);
-      Exit(True);
-    end;
-    fCurrent := Default(T);
-    Exit(False);
-  end;
-  Result := RaiseHelper.EnumFailedVersion;
-
+    Result := fIndex < fSource.Count;
+    Inc(fIndex, Ord(Result));
+  end
+  else
+    Result := RaiseHelper.EnumFailedVersion;
 end;
 
 {$ENDREGION}

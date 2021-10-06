@@ -71,6 +71,9 @@
   // Use the unused vmtAutoTable slot in the class VMT to store the init table
   // otherwise a global dictionary will be used which is slightly slower
   {$DEFINE USE_VMTAUTOTABLE}
+
+  // see https://quality.embarcadero.com/browse/RSP-31615
+  {$IF defined(DELPHIX_SYDNEY_UP)}{$DEFINE RSP31615}{$IFEND}
 {$ELSE}
   // cannot use the vmtAutoTable slot on any platform except Windows (yet)
   {$UNDEF USE_VMTAUTOTABLE}

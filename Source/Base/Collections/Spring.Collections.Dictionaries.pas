@@ -67,7 +67,7 @@ type
       fSource: TDictionary<TKey, TValue>;
       fIndex: Integer;
       fVersion: Integer;
-      fCurrent: TKeyValuePair;
+      fItem: PItem;
       function GetCurrent: TKeyValuePair;
       function MoveNext: Boolean;
       class var Enumerator_Vtable: TEnumeratorVtable;
@@ -236,26 +236,23 @@ type
     {$ENDREGION}
     end;
 
-    TEnumerator = class(TRefCountedObject,
-      IEnumerator<TKeyValuePair>, IEnumerator<TKey>, IEnumerator<TValue>)
-    private
+    PEnumerator = ^TEnumerator;
+    TEnumerator = record
+      Vtable: Pointer;
+      RefCount: Integer;
+      TypeInfo: PTypeInfo;
       fSource: TBidiDictionary<TKey, TValue>;
       fItemIndex: Integer;
       fVersion: Integer;
       function GetCurrent: TKeyValuePair;
+      function GetCurrentInverse: TValueKeyPair;
       function GetCurrentKey: TKey;
       function GetCurrentValue: TValue;
-      function IEnumerator<TKey>.GetCurrent = GetCurrentKey;
-      function IEnumerator<TValue>.GetCurrent = GetCurrentValue;
-    public
-      constructor Create(const source: TBidiDictionary<TKey, TValue>);
-      destructor Destroy; override;
       function MoveNext: Boolean;
-    end;
-
-    TInverseEnumerator = class(TEnumerator, IEnumerator<TValueKeyPair>)
-    private
-      function GetCurrent: TValueKeyPair;
+      class var Enumerator_Vtable: TEnumeratorVtable;
+      class var InverseEnumerator_Vtable: TEnumeratorVtable;
+      class var KeysEnumerator_Vtable: TEnumeratorVtable;
+      class var ValuesEnumerator_Vtable: TEnumeratorVtable;
     end;
 
     TKeyCollection = class(TEnumerableBase<TKey>,
@@ -347,9 +344,6 @@ type
       const key: TKey);
     procedure DoSetValue(keyBucketIndex, itemIndex, valueHashCode: Integer;
       const value: TValue);
-    function DoMoveNext(var itemIndex: Integer;
-      iteratorVersion: Integer): Boolean;
-
     procedure AddOrSetKey(const value: TValue; const key: TKey);
   protected
     procedure Changed(const item: TPair<TKey, TValue>; action: TCollectionChangedAction); override;
@@ -413,22 +407,21 @@ type
     PKeyValuePair = ^TKeyValuePair;
     PNode = TNodes<TKey, TValue>.PRedBlackTreeNode;
 
-    TEnumerator = class(TRefCountedObject,
-      IEnumerator<TKeyValuePair>, IEnumerator<TKey>, IEnumerator<TValue>)
-    private
+    PEnumerator = ^TEnumerator;
+    TEnumerator = record
+      Vtable: Pointer;
+      RefCount: Integer;
+      TypeInfo: PTypeInfo;
       fSource: TSortedDictionary<TKey, TValue>;
-      fCurrentNode: PNode;
-      fFinished: Boolean;
+      fNode: PBinaryTreeNode;
       fVersion: Integer;
       function GetCurrent: TKeyValuePair;
       function GetCurrentKey: TKey;
       function GetCurrentValue: TValue;
-      function IEnumerator<TKey>.GetCurrent = GetCurrentKey;
-      function IEnumerator<TValue>.GetCurrent = GetCurrentValue;
-    public
-      constructor Create(const source: TSortedDictionary<TKey, TValue>);
-      destructor Destroy; override;
       function MoveNext: Boolean;
+      class var Enumerator_Vtable: TEnumeratorVtable;
+      class var KeysEnumerator_Vtable: TEnumeratorVtable;
+      class var ValuesEnumerator_Vtable: TEnumeratorVtable;
     end;
 
     TKeyCollection = class(TEnumerableBase<TKey>,
@@ -494,8 +487,6 @@ type
     procedure SetCapacity(value: Integer);
     procedure SetItem(const key: TKey; const value: TValue);
   {$ENDREGION}
-    function DoMoveNext(var currentNode: PNode; var finished: Boolean;
-      iteratorVersion: Integer): Boolean;
     procedure KeyChanged(const item: TKey; action: TCollectionChangedAction); inline;
     procedure ValueChanged(const item: TValue; action: TCollectionChangedAction); inline;
   public
@@ -1044,8 +1035,12 @@ end;
 {$REGION 'TDictionary<TKey, TValue>.TEnumerator'}
 
 function TDictionary<TKey, TValue>.TEnumerator.GetCurrent: TKeyValuePair;
+var
+  item: PItem;
 begin
-  Result := fCurrent;
+  item := fItem;
+  Result.Key := item.Key;
+  Result.Value := item.Value;
 end;
 
 function TDictionary<TKey, TValue>.TEnumerator.MoveNext: Boolean;
@@ -1064,12 +1059,10 @@ begin
       Inc(fIndex);
       if item.HashCode >= 0 then
       begin
-        fCurrent := PKeyValuePair(@item.Key)^;
+        fItem := item;
         Exit(True);
       end;
     until False;
-    fCurrent.Key := Default(TKey);
-    fCurrent.Value := Default(TValue);
     Result := False;
   end
   else
@@ -1493,26 +1486,16 @@ begin
   ValueChanged(value, caAdded);
 end;
 
-function TBidiDictionary<TKey, TValue>.DoMoveNext(var itemIndex: Integer;
-  iteratorVersion: Integer): Boolean;
-begin
-  if iteratorVersion = fVersion then
-  begin
-    while itemIndex < fItemCount - 1 do
-    begin
-      Inc(itemIndex);
-      if not fItems[itemIndex].Removed then
-        Exit(True);
-    end;
-    Result := False;
-  end
-  else
-    Result := RaiseHelper.EnumFailedVersion;
-end;
-
 function TBidiDictionary<TKey, TValue>.GetEnumerator: IEnumerator<TKeyValuePair>;
 begin
-  Result := TEnumerator.Create(self);
+  _AddRef;
+  with PEnumerator(TEnumeratorBlock.Create(@Result, @TEnumerator.Enumerator_Vtable,
+    TypeInfo(TEnumerator), @TEnumerator.GetCurrent, @TEnumerator.MoveNext))^ do
+  begin
+    fSource := Self;
+    fItemIndex := -1;
+    fVersion := Self.fVersion;
+  end;
 end;
 
 procedure TBidiDictionary<TKey, TValue>.Clear;
@@ -1962,7 +1945,14 @@ end;
 
 function TBidiDictionary<TKey, TValue>.TInverse.GetEnumerator: IEnumerator<TValueKeyPair>;
 begin
-  Result := TInverseEnumerator.Create(fSource);
+  fSource._AddRef;
+  with PEnumerator(TEnumeratorBlock.Create(@Result, @TEnumerator.InverseEnumerator_Vtable,
+    TypeInfo(TEnumerator), @TEnumerator.GetCurrentInverse, @TEnumerator.MoveNext))^ do
+  begin
+    fSource := Self.fSource;
+    fItemIndex := -1;
+    fVersion := fSource.fVersion;
+  end;
 end;
 
 function TBidiDictionary<TKey, TValue>.TInverse.GetInverse: IBidiDictionary<TKey, TValue>;
@@ -2180,24 +2170,16 @@ end;
 
 {$REGION 'TBidiDictionary<TKey, TValue>.TEnumerator' }
 
-constructor TBidiDictionary<TKey, TValue>.TEnumerator.Create(
-  const source: TBidiDictionary<TKey, TValue>);
-begin
-  fSource := source;
-  fSource._AddRef;
-  fItemIndex := -1;
-  fVersion := fSource.fVersion;
-end;
-
-destructor TBidiDictionary<TKey, TValue>.TEnumerator.Destroy;
-begin
-  fSource._Release;
-end;
-
 function TBidiDictionary<TKey, TValue>.TEnumerator.GetCurrent: TKeyValuePair;
 begin
   Result.Key := fSource.fItems[fItemIndex].Key;
   Result.Value := fSource.fItems[fItemIndex].Value;
+end;
+
+function TBidiDictionary<TKey, TValue>.TEnumerator.GetCurrentInverse: TValueKeyPair;
+begin
+  Result.Key := fSource.fItems[fItemIndex].Value;
+  Result.Value := fSource.fItems[fItemIndex].Key;
 end;
 
 function TBidiDictionary<TKey, TValue>.TEnumerator.GetCurrentKey: TKey;
@@ -2212,18 +2194,18 @@ end;
 
 function TBidiDictionary<TKey, TValue>.TEnumerator.MoveNext: Boolean;
 begin
-  Result := fSource.DoMoveNext(fItemIndex, fVersion);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TBidiDictionary<TKey, TValue>.TInverseEnumerator' }
-
-function TBidiDictionary<TKey, TValue>.TInverseEnumerator.GetCurrent: TValueKeyPair;
-begin
-  Result.Key := fSource.fItems[fItemIndex].Value;
-  Result.Value := fSource.fItems[fItemIndex].Key;
+  if fVersion = fSource.fVersion then
+  begin
+    while fItemIndex < fSource.fItemCount - 1 do
+    begin
+      Inc(fItemIndex);
+      if not fSource.fItems[fItemIndex].Removed then
+        Exit(True);
+    end;
+    Result := False;
+  end
+  else
+    Result := RaiseHelper.EnumFailedVersion;
 end;
 
 {$ENDREGION}
@@ -2254,7 +2236,14 @@ end;
 
 function TBidiDictionary<TKey, TValue>.TKeyCollection.GetEnumerator: IEnumerator<TKey>;
 begin
-  Result := TEnumerator.Create(fSource);
+  fSource._AddRef;
+  with PEnumerator(TEnumeratorBlock.Create(@Result, @TEnumerator.KeysEnumerator_Vtable,
+    TypeInfo(TEnumerator), @TEnumerator.GetCurrentKey, @TEnumerator.MoveNext))^ do
+  begin
+    fSource := Self.fSource;
+    fItemIndex := -1;
+    fVersion := fSource.fVersion;
+  end;
 end;
 
 function TBidiDictionary<TKey, TValue>.TKeyCollection.ToArray: TArray<TKey>;
@@ -2320,7 +2309,14 @@ end;
 
 function TBidiDictionary<TKey, TValue>.TValueCollection.GetEnumerator: IEnumerator<TValue>;
 begin
-  Result := TEnumerator.Create(fSource);
+  fSource._AddRef;
+  with PEnumerator(TEnumeratorBlock.Create(@Result, @TEnumerator.ValuesEnumerator_Vtable,
+    TypeInfo(TEnumerator), @TEnumerator.GetCurrentValue, @TEnumerator.MoveNext))^ do
+  begin
+    fSource := Self.fSource;
+    fItemIndex := -1;
+    fVersion := fSource.fVersion;
+  end;
 end;
 
 function TBidiDictionary<TKey, TValue>.TValueCollection.ToArray: TArray<TValue>;
@@ -2494,25 +2490,6 @@ begin
   Result := False;
 end;
 
-function TSortedDictionary<TKey, TValue>.DoMoveNext(var currentNode: PNode;
-  var finished: Boolean; iteratorVersion: Integer): Boolean;
-begin
-  if iteratorVersion = fVersion then
-  begin
-    if (fTree.Count = 0) or finished then
-      Exit(False);
-
-    if not Assigned(currentNode) then
-      currentNode := fTree.Root.LeftMost
-    else
-      currentNode := currentNode.Next;
-    Result := Assigned(currentNode);
-    finished := not Result;
-  end
-  else
-    Result := RaiseHelper.EnumFailedVersion;
-end;
-
 function TSortedDictionary<TKey, TValue>.Extract(const key: TKey;
   const value: TValue): TKeyValuePair;
 var
@@ -2556,7 +2533,13 @@ end;
 
 function TSortedDictionary<TKey, TValue>.GetEnumerator: IEnumerator<TKeyValuePair>;
 begin
-  Result := TEnumerator.Create(Self);
+  _AddRef;
+  with PEnumerator(TEnumeratorBlock.Create(@Result, @TEnumerator.Enumerator_Vtable,
+    TypeInfo(TEnumerator), @TEnumerator.GetCurrent, @TEnumerator.MoveNext))^ do
+  begin
+    fSource := Self;
+    fVersion := Self.fVersion;
+  end;
 end;
 
 function TSortedDictionary<TKey, TValue>.GetItem(const key: TKey): TValue;
@@ -2753,38 +2736,47 @@ end;
 
 {$REGION 'TSortedDictionary<TKey, TValue>.TEnumerator'}
 
-constructor TSortedDictionary<TKey, TValue>.TEnumerator.Create(
-  const source: TSortedDictionary<TKey, TValue>);
-begin
-  fSource := source;
-  fSource._AddRef;
-  fVersion := fSource.fVersion;
-end;
-
-destructor TSortedDictionary<TKey, TValue>.TEnumerator.Destroy;
-begin
-  fSource._Release;
-end;
-
 function TSortedDictionary<TKey, TValue>.TEnumerator.GetCurrent: TKeyValuePair;
 begin
-  Result.Key := fCurrentNode.Key;
-  Result.Value := fCurrentNode.Value;
+  Result.Key := PNode(fNode).Key;
+  Result.Value := PNode(fNode).Value;
 end;
 
 function TSortedDictionary<TKey, TValue>.TEnumerator.GetCurrentKey: TKey;
 begin
-  Result := fCurrentNode.Key;
+  Result := PNode(fNode).Key;
 end;
 
 function TSortedDictionary<TKey, TValue>.TEnumerator.GetCurrentValue: TValue;
 begin
-  Result := fCurrentNode.Value;
+  Result := PNode(fNode).Value;
 end;
 
 function TSortedDictionary<TKey, TValue>.TEnumerator.MoveNext: Boolean;
+var
+  tree: TBinaryTree;
+  node: PBinaryTreeNode;
 begin
-  Result := fSource.DoMoveNext(fCurrentNode, fFinished, fVersion);
+  tree := fSource.fTree;
+  if fVersion = fSource.fVersion then
+  begin
+    if fNode <> Pointer(1) then
+    begin
+      if Assigned(fNode) then
+        node := fNode.Next
+      else
+        node := tree.Root.LeftMost;
+      if Assigned(node) then
+      begin
+        fNode := node;
+        Exit(True);
+      end;
+      fNode := Pointer(1);
+    end;
+    Result := False;
+  end
+  else
+    Result := RaiseHelper.EnumFailedVersion;
 end;
 
 {$ENDREGION}
@@ -2816,7 +2808,13 @@ end;
 
 function TSortedDictionary<TKey, TValue>.TKeyCollection.GetEnumerator: IEnumerator<TKey>;
 begin
-  Result := TEnumerator.Create(fSource);
+  _AddRef;
+  with PEnumerator(TEnumeratorBlock.Create(@Result, @TEnumerator.KeysEnumerator_Vtable,
+    TypeInfo(TEnumerator), @TEnumerator.GetCurrentKey, @TEnumerator.MoveNext))^ do
+  begin
+    fSource := Self.fSource;
+    fVersion := fSource.fVersion;
+  end;
 end;
 
 function TSortedDictionary<TKey, TValue>.TKeyCollection.ToArray: TArray<TKey>;
@@ -2874,7 +2872,13 @@ end;
 
 function TSortedDictionary<TKey, TValue>.TValueCollection.GetEnumerator: IEnumerator<TValue>;
 begin
-  Result := TEnumerator.Create(fSource);
+  _AddRef;
+  with PEnumerator(TEnumeratorBlock.Create(@Result, @TEnumerator.ValuesEnumerator_Vtable,
+    TypeInfo(TEnumerator), @TEnumerator.GetCurrentValue, @TEnumerator.MoveNext))^ do
+  begin
+    fSource := Self.fSource;
+    fVersion := fSource.fVersion;
+  end;
 end;
 
 function TSortedDictionary<TKey, TValue>.TValueCollection.ToArray: TArray<TValue>;

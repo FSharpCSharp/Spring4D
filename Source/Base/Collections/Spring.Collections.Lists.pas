@@ -58,9 +58,7 @@ type
         RefCount: Integer;
         TypeInfo: PTypeInfo;
         fSource: TAbstractArrayList<T>;
-        fIndex, fCount: Integer;
-        fVersion: Integer;
-        fCurrent: T;
+        fIndex, fVersion: Integer;
         function GetCurrent: T;
         function MoveNext: Boolean;
         class var Enumerator_Vtable: TEnumeratorVtable;
@@ -237,7 +235,6 @@ type
         fSource: TCollectionList<T>;
         fIndex: Integer;
         fVersion: Integer;
-        fCurrent: T;
         function GetCurrent: T;
       public
         constructor Create(const list: TCollectionList<T>);
@@ -523,7 +520,6 @@ begin
     TypeInfo(TEnumerator), @TEnumerator.GetCurrent, @TEnumerator.MoveNext))^ do
   begin
     fSource := Self;
-    fCount := Self.Count;
     fVersion := Self.fVersion;
   end;
 end;
@@ -1582,26 +1578,21 @@ end;
 
 function TAbstractArrayList<T>.TEnumerator.GetCurrent: T;
 begin
-  Result := fCurrent;
+  Result := fSource.fItems[fIndex - 1];
 end;
 
 function TAbstractArrayList<T>.TEnumerator.MoveNext: Boolean;
 var
-  source: TAbstractArrayList<T>;
+  index: Integer;
 begin
-  source := fSource;
-  if fVersion = source.fVersion then
+  if fVersion = fSource.fVersion then
   begin
-    if fIndex < fCount then
-    begin
-      fCurrent := source.fItems[fIndex];
-      Inc(fIndex);
-      Exit(True);
-    end;
-    fCurrent := Default(T);
-    Exit(False);
-  end;
-  Result := RaiseHelper.EnumFailedVersion;
+    index := fIndex;
+    fIndex := index + 1;
+    Result := index < fSource.Count;
+  end
+  else
+    Result := RaiseHelper.EnumFailedVersion;
 end;
 
 {$ENDREGION}
@@ -2180,24 +2171,15 @@ end;
 
 function TCollectionList<T>.TEnumerator.GetCurrent: T;
 begin
-  Result := fCurrent;
+  Result := T(fSource.fCollection.Items[fIndex - 1]);
 end;
 
 function TCollectionList<T>.TEnumerator.MoveNext: Boolean;
 begin
   if fVersion = fSource.fVersion then
   begin
-    if fIndex < fSource.fCollection.Count then
-    begin
-      fCurrent := T(fSource.fCollection.Items[fIndex]);
-      Inc(fIndex);
-      Result := True;
-    end
-    else
-    begin
-      fCurrent := Default(T);
-      Result := False;
-    end;
+    Result := fIndex < fSource.fCollection.Count;
+    Inc(fIndex, Ord(Result));
   end
   else
     Result := RaiseHelper.EnumFailedVersion;
