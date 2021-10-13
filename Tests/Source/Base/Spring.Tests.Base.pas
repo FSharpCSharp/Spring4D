@@ -584,6 +584,8 @@ type
 
   TArrayTest = class(TTestCase)
   published
+    procedure TestBinarySearch;
+    procedure TestBinarySearchSubRange;
     procedure TestBinarySearchUpperBound;
     procedure TestBinarySearchUpperBoundSubRange;
 
@@ -3603,14 +3605,44 @@ end;
 
 {$REGION 'TArrayTest'}
 
+procedure TArrayTest.TestBinarySearch;
+var
+  values: TArray<Integer>;
+  index: Integer;
+begin
+  values := TArray<Integer>.Create(1, 2, 3, 4, 5, 5, 5, 6, 7, 9);
+  CheckFalse(TArray.BinarySearch<Integer>(values, 0, index));
+  CheckEquals(0, index);
+  CheckTrue(TArray.BinarySearch<Integer>(values, 5, index));
+  CheckEquals(4, index);
+  CheckFalse(TArray.BinarySearch<Integer>(values, 8, index));
+  CheckEquals(9, index);
+end;
+
+procedure TArrayTest.TestBinarySearchSubRange;
+var
+  values: TArray<Integer>;
+  index: Integer;
+begin
+  values := TArray<Integer>.Create(1, 2, 3, 4, 5, 5, 5, 6, 7, 9);
+  CheckTrue(TArray.BinarySearch<Integer>(values, 5, index, 2, 6));
+  CheckEquals(4, index);
+  CheckFalse(TArray.BinarySearch<Integer>(values, 8, index, 2, 8));
+  CheckEquals(9, index);
+end;
+
 procedure TArrayTest.TestBinarySearchUpperBound;
 var
   values: TArray<Integer>;
   index: Integer;
 begin
-  values := TArray<Integer>.Create(1, 2, 3, 4, 5, 5, 5, 6, 7, 8, 9);
+  values := TArray<Integer>.Create(1, 2, 3, 4, 5, 5, 5, 6, 7, 9);
+  CheckFalse(TArray.BinarySearchUpperBound<Integer>(values, 0, index));
+  CheckEquals(0, index);
   CheckTrue(TArray.BinarySearchUpperBound<Integer>(values, 5, index));
-  CheckEquals(6, index);
+  CheckEquals(7, index);
+  CheckFalse(TArray.BinarySearchUpperBound<Integer>(values, 8, index));
+  CheckEquals(9, index);
 end;
 
 procedure TArrayTest.TestBinarySearchUpperBoundSubRange;
@@ -3618,10 +3650,11 @@ var
   values: TArray<Integer>;
   index: Integer;
 begin
-  values := TArray<Integer>.Create(1, 2, 3, 4, 5, 5, 5, 6, 7, 8, 9);
-  CheckTrue(TArray.BinarySearchUpperBound<Integer>(values, 5, index,
-    TComparer<Integer>.Default(), 0, 6));
-  CheckEquals(5, index);
+  values := TArray<Integer>.Create(1, 2, 3, 4, 5, 5, 5, 6, 7, 9);
+  CheckTrue(TArray.BinarySearchUpperBound<Integer>(values, 5, index, 2, 6));
+  CheckEquals(7, index);
+  CheckFalse(TArray.BinarySearchUpperBound<Integer>(values, 8, index, 2, 8));
+  CheckEquals(9, index);
 end;
 
 procedure TArrayTest.TestLastIndexOf;
