@@ -1546,7 +1546,9 @@ end;
 function TEnumerableBase<T>.Memoize: IEnumerable<T>;
 begin
   if (GetInterfaceEntry(ICollectionOfTGuid) <> nil)
-    or (GetInterfaceEntry(IReadOnlyCollectionOfTGuid) <> nil) then
+    or (GetInterfaceEntry(IReadOnlyCollectionOfTGuid) <> nil)
+    or (InheritsFrom(TEnumerableIterator<T>)
+    and (TEnumerableIterator<T>(Self).fKind = TIteratorKind.Memoize)) then
     Result := IEnumerable<T>(this)
   else
     Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
@@ -3133,8 +3135,6 @@ begin
     Count := iterator.fCount;
     Kind := iterator.fKind;
     Methods.Finalize := @TIteratorBlock<T>.Finalize;
-    if Kind = Memoize then
-      Pointer(Predicate) := @iterator.fSource;
   end;
   rec.InitMethods;
   rec.InitVtable;
@@ -3183,6 +3183,7 @@ begin
     end;
     TIteratorKind.Memoize:
     begin
+      Pointer(Predicate) := @TIteratorBase<T>(Parent).fSource;
       if Count = 0 then
       begin
         Methods.MoveNext := @TIteratorBlock<T>.MoveNextMemoize;

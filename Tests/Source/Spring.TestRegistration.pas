@@ -149,7 +149,9 @@ begin
       TAtLeastTests.Suite,
       TAtMostTests.Suite,
       TBetweenTests.Suite,
-      TExactlyTests.Suite
+      TExactlyTests.Suite,
+
+      TMemoizeTests.Suite
     ]);
 
     RegisterTests('Spring.Base.Collections.Dictionaries', [

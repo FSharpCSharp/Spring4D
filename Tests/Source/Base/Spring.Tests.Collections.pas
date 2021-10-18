@@ -826,7 +826,7 @@ type
     end;
   protected
     class function BreakingSequence<T>: IEnumerable<T>; static;
-    class function BreakingReadOnlyCollection<T>(const collection: IReadOnlyCollection<T>): IEnumerable<T>; static;
+    class function BreakingReadOnlyCollection<T>(const collection: IReadOnlyCollection<T>): IReadOnlyCollection<T>; static;
     class function FastInfiniteEnumerator<T>: IEnumerable<T>; static;
     class function ForceNotCollection<T>(const source: array of T): IEnumerable<T>; overload; static;
     class function ForceNotCollection<T>(const source: IEnumerable<T>): IEnumerable<T>; overload; static;
@@ -1019,6 +1019,17 @@ type
     procedure SingleElementHasExactlyOneElement;
     procedure ManyElementsHasExactlyOneElement;
     procedure DoesNotIterateUnnecessaryElements;
+  end;
+
+  TSourceKind = (skBreakingCollection, skBreakingReadOnlyCollection);
+
+  TMemoizeTests = class(TEnumerableTestCase)
+  published
+    procedure MemoizeWithPartialIterationBeforeCompleteIteration;
+    procedure MemoizeIsLazy;
+    procedure MemoizeWithInMemoryCollection;
+    procedure MemoizeEnumeratesOnlyOnce;
+    procedure MemoizeWithMemoizedSourceReturnsSame;
   end;
 
 implementation
@@ -5426,7 +5437,7 @@ begin
 end;
 
 class function TEnumerableTestCase.BreakingReadOnlyCollection<T>(
-  const collection: IReadOnlyCollection<T>): IEnumerable<T>;
+  const collection: IReadOnlyCollection<T>): IReadOnlyCollection<T>;
 begin
   Result := TBreakingReadOnlyCollection<T>.Create(collection);
 end;
@@ -6728,6 +6739,64 @@ begin
         raise Exception.Create('');
     end);
   CheckFalse(source.Exactly(2));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TMemoizeTests'}
+
+procedure TMemoizeTests.MemoizeWithPartialIterationBeforeCompleteIteration;
+var
+  buffer: IEnumerable<Integer>;
+begin
+  buffer := TEnumerable.Range(0, 10).Memoize;
+
+  CheckEquals(buffer.Take(5), TEnumerable.Range(0, 5));
+  CheckEquals(buffer, TEnumerable.Range(0, 10));
+end;
+
+procedure TMemoizeTests.MemoizeIsLazy;
+begin
+  BreakingSequence<Integer>.Memoize;
+  Pass;
+end;
+
+procedure TMemoizeTests.MemoizeWithInMemoryCollection;
+var
+  collection: IReadOnlyCollection<Integer>;
+begin
+  collection := BreakingReadOnlyCollection<Integer>(TEnumerable.Empty<Integer>());
+  CheckSame(collection.Memoize, collection);
+end;
+
+procedure TMemoizeTests.MemoizeEnumeratesOnlyOnce;
+var
+  count: Integer;
+  range, memoized: IEnumerable<Integer>;
+begin
+  count := 10;
+  range := TEnumerable.Range(1, count).Where(
+    function(const x: Integer): Boolean
+    begin
+      Check(count > 0);
+      Dec(count);
+      Result := True;
+    end);
+  memoized := range.Memoize;
+
+  CheckEquals(10, memoized.Count);
+  CheckEquals(10, memoized.Count);
+end;
+
+procedure TMemoizeTests.MemoizeWithMemoizedSourceReturnsSame;
+var
+  memoized, memoizedAgain: IEnumerable<Integer>;
+begin
+  memoized := TEnumerable.Range(0, 9).Memoize;
+  memoizedAgain := memoized.Memoize;
+
+  CheckSame(memoized, memoizedAgain);
 end;
 
 {$ENDREGION}
