@@ -3374,6 +3374,7 @@ type
     class procedure InternalFrom_Object_OpenArray(source: Pointer; count: Integer; var result; elementType: PTypeInfo); static;
     class procedure InternalFrom_Interface_DynArray(source: Pointer; var result; elementType: PTypeInfo); static;
     class procedure InternalFrom_Interface_OpenArray(source: Pointer; count: Integer; var result; elementType: PTypeInfo); static;
+    class procedure InternalOfType_Object(const source: IEnumerable<TObject>; var result; resultType: PTypeInfo); static;
   public
     class function Aggregate<TSource, TAccumulate>(const source: IEnumerable<TSource>;
       const seed: TAccumulate; const func: Func<TAccumulate, TSource, TAccumulate>): TAccumulate; overload; static;
@@ -3625,6 +3626,34 @@ begin
     Result := nil;
   end;
 end;
+
+type
+  TOfTypeIterator = class(TEnumerableBase<TObject>, IInterface, IEnumerable<TObject>)
+  private type
+  {$REGION 'Nested Types'}
+    PEnumerator = ^TEnumerator;
+    TEnumerator = record
+      Vtable: Pointer;
+      RefCount: Integer;
+      TypeInfo: PTypeInfo;
+      Parent: TOfTypeIterator;
+      fResultClass: TClass;
+      fEnumerator: IEnumerator<TObject>;
+      fCurrent: TObject;
+      function GetCurrent: TObject;
+      function MoveNext: Boolean;
+      class var Enumerator_Vtable: TEnumeratorVtable;
+    end;
+  {$ENDREGION}
+  private
+    fSource: IEnumerable<TObject>;
+    fResultClass: TClass;
+  protected
+    function GetElementType: PTypeInfo; override;
+  public
+    constructor Create(const source: IEnumerable<TObject>; resultClass: TClass);
+    function GetEnumerator: IEnumerator<TObject>;
+  end;
 
 
 {$REGION 'TPair<TKey, TValue>'}
@@ -7376,6 +7405,12 @@ begin
     TFoldedArrayIterator<TObject>.Create(source, count, elementType);
 end;
 
+class procedure TEnumerable.InternalOfType_Object(const source: IEnumerable<TObject>;
+  var result; resultType: PTypeInfo);
+begin
+  IEnumerable<TObject>(Result) := TOfTypeIterator.Create(source, GetTypeData(resultType).ClassType);
+end;
+
 class procedure TEnumerable.InternalFrom_Interface_DynArray(source: Pointer;
   var result; elementType: PTypeInfo);
 begin
@@ -7463,6 +7498,11 @@ end;
 class function TEnumerable.OfType<T, TResult>(
   const source: IEnumerable<T>): IEnumerable<TResult>;
 begin
+  {$IFDEF DELPHIXE7_UP}
+  if (GetTypeKind(T) = tkClass) and (GetTypeKind(TResult) = tkClass) then
+    InternalOfType_Object(IEnumerable<TObject>(source), Result, TypeInfo(TResult))
+  else
+  {$ENDIF}
   Result := TOfTypeIterator<T, TResult>.Create(source);
 end;
 
@@ -7990,6 +8030,70 @@ end;
 class destructor TIdentityFunction<T>.Destroy;
 begin
   fInstance := nil;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TOfTypeIterator'}
+
+constructor TOfTypeIterator.Create(const source: IEnumerable<TObject>; resultClass: TClass);
+begin
+  fSource := source;
+  fResultClass := resultClass;
+end;
+
+function TOfTypeIterator.GetElementType: PTypeInfo;
+begin
+  Result := fResultClass.ClassInfo;
+end;
+
+function TOfTypeIterator.GetEnumerator: IEnumerator<TObject>;
+begin
+  _AddRef;
+  with PEnumerator(TEnumeratorBlock.Create(@Result, @TEnumerator.Enumerator_Vtable,
+    TypeInfo(TEnumerator), @TEnumerator.GetCurrent, @TEnumerator.MoveNext))^ do
+  begin
+    Parent := Self;
+    fResultClass := Self.fResultClass;
+  end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TOfTypeIterator.TEnumerator'}
+
+function TOfTypeIterator.TEnumerator.GetCurrent: TObject;
+begin
+  Result := fCurrent;
+end;
+
+function TOfTypeIterator.TEnumerator.MoveNext: Boolean;
+label
+  HasEnumerator;
+var
+  current: TObject;
+begin
+  if Assigned(fEnumerator) then
+  begin
+  HasEnumerator:
+    repeat
+      Result := fEnumerator.MoveNext;
+      if not Result then
+        Break;
+      current := fEnumerator.Current;
+      fCurrent := current;
+      Result := current.InheritsFrom(fResultClass);
+    until Result;
+    Exit;
+  end;
+{$IFDEF MSWINDOWS}
+  IEnumerableInternal(Parent.fSource).GetEnumerator(IEnumerator(fEnumerator));
+{$ELSE}
+  fEnumerator := Parent.fSource.GetEnumerator;
+{$ENDIF}
+  goto HasEnumerator;
 end;
 
 {$ENDREGION}
