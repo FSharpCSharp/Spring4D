@@ -77,6 +77,7 @@ implementation
 
 uses
   Classes,
+  TypInfo, // H2443
   Variants,
   Spring,
   Spring.Reflection;

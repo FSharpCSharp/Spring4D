@@ -304,6 +304,7 @@ function GetEndOperator(startOperator: TWhereOperator): TWhereOperator;
 implementation
 
 uses
+  Rtti, // H2443
   StrUtils,
   SysUtils,
   Spring,

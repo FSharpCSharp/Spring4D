@@ -69,6 +69,7 @@ type
 implementation
 
 uses
+  Rtti, // H2443
   StrUtils,
   SysUtils,
   TypInfo,

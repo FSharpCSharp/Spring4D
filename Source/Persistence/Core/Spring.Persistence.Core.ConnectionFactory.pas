@@ -68,6 +68,7 @@ implementation
 
 uses
   Classes,
+  Generics.Collections, // H2443
   Rtti,
   SysUtils,
   TypInfo,

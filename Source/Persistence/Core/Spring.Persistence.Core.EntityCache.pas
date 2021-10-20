@@ -123,8 +123,9 @@ type
 implementation
 
 uses
-  SysUtils,
   Rtti,
+  SysUtils,
+  TypInfo, // H2443
   Spring.Persistence.Core.Exceptions,
   Spring.Reflection;
 

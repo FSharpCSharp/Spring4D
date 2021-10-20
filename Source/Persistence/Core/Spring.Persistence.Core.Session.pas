@@ -275,6 +275,7 @@ type
 implementation
 
 uses
+  Rtti, // H2443
   TypInfo,
   Spring.Persistence.Core.Base,
   Spring.Persistence.Core.EntityCache,

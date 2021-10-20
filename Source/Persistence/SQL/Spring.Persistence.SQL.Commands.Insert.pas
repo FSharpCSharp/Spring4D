@@ -76,6 +76,8 @@ type
 implementation
 
 uses
+  Rtti, // H2443
+  TypInfo, // H2443
   Variants,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.SQL.Params,
