@@ -35,7 +35,6 @@ interface
 
 uses
   Classes,
-  Generics.Collections,
   Generics.Defaults,
   TypInfo,
   TestFramework,
@@ -4354,26 +4353,18 @@ end;
 
 procedure TSortTest.TestSort<T>(const genvalue: Func<T>);
 var
-  data, data2: TArray<T>;
+  data: TArray<T>;
   i: Integer;
   comparer: IComparer<T>;
 begin
   SetLength(data, Count);
-  SetLength(data2, Count);
   for i := 0 to High(data) do
-  begin
     data[i] := genValue;
-    data2[i] := data[i];
-  end;
   TestPassing<T>(data[0]);
   TArray.Sort<T>(data);
   comparer := TComparer<T>.Default;
-  Generics.Collections.TArray.Sort<T>(data2, comparer);
   for i := 1 to High(data) do
-  begin
     Check(comparer.Compare(data[i-1], data[i]) <= 0);
-    Check(comparer.Compare(data[i], data2[i]) = 0);
-  end;
 end;
 
 procedure TSortTest.Test_Int8;
