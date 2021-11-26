@@ -7926,8 +7926,6 @@ end;
 
 function TStringComparer.GetHashCode(const value: string): Integer;
 const
-  FNV_Prime = 16777619;
-  FNV_OffsetBasis = Integer($811C9DC5); // 2166136261
   NotAsciiMask = $FF80FF80;
   LowerCaseMask = $00200020;
 
@@ -7942,55 +7940,45 @@ const
   function GetHashCodeIgnoreCaseSlow(const value: string): Integer;
   var
     s: string;
-    len, i: NativeInt;
-    c: Integer;
+    len: NativeInt;
   begin
-    s := AnsiUpperCase(value);
+    s := AnsiLowerCase(value);
     len := Length(s);
-    Result := FNV_OffsetBasis;
-    i := 0;
-    while len > 0 do
-    begin
-      c := PIntegerArray(s)[i];
-      c := c or LowerCaseMask;
-      Result := Result xor c;
-      {$Q-}
-      Result := Result * FNV_PRIME;
-      {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
-      Inc(i);
-      Dec(len, 2);
-    end;
+    Result := DefaultHashFunction(Pointer(s)^, len * SizeOf(Char));
   end;
 
 label
   NotAscii;
 var
-  len, i: NativeInt;
-  hashCode, c: Integer;
+  i: NativeInt;
+  c: Integer;
+  buffer: array[0..1023] of Integer;
+  len: record value: NativeInt; end;
 begin
-  len := Length(value);
-  if fIgnoreCase then
+  if value <> '' then
   begin
-    hashCode := FNV_OffsetBasis;
-    i := 0;
-    while len > 0 do
+    len.value := PInteger(@PByte(value)[-4])^;
+    if fIgnoreCase then
     begin
-      c := PIntegerArray(value)[i];
-      if c and NotAsciiMask <> 0 then goto NotAscii;
-      c := c or LowerCaseMask;
-      hashCode := hashCode xor c;
-      {$Q-}
-      hashCode := hashCode * FNV_PRIME;
-      {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
-      Inc(i);
-      Dec(len, 2);
-    end;
-    Exit(hashCode);
-  NotAscii:
-    Result := GetHashCodeIgnoreCaseSlow(value);
+      if len.value <= 2048 then
+      begin
+        for i := 0 to (len.value-1) shr 1 do
+        begin
+          c := PIntegerArray(value)[i];
+          if c and NotAsciiMask <> 0 then goto NotAscii;
+          buffer[i] := c or LowerCaseMask;
+        end;
+        Result := DefaultHashFunction(buffer[0], len.value * SizeOf(Char));
+      end
+      else
+      NotAscii:
+        Result := GetHashCodeIgnoreCaseSlow(value);
+    end
+    else
+      Result := DefaultHashFunction(Pointer(value)^, len.value * SizeOf(Char));
   end
   else
-    Result := DefaultHashFunction(Pointer(value)^, len * SizeOf(Char));
+    Result := DefaultHashFunction(Pointer(value)^, 0);
 end;
 
 class function TStringComparer.Ordinal: TStringComparer;
