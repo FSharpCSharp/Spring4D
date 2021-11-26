@@ -513,7 +513,7 @@ type
 
     function MoveTo(const collection: ICollection<T>): Integer; overload;
     function MoveTo(const collection: ICollection<T>;
-      const match: Predicate<T>): Integer; overload;
+      const predicate: Predicate<T>): Integer; overload;
   end;
 
   TInnerCollection<T> = class sealed(TEnumerableBase<T>,
@@ -2315,22 +2315,30 @@ begin
 end;
 
 function TCollectionBase<T>.MoveTo(const collection: ICollection<T>): Integer;
+var
+  values: TArray<T>;
 begin
-  Result := ICollection<T>(this).MoveTo(collection, nil);
+  if not Assigned(collection) then RaiseHelper.ArgumentNil(ExceptionArgument.collection);
+
+  values := IEnumerable<T>(this).ToArray;
+  ICollection<T>(this).ExtractRange(values);
+  collection.AddRange(values);
+  Result := DynArrayLength(values);
 end;
 
 function TCollectionBase<T>.MoveTo(const collection: ICollection<T>;
-  const match: Predicate<T>): Integer;
+  const predicate: Predicate<T>): Integer;
 var
   values: TArray<T>;
   i: Integer;
 begin
   if not Assigned(collection) then RaiseHelper.ArgumentNil(ExceptionArgument.collection);
+  if not Assigned(predicate) then RaiseHelper.ArgumentNil(ExceptionArgument.predicate);
 
   Result := 0;
   values := IEnumerable<T>(this).ToArray;
   for i := 0 to DynArrayHigh(values) do
-    if not Assigned(match) or match(values[i]) then
+    if predicate(values[i]) then
     begin
       ICollection<T>(this).Extract(values[i]);
       collection.Add(values[i]);

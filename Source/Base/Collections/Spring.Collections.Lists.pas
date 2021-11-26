@@ -64,6 +64,16 @@ type
         class var Enumerator_Vtable: TEnumeratorVtable;
       end;
       ItemType = TTypeInfo<T>;
+
+      // internal helper type to solve compiler issue with using Slice on the
+      // overloaded AddRange method in older Delphi versions
+      // keep this in sync with the ICollection<T> interface from Spring.Collections
+      ICollectionInternal = interface(IEnumerable<T>)
+        function GetOnChanged: ICollectionChangedEvent<T>;
+        function Add(const item: T): Boolean;
+        procedure AddRange(const values: array of T);
+      end;
+
   {$ENDREGION}
     {$IFDEF DELPHIXE7_UP}
     class var DefaultComparer: Pointer;
@@ -82,6 +92,7 @@ type
       action: TCollectionChangedAction; doClear: Boolean; result: PPointer);
     function InsertInternal(index: Integer; const item: T): Integer;
     procedure SetItemInternal(index: Integer; const value: T);
+    procedure DoNotifyExtracted(count: Integer);
   protected
   {$REGION 'Property Accessors'}
     function GetCapacity: Integer; inline;
@@ -139,6 +150,7 @@ type
     procedure Clear;
 
     function CopyTo(var values: TArray<T>; index: Integer): Integer;
+    function MoveTo(const collection: ICollection<T>): Integer; overload;
     function MoveTo(const collection: ICollection<T>; const predicate: Predicate<T>): Integer; overload;
   {$ENDREGION}
 
@@ -1049,6 +1061,14 @@ begin
     TArray<T>(result^) := oldItems;
 end;
 
+procedure TAbstractArrayList<T>.DoNotifyExtracted(count: Integer);
+var
+  i: Integer;
+begin
+  for i := 0 to count - 1 do
+    Notify(Self, fItems[i], caExtracted);
+end;
+
 procedure TAbstractArrayList<T>.DeleteRange(index, count: Integer);
 var
   listCount, tailCount: Integer;
@@ -1258,26 +1278,37 @@ begin
   DoNotify(temp, caMoved);
 end;
 
+function TAbstractArrayList<T>.MoveTo(const collection: ICollection<T>): Integer;
+begin
+  Result := Count;
+  if Result > 0 then
+  begin
+    {$Q-}
+    Inc(fVersion);
+    {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+    Dec(fCount, Result);
+    if Assigned(Notify) then
+      DoNotifyExtracted(Result);
+    // hardcast to solve compiler glitch in older Delphi versions due to AddRange overload
+    ICollectionInternal(collection).AddRange(Slice(TSlice<T>((@fItems[0])^), Result));
+    if ItemType.IsManaged then
+      FinalizeArray(fItems, TypeInfo(T), Result);
+    System.FillChar(fItems[0], SizeOf(T) * Result, 0);
+  end;
+end;
+
 function TAbstractArrayList<T>.MoveTo(const collection: ICollection<T>;
   const predicate: Predicate<T>): Integer;
 var
-  i: Integer;
-  item: T;
+  values: TArray<T>;
 begin
   if not Assigned(collection) then RaiseHelper.ArgumentNil(ExceptionArgument.collection);
+  if not Assigned(predicate) then RaiseHelper.ArgumentNil(ExceptionArgument.predicate);
 
-  Result := 0;
-  i := 0;
-  while i < Count do
-    if not Assigned(predicate) or predicate(fItems[i]) then
-    begin
-      item := fItems[i];
-      DeleteInternal(i, caExtracted);
-      collection.Add(item);
-      Inc(Result);
-    end
-    else
-      Inc(i);
+  SetLength(values, Self.Count);
+  Result := DeleteAllInternal(predicate, caExtracted, values);
+  // hardcast to solve compiler glitch in older Delphi versions due to AddRange overload
+  ICollectionInternal(collection).AddRange(Slice(TSlice<T>((@values[0])^), Result));
 end;
 
 function TAbstractArrayList<T>.QueryInterface(const IID: TGUID; out Obj): HResult;

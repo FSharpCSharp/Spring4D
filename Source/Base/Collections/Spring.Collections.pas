@@ -901,6 +901,8 @@ type
   /// </typeparam>
   ICollection<T> = interface(IEnumerable<T>)
     ['{9BFD9B06-45CD-4C80-B145-01B09D432CF0}']
+    // IMPORTANT NOTICE:
+    // keep this in sync with ICollectionInternal<T> in Spring.Collections.Lists
   {$REGION 'Property Accessors'}
     function GetOnChanged: ICollectionChangedEvent<T>;
   {$ENDREGION}
