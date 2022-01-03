@@ -126,6 +126,7 @@ type
     procedure TestByValue;
     procedure Test_Initializer_RaisesArgumentException_NotReferenceType;
     procedure TestIsLazyType;
+    procedure Issue375;
   end;
 
   {$M+}
@@ -1301,6 +1302,25 @@ var
 begin
   ExpectedException := EArgumentException;
   TLazyInitializer.EnsureInitialized<Integer>(i, function: Integer begin Exit(42) end);
+end;
+
+procedure TTestLazy.Issue375;
+var
+  lazyType: Lazy<TStringStream>;
+  lazyTypeValue: TValue;
+  lazyValue: TValue;
+begin
+  lazyType := Lazy<TStringStream>.Create(
+    function: TStringStream
+    begin
+      Result := TStringStream.Create;
+    end, True);
+  lazyType.Value.WriteString('Some text');
+  lazyType.Value.WriteString('Some text');
+
+  lazyTypeValue := TValue.From<Lazy<TStringStream>>(lazyType);
+  CheckTrue(IsLazyType(lazyTypeValue.TypeInfo));
+  CheckTrue(lazyTypeValue.TryGetLazyValue(lazyValue));
 end;
 
 procedure TTestLazy.TearDown;

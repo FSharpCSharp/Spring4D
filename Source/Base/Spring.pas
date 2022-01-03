@@ -1933,6 +1933,12 @@ type
       function Invoke: TObject;
     end;
 
+    TReference = record
+      Vtable: Pointer;
+
+      function QueryInterface(const IID: TGUID; out obj): HResult; stdcall;
+    end;
+
     PObjectReference = ^TObjectReference;
     TObjectReference = record
       Vtable: Pointer;
@@ -1968,7 +1974,7 @@ type
   const
     ObjectReferenceVtable: array[0..6] of Pointer =
     (
-      @NopQueryInterface,
+      @TReference.QueryInterface,
       @RecAddRef,
       @TObjectReference._Release,
 
@@ -1980,7 +1986,7 @@ type
 
     InterfaceReferenceVtable: array[0..6] of Pointer =
     (
-      @NopQueryInterface,
+      @TReference.QueryInterface,
       @RecAddRef,
       @TInterfaceReference._Release,
 
@@ -8865,6 +8871,22 @@ begin
   TObject(instance) := TLazy<T>.Create;
   instance.fValueFactory := IInterface(factory);
   ILazyInternal<T>(result) := instance;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'Lazy.TReference'}
+
+function Lazy.TReference.QueryInterface(const IID: TGUID; out obj): HResult;
+begin
+  if IID = ILazy then
+  begin
+    Pointer(obj) := @Vtable;
+    Result := S_OK;
+  end
+  else
+    Result := E_NOINTERFACE;
 end;
 
 {$ENDREGION}
