@@ -107,6 +107,8 @@ begin
 end;
 {$ELSEIF defined(CPUX86)}
 asm
+  // eax = key, edx = len, ecx = seed
+
   push    ebx
   push    esi
   push    edi
@@ -114,42 +116,38 @@ asm
   push    edx
 
   mov     ebx, eax                            // data := @key;
-  lea     esi, [eax+edx]                      // pEnd := Pointer(NativeUInt(data) + len);
-  lea     eax, [ecx+Prime5]                   // Result := seed + cPrime32x5;
-  cmp     edx, 15                             // if len >= 16 then
-  jbe     @tail
+  lea     esi, [eax+edx-16]                   // limit := Pointer(NativeUInt(data) + len - 16);
+  lea     eax, [ecx+Prime5]                   // Result := seed + Prime5;
+  cmp     edx, 16                             // if len >= 16 then
+  jb      @tail
 
-  mov     ebp, ecx
-  sub     esi, 16                             // limit := Pointer(NativeUInt(pEnd) - 16);
-
-  lea     eax, [ebp+Prime1+Prime2]            // v1 := seed + Prime1 + Prime2;
-  lea     edx, [ebp+Prime2]                   // v2 := seed + Prime2;
-                                              // v3 := seed;
-  lea     edi, [ebp-Prime1]                   // v4 := seed - Prime1;
+  lea     eax, [ecx+Prime1+Prime2]            // v1 := seed + Prime1 + Prime2;
+  lea     edx, [ecx+Prime2]                   // v2 := seed + Prime2;
+  mov     ebp, ecx                            // v3 := seed;
+  lea     edi, [ecx-Prime1]                   // v4 := seed - Prime1;
 
 @loop16bytes:
   imul    ecx, [ebx], Prime2                  // v1 := Prime1 * rol(v1 + Prime2 * PCardinal(data)[0], 13);
-  add     ebx, 16
   add     eax, ecx
   rol     eax, 13
   imul    eax, eax, Prime1
 
-  imul    ecx, [ebx-12], Prime2               // v2 := Prime1 * rol(v2 + Prime2 * PCardinal(data)[1], 13);
+  imul    ecx, [ebx+4], Prime2                // v2 := Prime1 * rol(v2 + Prime2 * PCardinal(data)[1], 13);
   add     edx, ecx
   rol     edx, 13
   imul    edx, edx, Prime1
 
-  imul    ecx, [ebx-8], Prime2                // v3 := Prime1 * rol(v3 + Prime2 * PCardinal(data)[2], 13);
-  add     ecx, ebp
-  rol     ecx, 13
-  imul    ecx, ecx, Prime1
-  mov     ebp, ecx
+  imul    ecx, [ebx+8], Prime2                // v3 := Prime1 * rol(v3 + Prime2 * PCardinal(data)[2], 13);
+  add     ebp, ecx
+  rol     ebp, 13
+  imul    ebp, ebp, Prime1
 
-  imul    ecx, [ebx-4], Prime2                // v4 := Prime1 * rol(v4 + Prime2 * PCardinal(data)[3], 13);
-  add     ecx, edi
-  rol     ecx, 13
-  imul    edi, ecx, Prime1
+  imul    ecx, [ebx+12], Prime2               // v4 := Prime1 * rol(v4 + Prime2 * PCardinal(data)[3], 13);
+  add     edi, ecx
+  rol     edi, 13
+  imul    edi, edi, Prime1
 
+  add     ebx, 16                             // Inc(NativeUInt(data), 16);
   cmp     ebx, esi                            // until NativeUInt(data) > NativeUInt(pLimit);
   jbe     @loop16bytes
 
@@ -159,23 +157,23 @@ asm
   add     eax, edx
   rol     ebp, 12
   rol     edi, 18
-  add     edi, ebp
+  add     eax, ebp
   add     eax, edi
 
 @tail:
+  add     eax, [esp]                          // Inc(Result, len);
   lea     ebp, [esi-4]
-  add     eax, [esp]                          // Inc(Result, Len);
-  cmp     ebp, ebx
+  cmp     ebp, ebx                            // while NativeUInt(data) <= (NativeUInt(pEnd) - 4) do
   jb      @lessThan4bytes
 
 @loop4bytes:
-  imul    edx, [ebx], Prime3                  // Result := Result + PCardinal(data)[0] * Prime3;
-  add     ebx, 4                              // Inc(NativeUInt(data), 4);
+  imul    edx, [ebx], Prime3                  // Result := Result + PCardinal(data)^ * Prime3;
   add     edx, eax
   rol     edx, 17                             // Result := Rol(Result, 17) * Prime4;
   imul    eax, edx, Prime4
-  cmp     ebp, ebx                            // while NativeUInt(data) <= (NativeUInt(pEnd) - 4) do
-  jnb     @loop4bytes
+  add     ebx, 4                              // Inc(NativeUInt(data), 4);
+  cmp     ebx, ebp                            // while NativeUInt(data) <= (NativeUInt(pEnd) - 4) do
+  jbe     @loop4bytes
 
 @lessThan4bytes:
   cmp     ebx, esi
@@ -183,11 +181,11 @@ asm
 
 @loopBytes:
   movzx   edx, byte ptr [ebx]                 // Result := Result + PByte(data)^ * Prime5;
-  inc     ebx
   imul    edx, edx, Prime5
   add     edx, eax
   rol     edx, 11                             // Result := Rol(Result, 11) * Prime1;
   imul    eax, edx, Prime1
+  inc     ebx                                 // Inc(NativeUInt(data));
   cmp     ebx, esi                            // while NativeUInt(data) < NativeUInt(pEnd) do
   jb      @loopBytes
 
@@ -212,121 +210,101 @@ asm
 end;
 {$ELSEIF defined(CPUX64)}
 asm
-     //xxHashTest.dpr.124: begin
-     push rsi
-     push rbx
-     //xxHashTest.dpr.125: ABuffer:= @HashData;
-     mov rbx,rcx
-     //xxHashTest.dpr.126: pEnd:= pointer(NativeUInt(ABuffer) + Len);
-     //movsxd rax,edx
-     lea r11,[rcx+rdx]
-     //xxHashTest.dpr.127: if Len >= 16 then begin
-     cmp edx,$10
-     jl @SmallHash
-     //xxHashTest.dpr.128: pLimit:= pointer(NativeUInt(pEnd) - 16);
-     lea r10,[rcx+rdx-$10]
-     //xxHashTest.dpr.129: v1:= Seed + cPrime32x1 + cPrime32x2;
-     lea eax,[r8d+$24234428]
-     //xxHashTest.dpr.130: v2:= Seed + cPrime32x2;
-     lea ecx,[r8d+$85ebca77]
-     //xxHashTest.dpr.131: v3:= Seed;
-     mov r9d,r8d
-     //xxHashTest.dpr.132: v4:= Seed - cPrime32x1;
-     add r8d,$61c8864f
-     //xxHashTest.dpr.135: v1:= cPrime32x1 * rol(v1 + cPrime32x2 * PCardinal(data)[0], 13);
-@StartRepeat16:
-     imul esi,[rbx],$85ebca77
-     add eax,esi
-     rol eax,$0d
-     imul eax,eax,$9e3779b1
-     //xxHashTest.dpr.136: v2:= cPrime32x1 * rol(v2 + cPrime32x2 * PCardinal(data)[1], 13);
-     imul esi,[rbx+$04],$85ebca77
-     add ecx,esi
-     rol ecx,$0d
-     imul ecx,ecx,$9e3779b1
-     //xxHashTest.dpr.137: v3:= cPrime32x1 * rol(v3 + cPrime32x2 * PCardinal(data)[2], 13);
-     imul esi,[rbx+$08],$85ebca77
-     add r9d,esi
-     rol r9d,$0d
-     imul r9d,r9d,$9e3779b1
-     //xxHashTest.dpr.138: v4:= cPrime32x1 * rol(v4 + cPrime32x2 * PCardinal(data)[3], 13);
-     imul esi,[rbx+$0c],$85ebca77
-     add r8d,esi
-     rol r8d,$0d
-     imul r8d,r8d,$9e3779b1
-     //xxHashTest.dpr.139: Inc(NativeUInt(ABuffer), 16);
-     add rbx,$10
-     //xxHashTest.dpr.140: until not(NativeUInt(ABuffer) <= NativeUInt(pLimit));
-     cmp rbx,r10
-     jbe @StartRepeat16
-     //xxHashTest.dpr.142: Result:= Rol(v1, 1) + Rol(v2, 7) + Rol(v3, 12) + Rol(v4, 18);
-     rol eax,1
-     rol ecx,$07
-     add eax,ecx
-     rol r9d,$0c
-     add eax,r9d
-     rol r8d,$12
-     add eax,r8d
-     jmp @Tail
-@SmallHash:
-     //xxHashTest.dpr.144: else Result:= Seed + cPrime32x5;
-     lea eax,[r8d+$165667b1]
-     //xxHashTest.dpr.146: Inc(Result, Len);
-@Tail:
-     add eax,edx
-     jmp @EndWhile4Bytes
-@StartWhile4Bytes:
-     //xxHashTest.dpr.149: Result:= Result + PCardinal(ABuffer)^ * cPrime32x3;
-     imul ecx,[rbx],$c2b2ae3d
-     add ecx,eax
-     //xxHashTest.dpr.150: Result:= Rol(Result, 17) * cPrime32x4;
-     //mov ecx,eax
-     rol ecx,$11
-     imul eax,ecx,$27d4eb2f
-     //mov eax,ecx
-     //xxHashTest.dpr.151: Inc(NativeUInt(ABuffer), 4);
-     add rbx,$04
-     //xxHashTest.dpr.148: while NativeUInt(ABuffer) <= (NativeUInt(pEnd) - 4) do begin
-@EndWhile4Bytes:
-     lea rcx,[r11-$04]
-     cmp rbx,rcx
-     jbe @StartWhile4Bytes
-     jmp @EndWhileBytes
-     //xxHashTest.dpr.155: Result:= Result + PByte(ABuffer)^ * cPrime32x5;
-@StartWhileBytes:
-     movzx rcx,byte ptr [rbx]
-     imul ecx,ecx,$165667b1
-     add eax,ecx
-     //xxHashTest.dpr.156: Result:= Rol(Result, 11) * cPrime32x1;
-     //mov ecx,eax
-     rol eax,$0b
-     imul eax,eax,$9e3779b1
-     //mov eax,ecx
-     //xxHashTest.dpr.157: Inc(NativeUint(ABuffer));
-     add rbx,$01
-     //xxHashTest.dpr.154: while NativeUInt(ABuffer) < NativeUInt(pEnd) do begin
-@EndWhileBytes:
-     cmp rbx,r11
-     jb @StartWhileBytes
-     //xxHashTest.dpr.160: Result:= Result xor (Result shr 15);
-     mov ecx,eax
-     shr ecx,$0f
-     xor eax,ecx
-     //xxHashTest.dpr.161: Result:= Result * cPrime32x2;
-     imul eax,eax,$85ebca77
-     //xxHashTest.dpr.162: Result:= Result xor (Result shr 13);
-     mov ecx,eax
-     shr ecx,$0d
-     xor eax,ecx
-     //xxHashTest.dpr.163: Result:= Result * cPrime32x3;
-     imul eax,eax,$c2b2ae3d
-     //xxHashTest.dpr.164: Result:= Result xor (Result shr 16);
-     mov ecx,eax
-     shr ecx,$10
-     xor eax,ecx
-     //xxHashTest.dpr.165: end;
-     pop rbx
-     pop rsi
+  // rcx = key, edx = len, r8d = seed
+
+  push    rsi
+  push    rbx
+
+  mov     rbx, rcx                            // data := @key;
+  lea     r11, [rcx+rdx]                      // pEnd := Pointer(NativeUInt(data) + len);
+  lea     eax, [r8d+Prime5]                   // Result := seed + Prime5;
+  cmp     edx, 16                             // if len >= 16 then
+  jb      @tail
+
+  lea     r10, [rcx+rdx-16]                   // limit := Pointer(NativeUInt(pEnd) - 16);
+
+  lea     eax, [r8d+Prime1+Prime2]            // v1 := seed + Prime1 + Prime2;
+  lea     ecx, [r8d+Prime2]                   // v2 := seed + Prime2;
+                                              // v3 := seed;
+  lea     r9d, [r8d-Prime1]                   // v4 := seed - Prime1;
+
+@loop16bytes:
+  imul    esi, [rbx], Prime2                  // v1 := Prime1 * rol(v1 + Prime2 * PCardinal(data)[0], 13);
+  add     eax, esi
+  rol     eax, 13
+  imul    eax, eax, Prime1
+
+  imul    esi, [rbx+4], Prime2                // v2 := Prime1 * rol(v2 + Prime2 * PCardinal(data)[1], 13);
+  add     ecx, esi
+  rol     ecx, 13
+  imul    ecx, ecx, Prime1
+
+  imul    esi, [rbx+8], Prime2                // v3 := Prime1 * rol(v3 + Prime2 * PCardinal(data)[2], 13);
+  add     r8d, esi
+  rol     r8d, 13
+  imul    r8d, r8d, Prime1
+
+  imul    esi, [rbx+12], Prime2               // v4 := Prime1 * rol(v4 + Prime2 * PCardinal(data)[3], 13);
+  add     r9d, esi
+  rol     r9d, 13
+  imul    r9d, r9d, Prime1
+
+  add     rbx, 16                             // Inc(NativeUInt(data), 16);
+  cmp     rbx, r10                            // until NativeUInt(data) > NativeUInt(pLimit);
+  jbe     @loop16bytes
+
+  rol     eax, 1                              // Result := Rol(v1, 1) + Rol(v2, 7) + Rol(v3, 12) + Rol(v4, 18);
+  rol     ecx, 7
+  add     eax, ecx
+  rol     r8d, 12
+  rol     r9d, 18
+  add     eax, r8d
+  add     eax, r9d
+
+@tail:
+  add     eax, edx                            // Inc(Result, len);
+  lea     rcx, [r11-4]
+  cmp     rcx, rbx                            // while NativeUInt(data) <= (NativeUInt(pEnd) - 4) do
+  jb      @lessThan4bytes
+
+@loop4bytes:
+  imul    edx, [rbx], Prime3                  // Result := Result + PCardinal(data)^ * Prime3;
+  add     edx, eax
+  rol     edx, 17                             // Result := Rol(Result, 17) * Prime4;
+  imul    eax, edx, Prime4
+  add     rbx, 4                              // Inc(NativeUInt(data), 4);
+  cmp     rbx, rcx                            // while NativeUInt(data) <= (NativeUInt(pEnd) - 4) do
+  jbe     @loop4bytes
+
+@lessThan4bytes:
+  cmp     rbx, r11
+  jnb     @finalization
+
+@loopBytes:
+  movzx   edx, byte ptr [rbx]                 // Result := Result + PByte(data)^ * Prime5;
+  imul    edx, edx, Prime5
+  add     edx, eax
+  rol     edx, 11                             // Result := Rol(Result, 11) * Prime1;
+  imul    eax, edx, Prime1
+  inc     rbx                                 // Inc(NativeUInt(data));
+  cmp     rbx, r11                            // while NativeUInt(data) < NativeUInt(pEnd) do
+  jb      @loopBytes
+
+@finalization:
+  mov     ecx, eax                            // Result := Result xor (Result shr 15);
+  shr     ecx, 15
+  xor     eax, ecx
+  imul    eax, eax, Prime2                    // Result := Result * Prime2;
+  mov     ecx, eax                            // Result := Result xor (Result shr 13);
+  shr     ecx, 13
+  xor     eax, ecx
+  imul    eax, eax, Prime3                    // Result := Result * Prime3;
+  mov     ecx, eax                            // Result := Result xor (Result shr 16);
+  shr     ecx, 16
+  xor     eax, ecx
+
+  pop rbx
+  pop rsi
 end;
 {$IFEND}
 
