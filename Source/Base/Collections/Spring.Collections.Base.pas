@@ -1210,7 +1210,8 @@ begin
       IEnumeratorInternal(enumerator).GetCurrent(values[index])
     else
     {$IFEND}
-    values[index + Result] := enumerator.Current;
+    values[index] := enumerator.Current;
+    Inc(index);
     Inc(Result);
   end;
 end;
