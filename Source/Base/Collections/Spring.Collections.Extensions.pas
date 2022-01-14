@@ -1455,13 +1455,12 @@ end;
 
 function TDistinctIterator<T>.TryMoveNext(var current: T): Boolean;
 begin
-  while fEnumerator.MoveNext do
-  begin
+  repeat
+    Result := fEnumerator.MoveNext;
+    if not Result then Break;
     current := fEnumerator.Current;
-    if fSet.Add(current) then
-      Exit(True);
-  end;
-  Result := False;
+    Result := fSet.Add(current);
+  until Result;
 end;
 
 procedure TDistinctIterator<T>.Start;

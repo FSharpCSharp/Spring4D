@@ -2163,8 +2163,9 @@ begin
     STATE_RUNNING:
     _STATE_RUNNING:
     begin
-      if fTryMoveNext(Self, fCurrent) then
-        Exit(True);
+      Result := fTryMoveNext(Self, fCurrent);
+      if Result then
+        Exit;
 
       Dispose;
       fCurrent := Default(T);
