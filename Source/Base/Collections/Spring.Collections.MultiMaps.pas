@@ -167,11 +167,12 @@ type
   {$ENDREGION}
   private
     fCollection: ICollection<T>;
-    fWrappers: TList;
+    fOnDestroy: TNotifyEventImpl;
     fUpdateValues: TNotifyEvent;
     function GetCount: Integer;
     function GetCountFast: Integer;
     procedure RefreshIfEmpty;
+    procedure HandleDestroy(Sender: TObject);
   public
     procedure BeforeDestruction; override;
 
@@ -217,7 +218,7 @@ type
     fKeys: TKeyCollection;
     fValues: TValueCollection;
     fCount: Integer;
-    fWrappers: TList;
+    fOnDestroy: TNotifyEventImpl;
     function CreateWrappedCollection(const key: TKey): IReadOnlyCollection<TValue>;
     procedure DoValueChanged(sender: TObject; const item: TValue;
       action: TCollectionChangedAction);
@@ -309,7 +310,7 @@ type
     fValues: TValueCollection;
     fVersion: Integer;
     fCount: Integer;
-    fWrappers: TList;
+    fOnDestroy: TNotifyEventImpl;
     fKeyComparer: IComparer<TKey>;
     fOwnerships: TDictionaryOwnerships;
     function CreateWrappedCollection(const key: TKey): IReadOnlyCollection<TValue>;
@@ -459,7 +460,6 @@ type
 
   TCollections = class(Spring.Collections.TCollections);
 
-procedure ClearWrappers(const wrappers: TList);
 procedure HandleOnChanged(const collection: IInterface;
   const code: Pointer = nil; const data: Pointer = nil);
 
@@ -472,20 +472,6 @@ uses
   Spring.Collections.Sets,
   Spring.Comparers,
   Spring.ResourceStrings;
-
-procedure ClearWrappers(const wrappers: TList);
-var
-  i: NativeInt;
-begin
-  for i := wrappers.Count - 1 downto 0 do
-    with TCollectionWrapper<Pointer>(wrappers.List[i]) do
-    begin
-      fWrappers := nil;
-      TMethod(fUpdateValues).Code := nil;
-      TMethod(fUpdateValues).Data := nil;
-    end;
-  wrappers.Free;
-end;
 
 procedure HandleOnChanged(const collection: IInterface; const code, data: Pointer);
 var
@@ -801,8 +787,8 @@ end;
 
 procedure TCollectionWrapper<T>.BeforeDestruction;
 begin
-  if Assigned(fWrappers) then
-    fWrappers.Remove(Self);
+  if Assigned(fOnDestroy) then
+    fOnDestroy.Remove(HandleDestroy);
   inherited;
 end;
 
@@ -842,6 +828,12 @@ begin
     fCollection := Self.fCollection;
     fEnumerator := fCollection.GetEnumerator;
   end;
+end;
+
+procedure TCollectionWrapper<T>.HandleDestroy(Sender: TObject);
+begin
+  fOnDestroy := nil;
+  fUpdateValues := nil;
 end;
 
 function TCollectionWrapper<T>.ToArray: TArray<T>;
@@ -921,12 +913,14 @@ begin
 
   fKeys := TKeyCollection.Create(Self, @fHashTable, IEqualityComparer<TKey>(fHashTable.Comparer), keyType, 0);
   fValues := TValueCollection.Create(Self, @fHashTable, @fCount);
-  fWrappers := TList.Create;
+  fOnDestroy := TNotifyEventImpl.Create;
+  fOnDestroy.UseFreeNotification := False;
 end;
 
 procedure TMultiMapBase<TKey, TValue>.BeforeDestruction;
 begin
-  ClearWrappers(fWrappers);
+  fOnDestroy.Invoke(Self);
+  fOnDestroy.Free;
   Clear;
   fKeys.Free;
   fValues.Free;
@@ -940,8 +934,8 @@ var
 begin
   collection := TCollectionWrapper.Create;
   collection.fKey := key;
-  collection.fWrappers := fWrappers;
-  collection.fWrappers.Add(collection);
+  collection.fOnDestroy := fOnDestroy;
+  fOnDestroy.Add(collection.HandleDestroy);
   collection.fUpdateValues := UpdateValues;
   CreateCollection(collection.fCollection);
 
@@ -1340,12 +1334,14 @@ begin
   fTree := TRedBlackTreeBase<TKey,IInterface>.Create(fKeyComparer);
   fKeys := TKeyCollection.Create(Self, fTree, @fVersion);
   fValues := TValueCollection.Create(Self, fTree, @fVersion, @fCount, SizeOf(TKey));
-  fWrappers := TList.Create;
+  fOnDestroy := TNotifyEventImpl.Create;
+  fOnDestroy.UseFreeNotification := False;
 end;
 
 procedure TSortedMultiMapBase<TKey, TValue>.BeforeDestruction;
 begin
-  ClearWrappers(fWrappers);
+  fOnDestroy.Invoke(Self);
+  fOnDestroy.Free;
   Clear;
   fTree.Free;
   fKeys.Free;
@@ -1360,8 +1356,8 @@ var
 begin
   collection := TCollectionWrapper.Create;
   collection.fKey := key;
-  collection.fWrappers := fWrappers;
-  collection.fWrappers.Add(collection);
+  collection.fOnDestroy := fOnDestroy;
+  fOnDestroy.Add(collection.HandleDestroy);
   collection.fUpdateValues := UpdateValues;
   CreateCollection(collection.fCollection);
 
