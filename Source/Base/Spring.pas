@@ -1935,7 +1935,7 @@ type
 
     TReference = record
       Vtable: Pointer;
-
+      RefCount: Integer;
       function QueryInterface(const IID: TGUID; out obj): HResult; stdcall;
     end;
 
@@ -4362,7 +4362,7 @@ type
   PIntfRef = ^TIntfRef;
   TIntfRef = record
     VTable: Pointer;
-    RefCount: Integer
+    RefCount: Integer;
   end;
 begin
   Result := AtomicIncrement(PIntfRef(inst).RefCount);
@@ -8905,6 +8905,7 @@ begin
   if IID = ILazy then
   begin
     Pointer(obj) := @Vtable;
+    AtomicIncrement(RefCount);
     Result := S_OK;
   end
   else
