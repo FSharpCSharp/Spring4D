@@ -8833,7 +8833,6 @@ end;
 class procedure Lazy.MakeFromDefaultCtor(var result; const typeInfo: PTypeInfo);
 var
   defaultCtor: TDefaultCtorFactory;
-  factory: Pointer;
 begin
   Guard.CheckTypeKind(typeInfo, tkClass, 'classInfo');
 
@@ -8841,9 +8840,7 @@ begin
   defaultCtor.classType := typeInfo.TypeData.ClassType;
   defaultCtor.ctor := TActivator.FindConstructor(defaultCtor.classType);
 
-  factory := nil;
-  Func<TObject>(factory) := defaultCtor;
-  MakeFromFactory(factory, result, False);
+  MakeFromFactory(Pointer(Func<TObject>(defaultCtor)), result, True);
 end;
 
 class procedure Lazy.MakeFromFactory(factory: Pointer; var result; ownsObject: Boolean);
