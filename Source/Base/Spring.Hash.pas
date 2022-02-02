@@ -55,13 +55,12 @@ const
 {$if not defined(ASSEMBLER)}
 var
   v1, v2, v3, v4: Cardinal;
-  data, limit, pEnd: PByte;
+  data, limit: PByte;
 begin
   data := @key;
-  pEnd := data + len;
+  limit := data + len - 16;
   if len >= 16 then
   begin
-    limit := pEnd - 16;
     v1 := Cardinal(seed) + Prime1 + Prime2;
     v2 := Cardinal(seed) + Prime2;
     v3 := Cardinal(seed);
@@ -83,16 +82,17 @@ begin
   else
     Result := Cardinal(seed) + Prime5;
 
+  Inc(limit, 16);
   Inc(Result, len);
 
-  while data <= pEnd - 4 do
+  while data + 4 <= limit do
   begin
     Result := Cardinal(Result) + PCardinal(data)^ * Prime3;
     Result := RotateLeft(Result, 17) * Prime4;
     Inc(data, 4);
   end;
 
-  while data < pEnd do
+  while data < limit do
   begin
     Result := Result + data^ * Prime5;
     Result := RotateLeft(Result, 11) * Prime1;
@@ -116,7 +116,7 @@ asm
   push    edx
 
   mov     ebx, eax                            // data := @key;
-  lea     esi, [eax+edx-16]                   // limit := Pointer(NativeUInt(data) + len - 16);
+  lea     esi, [eax+edx-16]                   // limit := data + len - 16;
   lea     eax, [ecx+Prime5]                   // Result := seed + Prime5;
   cmp     edx, 16                             // if len >= 16 then
   jb      @tail
@@ -147,8 +147,8 @@ asm
   rol     edi, 13
   imul    edi, edi, Prime1
 
-  add     ebx, 16                             // Inc(NativeUInt(data), 16);
-  cmp     ebx, esi                            // until NativeUInt(data) > NativeUInt(limit);
+  add     ebx, 16                             // Inc(data, 16);
+  cmp     ebx, esi                            // until data > limit;
   jbe     @loop16bytes
 
   rol     eax, 1                              // Result := Rol(v1, 1) + Rol(v2, 7) + Rol(v3, 12) + Rol(v4, 18);
@@ -160,33 +160,34 @@ asm
   add     eax, edi
 
 @tail:
-  add     esi, 16
+  add     esi, 16                             // Inc(limit, 16);
   add     eax, [esp]                          // Inc(Result, len);
-  lea     ebp, [esi-4]
-  cmp     ebp, ebx                            // while NativeUInt(data) <= (NativeUInt(pEnd) - 4) do
-  jb      @lessThan4bytes
+  add     ebx, 4
+  cmp     ebx, esi                            // while data + 4 <= limit do
+  jnbe    @lessThan4bytes
 
 @loop4bytes:
-  imul    edx, [ebx], Prime3                  // Result := Result + PCardinal(data)^ * Prime3;
+  imul    edx, [ebx-4], Prime3                // Result := Result + PCardinal(data)^ * Prime3;
   add     edx, eax
   rol     edx, 17                             // Result := Rol(Result, 17) * Prime4;
   imul    eax, edx, Prime4
-  add     ebx, 4                              // Inc(NativeUInt(data), 4);
-  cmp     ebx, ebp                            // while NativeUInt(data) <= (NativeUInt(pEnd) - 4) do
+  add     ebx, 4                              // Inc(data, 4);
+  cmp     ebx, esi                            // while data + 4 <= limit do
   jbe     @loop4bytes
 
 @lessThan4bytes:
-  cmp     ebx, esi
+  sub     ebx, 4
+  cmp     ebx, esi                            // while data < limit do
   jnb     @finalization
 
 @loopBytes:
-  movzx   edx, byte ptr [ebx]                 // Result := Result + PByte(data)^ * Prime5;
+  movzx   edx, byte ptr [ebx]                 // Result := Result + data^ * Prime5;
   imul    edx, edx, Prime5
   add     edx, eax
   rol     edx, 11                             // Result := Rol(Result, 11) * Prime1;
   imul    eax, edx, Prime1
-  inc     ebx                                 // Inc(NativeUInt(data));
-  cmp     ebx, esi                            // while NativeUInt(data) < NativeUInt(pEnd) do
+  inc     ebx                                 // Inc(data);
+  cmp     ebx, esi                            // while data < limit do
   jb      @loopBytes
 
 @finalization:
@@ -216,12 +217,10 @@ asm
   push    rbx
 
   mov     rbx, rcx                            // data := @key;
-  lea     r11, [rcx+rdx]                      // pEnd := Pointer(NativeUInt(data) + len);
+  lea     r10, [rcx+rdx-16]                   // limit := data + len - 16;
   lea     eax, [r8d+Prime5]                   // Result := seed + Prime5;
   cmp     edx, 16                             // if len >= 16 then
   jb      @tail
-
-  lea     r10, [rcx+rdx-16]                   // limit := Pointer(NativeUInt(pEnd) - 16);
 
   lea     eax, [r8d+Prime1+Prime2]            // v1 := seed + Prime1 + Prime2;
   lea     ecx, [r8d+Prime2]                   // v2 := seed + Prime2;
@@ -249,8 +248,8 @@ asm
   rol     r9d, 13
   imul    r9d, r9d, Prime1
 
-  add     rbx, 16                             // Inc(NativeUInt(data), 16);
-  cmp     rbx, r10                            // until NativeUInt(data) > NativeUInt(pLimit);
+  add     rbx, 16                             // Inc(data, 16);
+  cmp     rbx, r10                            // until data > limit;
   jbe     @loop16bytes
 
   rol     eax, 1                              // Result := Rol(v1, 1) + Rol(v2, 7) + Rol(v3, 12) + Rol(v4, 18);
@@ -262,32 +261,34 @@ asm
   add     eax, r9d
 
 @tail:
+  add     r10, 16                             // Inc(limit, 16);
   add     eax, edx                            // Inc(Result, len);
-  lea     rcx, [r11-4]
-  cmp     rcx, rbx                            // while NativeUInt(data) <= (NativeUInt(pEnd) - 4) do
-  jb      @lessThan4bytes
+  add     rbx, 4
+  cmp     rbx, r10                            // while data + 4 <= limit do
+  jnbe    @lessThan4bytes
 
 @loop4bytes:
-  imul    edx, [rbx], Prime3                  // Result := Result + PCardinal(data)^ * Prime3;
+  imul    edx, [rbx-4], Prime3                // Result := Result + PCardinal(data)^ * Prime3;
   add     edx, eax
   rol     edx, 17                             // Result := Rol(Result, 17) * Prime4;
   imul    eax, edx, Prime4
   add     rbx, 4                              // Inc(NativeUInt(data), 4);
-  cmp     rbx, rcx                            // while NativeUInt(data) <= (NativeUInt(pEnd) - 4) do
+  cmp     rbx, r10                            // while data + 4 <= limit do
   jbe     @loop4bytes
 
 @lessThan4bytes:
-  cmp     rbx, r11
+  sub     rbx, 4
+  cmp     rbx, r10                            // while data < limit do
   jnb     @finalization
 
 @loopBytes:
-  movzx   edx, byte ptr [rbx]                 // Result := Result + PByte(data)^ * Prime5;
+  movzx   edx, byte ptr [rbx]                 // Result := Result + data^ * Prime5;
   imul    edx, edx, Prime5
   add     edx, eax
   rol     edx, 11                             // Result := Rol(Result, 11) * Prime1;
   imul    eax, edx, Prime1
-  inc     rbx                                 // Inc(NativeUInt(data));
-  cmp     rbx, r11                            // while NativeUInt(data) < NativeUInt(pEnd) do
+  inc     rbx                                 // Inc(data);
+  cmp     rbx, r10                            // while data < limit do
   jb      @loopBytes
 
 @finalization:

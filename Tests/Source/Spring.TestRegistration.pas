@@ -101,7 +101,8 @@ begin
       TTestEnum.Suite,
       TTestBaseRoutines.Suite,
       TTestManagedObject.Suite,
-      TSortTest.Suite
+      TSortTest.Suite,
+      TTestHash.Suite
     ]);
   end;
 

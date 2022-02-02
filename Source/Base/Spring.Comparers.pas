@@ -53,7 +53,7 @@ procedure RegisterComparer(intf: TDefaultGenericInterface; typeInfo: PTypeInfo; 
 function SameGuid(const left, right: TGUID): Boolean;
 
 var
-  DefaultHashFunction: THashFunction = MurmurHash3;
+  DefaultHashFunction: THashFunction = xxHash32;
 
 implementation
 
