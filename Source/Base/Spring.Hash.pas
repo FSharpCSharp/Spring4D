@@ -38,8 +38,6 @@ function xxHash32(const key; len: Cardinal; Seed: Integer = 0): Integer;
 
 implementation
 
-{$POINTERMATH ON}
-
 function RotateLeft(const x: Cardinal; const y: Byte): Cardinal; inline;
 begin
   Result := (x shl y) or (x shr (32 - y));
@@ -67,10 +65,12 @@ begin
     v4 := Cardinal(seed) - Prime1;
 
     repeat
+      {$POINTERMATH ON}
       v1 := Prime1 * RotateLeft(v1 + Prime2 * PCardinal(data)[0], 13);
       v2 := Prime1 * RotateLeft(v2 + Prime2 * PCardinal(data)[1], 13);
       v3 := Prime1 * RotateLeft(v3 + Prime2 * PCardinal(data)[2], 13);
       v4 := Prime1 * RotateLeft(v4 + Prime2 * PCardinal(data)[3], 13);
+      {$POINTERMATH OFF}
       Inc(data, 16);
     until data > limit;
 
