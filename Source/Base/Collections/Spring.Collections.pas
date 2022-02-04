@@ -7912,7 +7912,9 @@ end;
 
 function TStringComparer.Compare(const left, right: string): Integer;
 begin
-  if fIgnoreCase then
+  if Pointer(left) = Pointer(right) then
+    Result := 0
+  else if fIgnoreCase then
     Result := AnsiCompareText(left, right)
   else
     Result := AnsiCompareStr(left, right);
@@ -7920,7 +7922,9 @@ end;
 
 function TStringComparer.Equals(const left, right: string): Boolean;
 begin
-  if fIgnoreCase then
+  if Pointer(left) = Pointer(right) then
+    Result := True
+  else if fIgnoreCase then
     Result := AnsiSameText(left, right)
   else
     Result := AnsiSameStr(left, right);
