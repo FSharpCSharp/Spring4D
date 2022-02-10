@@ -237,7 +237,7 @@ begin
           FreeObject(fItems[i]);
 
     if TType.IsManaged<T> then
-      System.FinalizeArray(@fItems[0], TypeInfo(T), stackCount)
+      System.Finalize(fItems[0], stackCount)
     else
       System.FillChar(fItems[0], SizeOf(T) * stackCount, 0);
   end;

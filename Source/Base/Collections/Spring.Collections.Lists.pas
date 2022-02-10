@@ -1090,12 +1090,12 @@ begin
         Dec(fCount, count);
 
         if ItemType.IsManaged then
-          FinalizeArray(@fItems[index], TypeInfo(T), count);
+          System.Finalize(fItems[index], count);
         if tailCount > 0 then
           if ItemType.HasWeakRef then
           begin
             MoveManaged(@fItems[index + count], @fItems[index], TypeInfo(T), tailCount);
-            FinalizeArray(@fItems[index + tailCount], TypeInfo(T), count);
+            System.Finalize(fItems[index + tailCount], count);
           end
           else
             System.Move(fItems[index + count], fItems[index], SizeOf(T) * tailCount);
@@ -1262,7 +1262,7 @@ begin
   if ItemType.HasWeakRef then
   begin
     MoveManaged(@fItems[sourceIndex], @fItems[targetIndex], TypeInfo(T), itemCount);
-    FinalizeArray(@fItems[newIndex], TypeInfo(T), 1);
+    System.Finalize(fItems[newIndex], 1);
   end
   else
     System.Move(fItems[sourceIndex], fItems[targetIndex], SizeOf(T) * itemCount);
@@ -1292,7 +1292,7 @@ begin
     // hardcast to solve compiler glitch in older Delphi versions due to AddRange overload
     ICollectionInternal(collection).AddRange(Slice(TSlice<T>((@fItems[0])^), Result));
     if ItemType.IsManaged then
-      FinalizeArray(fItems, TypeInfo(T), Result);
+      System.Finalize(fItems[0], Result);
     System.FillChar(fItems[0], SizeOf(T) * Result, 0);
   end;
 end;
@@ -1462,7 +1462,7 @@ begin
   Result := listCount - freeIndex;
   if Result > 0 then
     if ItemType.IsManaged then
-      FinalizeArray(@fItems[freeIndex], TypeInfo(T), Result)
+      System.Finalize(fItems[freeIndex], Result)
     else
       System.FillChar(fItems[freeIndex], SizeOf(T) * Result, 0);
   Dec(fCount, Result);
