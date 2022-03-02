@@ -2913,7 +2913,7 @@ type
 
   TArrayEnumerator<T> = record
   private
-    fItems: TArray<T>;
+    fItems: Pointer;
     fIndex: Integer;
     function GetCurrent: T; inline;
   public
@@ -2924,25 +2924,25 @@ type
 
   VectorHelper = record
   private
-    class function InternalIndexOfInt8(const data: Pointer; const item: ShortInt): Integer; static;
-    class function InternalIndexOfInt16(const data: Pointer; const item: SmallInt): Integer; static;
-    class function InternalIndexOfInt32(const data: Pointer; const item: Integer): Integer; static;
-    class function InternalIndexOfInt64(const data: Pointer; const item: Int64): Integer; static;
-    class function InternalIndexOfStr(const data: Pointer; const item: string): Integer; static;
+    class function InternalIndexOfInt8(const data: Pointer; const item: ShortInt): NativeInt; static;
+    class function InternalIndexOfInt16(const data: Pointer; const item: SmallInt): NativeInt; static;
+    class function InternalIndexOfInt32(const data: Pointer; const item: Integer): NativeInt; static;
+    class function InternalIndexOfInt64(const data: Pointer; const item: Int64): NativeInt; static;
+    class function InternalIndexOfStr(const data: Pointer; const item: string): NativeInt; static;
   end;
 
   Vector<T> = record
   private
     fData: TArray<T>; // DO NOT ADD ANY OTHER FIELDS !!!
-    function GetCount: Integer; inline;
+    function GetCount: NativeInt; inline;
     function GetFirst: T; inline;
-    function GetItem(index: Integer): T; inline;
+    function GetItem(index: NativeInt): T; inline;
     function GetLast: T; inline;
-    procedure SetCount(value: Integer); inline;
-    procedure SetItem(index: Integer; const value: T); inline;
-    procedure InternalInsert(index: Integer; const items: array of T);
+    procedure SetCount(value: NativeInt); inline;
+    procedure SetItem(index: NativeInt; const value: T); inline;
+    procedure InternalInsert(index: NativeInt; const items: array of T);
     function InternalEquals(const items: array of T): Boolean;
-    function InternalIndexOf(const item: T): Integer;
+    function InternalIndexOf(const item: T): NativeInt;
   public
     class operator Implicit(const value: TArray<T>): Vector<T>; inline;
     class operator Implicit(const value: Vector<T>): TArray<T>; inline;
@@ -2962,15 +2962,15 @@ type
     procedure Assign(const items: array of T);
     procedure Clear; inline;
 
-    function Add(const item: T): Integer; overload; inline;
+    function Add(const item: T): NativeInt; overload; inline;
     procedure Add(const items: array of T); overload;
     procedure Add(const items: TArray<T>); overload; inline;
     procedure Add(const items: Vector<T>); overload; inline;
-    procedure Insert(index: Integer; const item: T); overload; inline;
-    procedure Insert(index: Integer; const items: array of T); overload;
-    procedure Insert(index: Integer; const items: TArray<T>); overload; inline;
-    procedure Delete(index: Integer); overload; inline;
-    procedure Delete(index: Integer; count: Integer); overload; inline;
+    procedure Insert(index: NativeInt; const item: T); overload; inline;
+    procedure Insert(index: NativeInt; const items: array of T); overload;
+    procedure Insert(index: NativeInt; const items: TArray<T>); overload; inline;
+    procedure Delete(index: NativeInt); overload; inline;
+    procedure Delete(index: NativeInt; count: NativeInt); overload; inline;
     function Remove: T; overload; inline;
     procedure Remove(const item: T); overload; inline;
     procedure Remove(const items: array of T); overload;
@@ -2981,14 +2981,14 @@ type
     function Contains(const item: T; const comparer: TEqualityComparison<T>): Boolean; overload;
     function Contains(const items: array of T): Boolean; overload;
     function Contains(const items: TArray<T>): Boolean; overload;
-    function IndexOf(const item: T): Integer; inline;
+    function IndexOf(const item: T): NativeInt; inline;
     function Equals(const items: array of T): Boolean; overload;
     function Equals(const items: TArray<T>): Boolean; overload; inline;
 
-    function Slice(index: Integer): Vector<T>; overload; inline;
-    function Slice(index: Integer; count: Integer): Vector<T>; overload; inline;
-    function Splice(index: Integer; count: Integer): Vector<T>; overload; inline;
-    function Splice(index: Integer; count: Integer; const items: array of T): Vector<T>; overload;
+    function Slice(index: NativeInt): Vector<T>; overload; inline;
+    function Slice(index: NativeInt; count: NativeInt): Vector<T>; overload; inline;
+    function Splice(index: NativeInt; count: NativeInt): Vector<T>; overload; inline;
+    function Splice(index: NativeInt; count: NativeInt; const items: array of T): Vector<T>; overload;
 
     procedure Sort; overload; inline;
     procedure Sort(const comparer: IComparer<T>); overload; inline;
@@ -2998,12 +2998,12 @@ type
     procedure ForEach(const action: Action<T>); inline;
 
     function GetEnumerator: TArrayEnumerator<T>; inline;
-    property Count: Integer read GetCount;
+    property Count: NativeInt read GetCount;
     property Data: TArray<T> read fData;
     property First: T read GetFirst;
-    property Items[index: Integer]: T read GetItem write SetItem; default;
+    property Items[index: NativeInt]: T read GetItem write SetItem; default;
     property Last: T read GetLast;
-    property Length: Integer read GetCount write SetCount;
+    property Length: NativeInt read GetCount write SetCount;
   end;
 
   {$ENDREGION}
@@ -13259,7 +13259,7 @@ end;
 {$REGION 'Vector<T>'}
 
 class function VectorHelper.InternalIndexOfInt8(const data: Pointer;
-  const item: ShortInt): Integer;
+  const item: ShortInt): NativeInt;
 begin
   for Result := 0 to High(TArray<ShortInt>(data)) do
     if TArray<ShortInt>(data)[Result] = item then
@@ -13268,7 +13268,7 @@ begin
 end;
 
 class function VectorHelper.InternalIndexOfInt16(const data: Pointer;
-  const item: SmallInt): Integer;
+  const item: SmallInt): NativeInt;
 begin
   for Result := 0 to High(TArray<SmallInt>(data)) do
     if TArray<SmallInt>(data)[Result] = item then
@@ -13277,7 +13277,7 @@ begin
 end;
 
 class function VectorHelper.InternalIndexOfInt32(const data:Pointer;
-  const item: Integer): Integer;
+  const item: Integer): NativeInt;
 begin
   for Result := 0 to High(TArray<Integer>(data)) do
     if TArray<Integer>(data)[Result] = item then
@@ -13286,7 +13286,7 @@ begin
 end;
 
 class function VectorHelper.InternalIndexOfInt64(const data: Pointer;
-  const item: Int64): Integer;
+  const item: Int64): NativeInt;
 begin
   for Result := 0 to High(TArray<Int64>(data)) do
     if TArray<Int64>(data)[Result] = item then
@@ -13295,7 +13295,7 @@ begin
 end;
 
 class function VectorHelper.InternalIndexOfStr(const data: Pointer;
-  const item: string): Integer;
+  const item: string): NativeInt;
 begin
   for Result := 0 to High(TArray<string>(data)) do
     if TArray<string>(data)[Result] = item then
@@ -13338,7 +13338,7 @@ begin
   Result.Add(right);
 end;
 
-function Vector<T>.Add(const item: T): Integer;
+function Vector<T>.Add(const item: T): NativeInt;
 begin
   Result := System.Length(fData);
   SetLength(fData, Result + 1);
@@ -13370,7 +13370,11 @@ end;
 
 procedure Vector<T>.Assign(const items: array of T);
 begin
-  fData := TArray.Copy<T>(items);
+  SetLength(fData, System.Length(items));
+  if TType.IsManaged<T> then
+    MoveManaged(@items[0], fData, TypeInfo(T), System.Length(items))
+  else
+    Move(items[0], fData[0], SizeOf(T) * System.Length(items));
 end;
 
 procedure Vector<T>.Clear;
@@ -13378,7 +13382,7 @@ begin
   fData := nil;
 end;
 
-function Vector<T>.IndexOf(const item: T): Integer;
+function Vector<T>.IndexOf(const item: T): NativeInt;
 begin
   case TType.Kind<T> of
     tkInteger:
@@ -13402,7 +13406,7 @@ end;
 function Vector<T>.Contains(const item: T;
   const comparer: IEqualityComparer<T>): Boolean;
 var
-  i: Integer;
+  i: NativeInt;
 begin
   for i := 0 to High(fData) do
     if comparer.Equals(fData[i], item) then
@@ -13413,7 +13417,7 @@ end;
 function Vector<T>.Contains(const item: T;
   const comparer: TEqualityComparison<T>): Boolean;
 var
-  i: Integer;
+  i: NativeInt;
 begin
   for i := 0 to High(fData) do
     if comparer(fData[i], item) then
@@ -13423,7 +13427,7 @@ end;
 
 function Vector<T>.Contains(const items: array of T): Boolean;
 var
-  i: Integer;
+  i: NativeInt;
 begin
   for i := 0 to High(items) do
     if IndexOf(items[i]) = -1 then
@@ -13433,22 +13437,22 @@ end;
 
 function Vector<T>.Contains(const items: TArray<T>): Boolean;
 var
-  i: Integer;
+  i: NativeInt;
 begin
-  for i := 0 to System.Length(items) - 1 do
+  for i := 0 to DynArrayHigh(items) do
     if IndexOf(items[i]) = -1 then
       Exit(False);
   Result := True;
 end;
 
-procedure Vector<T>.Delete(index: Integer);
+procedure Vector<T>.Delete(index: NativeInt);
 {$IFNDEF DELPHIXE7_UP}
 var
-  n, i: Integer;
+  n, i: NativeInt;
 {$ENDIF}
 begin
 {$IFNDEF DELPHIXE7_UP}
-  n := System.Length(fData);
+  n := DynArrayLength(fData);
   if (index < 0) or (index >= n) then
     Exit;
   Dec(n);
@@ -13472,14 +13476,14 @@ begin
 {$ENDIF}
 end;
 
-procedure Vector<T>.Delete(index, count: Integer);
+procedure Vector<T>.Delete(index, count: NativeInt);
 {$IFNDEF DELPHIXE7_UP}
 var
-  n, i: Integer;
+  n, i: NativeInt;
 {$ENDIF}
 begin
 {$IFNDEF DELPHIXE7_UP}
-  n := System.Length(fData);
+  n := DynArrayLength(fData);
   if (index < 0) or (index >= n) then
     Exit;
   if count > n - index then
@@ -13513,9 +13517,9 @@ end;
 
 function Vector<T>.Equals(const items: array of T): Boolean;
 var
-  n, i: Integer;
+  n, i: NativeInt;
 begin
-  n := System.Length(fData);
+  n := DynArrayLength(fData);
   if n <> System.Length(items) then
     Exit(False);
   Result := True;
@@ -13535,10 +13539,10 @@ end;
 
 function Vector<T>.Equals(const items: TArray<T>): Boolean;
 var
-  n, i: Integer;
+  n, i: NativeInt;
 begin
-  n := System.Length(fData);
-  if n <> System.Length(items) then
+  n := DynArrayLength(fData);
+  if n <> DynArrayLength(items) then
     Exit(False);
   Result := True;
   case TType.Kind<T> of
@@ -13557,15 +13561,15 @@ end;
 
 procedure Vector<T>.ForEach(const action: Action<T>);
 var
-  i: Integer;
+  i: NativeInt;
 begin
   for i := Low(fData) to High(fData) do
     action(fData[i]);
 end;
 
-function Vector<T>.GetCount: Integer;
+function Vector<T>.GetCount: NativeInt;
 begin
-  Result := System.Length(fData);
+  Result := DynArrayLength(fData);
 end;
 
 function Vector<T>.GetEnumerator: TArrayEnumerator<T>;
@@ -13579,7 +13583,7 @@ begin
   Result := fData[0];
 end;
 
-function Vector<T>.GetItem(index: Integer): T;
+function Vector<T>.GetItem(index: NativeInt): T;
 begin
   Result := fData[index];
 end;
@@ -13599,8 +13603,7 @@ begin
   Result := value.fData;
 end;
 
-class operator Vector<T>.In(const left: T;
-  const right: Vector<T>): Boolean;
+class operator Vector<T>.In(const left: T; const right: Vector<T>): Boolean;
 begin
   Result := right.Contains(left);
 end;
@@ -13610,21 +13613,19 @@ begin
   Result := right.Contains(left.fData);
 end;
 
-class operator Vector<T>.In(const left: TArray<T>;
-  const right: Vector<T>): Boolean;
+class operator Vector<T>.In(const left: TArray<T>; const right: Vector<T>): Boolean;
 begin
   Result := right.Contains(left);
 end;
 
-procedure Vector<T>.Insert(index: Integer; const item: T);
+procedure Vector<T>.Insert(index: NativeInt; const item: T);
 {$IFNDEF DELPHIXE7_UP}
 var
-  count: Integer;
-  i: Integer;
+  count, i: NativeInt;
 {$ENDIF}
 begin
 {$IFNDEF DELPHIXE7_UP}
-  count := System.Length(fData);
+  count := DynArrayLength(fData);
   SetLength(fData, count + 1);
   if index <> count then
 {$IFDEF WEAKREF}
@@ -13645,12 +13646,12 @@ begin
 {$ENDIF}
 end;
 
-procedure Vector<T>.Insert(index: Integer; const items: array of T);
+procedure Vector<T>.Insert(index: NativeInt; const items: array of T);
 begin
   InternalInsert(index, items);
 end;
 
-procedure Vector<T>.Insert(index: Integer; const items: TArray<T>);
+procedure Vector<T>.Insert(index: NativeInt; const items: TArray<T>);
 begin
 {$IFNDEF DELPHIXE7_UP}
   InternalInsert(index, items);
@@ -13662,31 +13663,31 @@ end;
 function Vector<T>.InternalEquals(const items: array of T): Boolean;
 var
   comparer: Pointer;
-  i: Integer;
+  i: NativeInt;
 begin
   comparer := _LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T));
-  for i := 0 to System.Length(fData) - 1 do
+  for i := 0 to DynArrayHigh(fData) do
     if not IEqualityComparer<T>(comparer).Equals(fData[i], items[i]) then
       Exit(False);
   Result := True;
 end;
 
-function Vector<T>.InternalIndexOf(const item: T): Integer;
+function Vector<T>.InternalIndexOf(const item: T): NativeInt;
 var
   comparer: Pointer;
 begin
   comparer := _LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T));
-  for Result := 0 to High(fData) do
+  for Result := 0 to DynArrayHigh(fData) do
     if IEqualityComparer<T>(comparer).Equals(fData[Result], item) then
       Exit;
   Result := -1;
 end;
 
-procedure Vector<T>.InternalInsert(index: Integer; const items: array of T);
+procedure Vector<T>.InternalInsert(index: NativeInt; const items: array of T);
 var
-  count, len, i: Integer;
+  count, len, i: NativeInt;
 begin
-  count := System.Length(fData);
+  count := DynArrayLength(fData);
   len := System.Length(items);
   SetLength(fData, count + len);
   if index <> count then
@@ -13722,16 +13723,16 @@ end;
 
 function Vector<T>.Remove: T;
 var
-  n: Integer;
+  n: NativeInt;
 begin
-  n := High(fData);
+  n := DynArrayHigh(fData);
   Result := fData[n];
   SetLength(fData, n);
 end;
 
 procedure Vector<T>.Remove(const item: T);
 var
-  index: Integer;
+  index: NativeInt;
 begin
   index := IndexOf(item);
   if index > -1 then
@@ -13740,7 +13741,7 @@ end;
 
 procedure Vector<T>.Remove(const items: array of T);
 var
-  i, index: Integer;
+  i, index: NativeInt;
 begin
   for i := Low(items) to High(items) do
   begin
@@ -13752,9 +13753,9 @@ end;
 
 procedure Vector<T>.Remove(const items: TArray<T>);
 var
-  i, index: Integer;
+  i, index: NativeInt;
 begin
-  for i := 0 to System.Length(items) - 1 do
+  for i := 0 to DynArrayHigh(items) do
   begin
     index := IndexOf(items[i]);
     if index > -1 then
@@ -13765,7 +13766,7 @@ end;
 procedure Vector<T>.Reverse;
 var
   tmp: T;
-  b, e: Integer;
+  b, e: NativeInt;
 begin
   b := 0;
   e := Count - 1;
@@ -13779,22 +13780,22 @@ begin
   end;
 end;
 
-procedure Vector<T>.SetCount(value: Integer);
+procedure Vector<T>.SetCount(value: NativeInt);
 begin
   SetLength(fData, value);
 end;
 
-procedure Vector<T>.SetItem(index: Integer; const value: T);
+procedure Vector<T>.SetItem(index: NativeInt; const value: T);
 begin
   fData[index] := value;
 end;
 
-function Vector<T>.Slice(index: Integer): Vector<T>;
+function Vector<T>.Slice(index: NativeInt): Vector<T>;
 begin
   Result.fData := Copy(fData, index);
 end;
 
-function Vector<T>.Slice(index, count: Integer): Vector<T>;
+function Vector<T>.Slice(index, count: NativeInt): Vector<T>;
 begin
   Result.fData := Copy(fData, index, count);
 end;
@@ -13814,17 +13815,17 @@ begin
   TArray.Sort<T>(fData, IComparer<T>(PPointer(@comparer)^));
 end;
 
-function Vector<T>.Splice(index, count: Integer): Vector<T>;
+function Vector<T>.Splice(index, count: NativeInt): Vector<T>;
 begin
   Result := Splice(index, count, []);
 end;
 
-function Vector<T>.Splice(index, count: Integer;
+function Vector<T>.Splice(index, count: NativeInt;
   const items: array of T): Vector<T>;
 var
-  i: Integer;
+  i: NativeInt;
 begin
-  i := System.Length(fData);
+  i := DynArrayLength(fData);
   if (index < 0) or (index >= i) then
     Exit;
   if count > i - index then
@@ -13834,8 +13835,7 @@ begin
   Insert(index, items);
 end;
 
-class operator Vector<T>.Subtract(const left,
-  right: Vector<T>): Vector<T>;
+class operator Vector<T>.Subtract(const left, right: Vector<T>): Vector<T>;
 begin
   Result := left;
   Result.Remove(right.fData);
@@ -13861,13 +13861,15 @@ end;
 
 function TArrayEnumerator<T>.GetCurrent: T;
 begin
-  Result := fItems[fIndex];
+  Result := TArray<T>(fItems)[fIndex];
 end;
 
 function TArrayEnumerator<T>.MoveNext: Boolean;
 begin
   Inc(fIndex);
-  Result := fIndex < System.Length(fItems);
+  {$POINTERMATH ON}
+  Result := Assigned(fItems) and (fIndex < PNativeInt(fItems)[-1]);
+  {$POINTERMATH OFF}
 end;
 
 {$ENDREGION}
