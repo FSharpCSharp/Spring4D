@@ -91,7 +91,7 @@ procedure TUpdateExecutor.Execute(const entity: TObject);
 var
   statement: IDBStatement;
   sqlStatement: string;
-  affectedRows: Integer;
+  affectedRows: NativeUInt;
 begin
   Assert(Assigned(entity));
 

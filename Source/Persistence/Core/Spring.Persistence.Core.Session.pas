@@ -54,7 +54,7 @@ type
   TSession = class(TAbstractSession)
   protected
     function GetQueryCountSql(const sql: string): string;
-    function GetQueryCount(const sql: string; const params: IEnumerable<TDBParam>): Int64;
+    function GetQueryCount(const sql: string; const params: IEnumerable<TDBParam>): Integer;
   public
     /// <summary>
     ///   Starts a new List Session. ListSession monitors changes in the
@@ -411,7 +411,7 @@ begin
 end;
 
 function TSession.GetQueryCount(const sql: string;
-  const params: IEnumerable<TDBParam>): Int64;
+  const params: IEnumerable<TDBParam>): Integer;
 var
   results: IDBResultSet;
 begin

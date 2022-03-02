@@ -234,11 +234,11 @@ begin
     Exit(GetClassData(Parent^).VirtualMethodCount);
 
   if InitTable <> nil then
-    Result := (PByte(InitTable) - PByte(@VirtualMethods[0])) div SizeOf(Pointer)
+    Result := Integer((PByte(InitTable) - PByte(@VirtualMethods[0])) div SizeOf(Pointer))
   else if FieldTable <> nil then
-    Result := (PByte(FieldTable) - PByte(@VirtualMethods[0])) div SizeOf(Pointer)
+    Result := Integer((PByte(FieldTable) - PByte(@VirtualMethods[0])) div SizeOf(Pointer))
   else if MethodTable <> nil then
-    Result := (PByte(MethodTable) - PByte(@VirtualMethods[0])) div SizeOf(Pointer)
+    Result := Integer((PByte(MethodTable) - PByte(@VirtualMethods[0])) div SizeOf(Pointer))
   else
     Result := 0;
 end;

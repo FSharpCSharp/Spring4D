@@ -3199,7 +3199,7 @@ procedure FinalizeRecord(P: Pointer; TypeInfo: Pointer);
 procedure RegisterWeakRef(address: Pointer; const instance: TObject);
 procedure UnregisterWeakRef(address: Pointer; const instance: TObject);
 
-procedure MoveManaged(source, target, typeInfo: Pointer; count: Integer);
+procedure MoveManaged(source, target, typeInfo: Pointer; count: NativeInt);
 
 procedure CheckIndex(index, size: Integer); inline;
 procedure CheckRange(index, count, size: Integer); inline;
@@ -3211,6 +3211,13 @@ function RegisterExpectedMemoryLeak(P: Pointer): Boolean;
 {$ENDIF}
 
 function PassByRef(TypeInfo: PTypeInfo; CC: TCallConv; IsConst: Boolean = False): Boolean;
+
+{$IFNDEF DELPHIX_TOKYO_UP}
+function StrToUInt(const s: string): Cardinal;
+{$ENDIF}
+{$IFNDEF DELPHIXE6_UP}
+function StrToUInt64(const s: string): UInt64;
+{$ENDIF}
 
   {$ENDREGION}
 
@@ -3351,7 +3358,7 @@ function FormatValue(const value: TValue): string;
   var
     guid: TGUID;
     method: TRttiMethod;
-    i: Integer;
+    i: NativeInt;
     fields: TArray<TRttiField>;
   begin
     // handle TGUID explicitly
@@ -3628,6 +3635,8 @@ const
 var
   leftIsEmpty, rightIsEmpty: Boolean;
   leftValue, rightValue: TValue;
+  leftObject, rightObject: TObject;
+  equal: Boolean;
 begin
   leftIsEmpty := left.IsEmpty;
   rightIsEmpty := right.IsEmpty;
@@ -3643,7 +3652,24 @@ begin
   else if left.IsString and right.IsString then
     Result := SysUtils.AnsiCompareStr(left.AsString, right.AsString)
   else if left.IsObject and right.IsObject then
-    Result := NativeInt(left.AsObject) - NativeInt(right.AsObject) // TODO: instance comparer
+  begin
+    leftObject := left.AsObject;
+    rightObject := right.AsObject;
+    if (NativeInt(leftObject) or NativeInt(rightObject)) = 0 then
+      Exit(0);
+    if leftObject <> nil then
+      equal := leftObject.Equals(rightObject)
+    else
+      equal := rightObject.Equals(leftObject);
+    if equal then
+      Result := 0
+    else if NativeInt(leftObject) < NativeInt(rightObject) then
+      Result := -1
+    else if NativeInt(leftObject) > NativeInt(rightObject) then
+      Result := 1
+    else
+      Result := 0;
+  end
   else if left.IsVariant and right.IsVariant then
   begin
     case VarCompareValue(left.AsVariant, right.AsVariant) of
@@ -3802,7 +3828,7 @@ begin
   Result := VarArrayCreate([0, size - 1], varByte);
   lock := VarArrayLock(Result);
   try
-    stream.ReadBuffer(lock^, stream.Size);
+    stream.ReadBuffer(lock^, size);
   finally
     VarArrayUnlock(Result);
   end;
@@ -3830,7 +3856,8 @@ function GetGenericTypeParameters(const typeName: string): TArray<string>;
 
   function SplitTypes(const s: string): TArray<string>;
   var
-    startPos, index, len: Integer;
+    startPos, index: Integer;
+    len: NativeInt;
   begin
     Result := nil;
     startPos := 1;
@@ -3873,7 +3900,7 @@ function SameValue(const left, right: Variant): Boolean;
   function MoveNext(const bounds: TArray<TVarArrayBound>;
     var indices: TArray<Integer>): Boolean;
   var
-    i: Integer;
+    i: NativeInt;
   begin
     for i := Length(indices) - 1 downto 0 do
       if indices[i] < bounds[i].HighBound then
@@ -4437,6 +4464,29 @@ begin
   end;
 end;
 
+{$IFNDEF DELPHIX_TOKYO_UP}
+function StrToUInt(const s: string): Cardinal;
+var
+  i: Int64;
+  e: Integer;
+begin
+  Val(s, i, e);
+  if (e <> 0) or not((Low(Cardinal) <= i) and (i <= High(Cardinal))) then
+    raise EConvertError.CreateResFmt(@SInvalidInteger, [s]);
+  Result := Cardinal(i);
+end;
+{$ENDIF}
+
+{$IFNDEF DELPHIXE6_UP}
+function StrToUInt64(const s: string): UInt64;
+var
+  e: Integer;
+begin
+  Val(s, Result, e);
+  if e <> 0 then raise EConvertError.CreateResFmt(@SInvalidInteger, [s]);
+end;
+{$ENDIF}
+
 {$ENDREGION}
 
 
@@ -4485,7 +4535,7 @@ end;
 
 procedure ReadWriteLock.EnterWrite;
 var
-  current: Integer;
+  current: NativeInt;
 begin
   while True do
   begin
@@ -4661,7 +4711,7 @@ var
 {$ELSE}
   p: PShortString;
 {$ENDIF}
-  i: Integer;
+  i: NativeInt;
 begin
   Guard.CheckTypeKind<T>(tkEnumeration, 'T');
   typeData := GetTypeData(TypeInfo(T));
@@ -4700,13 +4750,13 @@ end;
 class function TEnum.GetValues<T>: TIntegerDynArray;
 var
   typeData: PTypeData;
-  i: Integer;
+  i: NativeInt;
 begin
   Guard.CheckTypeKind<T>(tkEnumeration, 'T');
   typeData := GetTypeData(TypeInfo(T));
   SetLength(Result, typeData.MaxValue - typeData.MinValue + 1);
   for i := Low(Result) to High(Result) do
-    Result[i] := i;
+    Result[i] := Integer(i);
 end;
 
 class function TEnum.TryParse<T>(const value: Integer; out enum: T): Boolean;
@@ -4832,7 +4882,7 @@ constructor TInitTable.Create(classType: TClass);
 var
   t: TRttiType;
   types: TArray<TRttiType>;
-  i: Integer;
+  i: NativeInt;
   f: TRttiField;
   p: TRttiProperty;
   a: TCustomAttribute;
@@ -4881,7 +4931,7 @@ begin
 
           if IntPtr(setter) and PROPSLOT_MASK = PROPSLOT_FIELD then
             AddDefaultField(p.PropertyType.Handle, DefaultAttribute(a).Value,
-              IntPtr(setter) and not PROPSLOT_MASK)
+              Integer(IntPtr(setter) and not PROPSLOT_MASK))
           else
             AddDefaultProperty(p.PropertyType.Handle, DefaultAttribute(a).Value,
               TRttiInstanceProperty(p).PropInfo);
@@ -4891,7 +4941,7 @@ end;
 
 destructor TInitTable.Destroy;
 var
-  i: Integer;
+  i: NativeInt;
 begin
   for i := 0 to High(DefaultFields) do
     FreeAndNil(DefaultFields[i]);
@@ -4954,7 +5004,7 @@ begin
   end;
   if defaultField <> nil then
   begin
-    DefaultFieldCount := Length(DefaultFields) + 1;
+    DefaultFieldCount := Integer(Length(DefaultFields) + 1);
     SetLength(DefaultFields, DefaultFieldCount);
     DefaultFields[DefaultFieldCount - 1] := defaultField;
   end;
@@ -5015,7 +5065,7 @@ begin
   end;
   if defaultField <> nil then
   begin
-    DefaultFieldCount := Length(DefaultFields) + 1;
+    DefaultFieldCount := Integer(Length(DefaultFields) + 1);
     SetLength(DefaultFields, DefaultFieldCount);
     DefaultFields[DefaultFieldCount - 1] := defaultField;
   end;
@@ -5092,7 +5142,7 @@ begin
   end;
   if managedField <> nil then
   begin
-    ManagedFieldCount := Length(ManagedFields) + 1;
+    ManagedFieldCount := Integer(Length(ManagedFields) + 1);
     SetLength(ManagedFields, ManagedFieldCount);
     ManagedFields[ManagedFieldCount - 1] := managedField;
   end;
@@ -6850,7 +6900,8 @@ function SplitString(const s, delimiter: string): TStringDynArray;
   end;
 
 var
-  startPos, index, len: Integer;
+  startPos, index: Integer;
+  len: NativeInt;
 begin
   Result := nil;
   startPos := 1;
@@ -6870,7 +6921,7 @@ function ConvStr2DynArray(const source: TValue; target: PTypeInfo;
 var
   s: string;
   values: TStringDynArray;
-  i: Integer;
+  i: NativeInt;
   res, v1, v2: TValue;
   elType: PTypeInfo;
 begin
@@ -8055,7 +8106,7 @@ end;
 class procedure Guard.CheckSet<T>(const argumentValue: T;
   const argumentName: string);
 var
-  value: Integer;
+  value: Cardinal;
 begin
   value := 0;
   Move(argumentValue, value, SizeOf(T));
@@ -8078,7 +8129,7 @@ begin
   if Assigned(data.CompType) then
   begin
     data := data.CompType^.TypeData;
-    maxValue := (1 shl (data.MaxValue - data.MinValue + 1)) - 1;
+    maxValue := Cardinal(1 shl (data.MaxValue - data.MinValue + 1)) - 1;
   end
   else
     case data^.OrdType of
@@ -8572,7 +8623,7 @@ begin
   fValueType := field.Field.TypeRef^;
   // get TTypeData.RecFields[1]
   field := PRecordTypeField(PByte(SkipShortString(@field.Name)) + SizeOf(TAttrData));
-  fHasValueOffset := field.Field.FldOffset;
+  fHasValueOffset := Byte(field.Field.FldOffset);
   fHasValueKind := field.Field.TypeRef^.Kind;
 end;
 
@@ -9378,7 +9429,7 @@ begin
   WeakRefInstances.UnregisterWeakRef(address, instance);
 end;
 
-procedure MoveManaged(source, target, typeInfo: Pointer; count: Integer);
+procedure MoveManaged(source, target, typeInfo: Pointer; count: NativeInt);
 type
   TFieldInfo = packed record
     TypeInfo: PPTypeInfo;
@@ -9402,7 +9453,8 @@ type
 var
   fieldTable: PFieldTable;
   elemType: PTypeInfo;
-  size, elemCount, n: Integer;
+  size, elemCount: Integer;
+  n: NativeInt;
 begin
   if count = 0 then Exit;
   if PByte(target) < PByte(source) then
@@ -11293,7 +11345,7 @@ begin
     Exit;
   end;
 
-  ts.Initialize(compare, @CompareThunk<T>, @TTimSort.MergeLo<T>, @TTimSort.MergeHi<T>, TypeInfo(TArray<T>), SizeOf(T));
+  ts.Initialize(compare, @CompareThunk<T>, @TTimSort.MergeLo<T>, @TTimSort.MergeHi<T>, TypeInfo(TArray<T>), Integer(SizeOf(T)));
   try
     (* March over the array once, left to right, finding natural runs, extending short
        natural runs to minRun elements, and merging runs to maintain stack invariant. *)
@@ -11523,7 +11575,7 @@ end;
 
 class function TArray.Concat<T>(const values: array of TArray<T>): TArray<T>;
 var
-  i, k, n: Integer;
+  i, k, n: NativeInt;
 begin
   n := 0;
   for i := Low(values) to High(values) do
@@ -11868,7 +11920,7 @@ begin
 {$IFDEF DELPHIXE7_UP}
   if not System.HasWeakRef(T) then
 {$ENDIF}
-    BinarySwap(left, right, SizeOf(T))
+    BinarySwap(left, right, Cardinal(SizeOf(T)))
 end;
 
 class procedure TArray.Reverse_Int8(const values: PInt8; right: NativeInt);
@@ -12040,7 +12092,7 @@ begin
   left := 0;
   while left < right do
   begin
-    BinarySwap(@values[left * size], @values[right * size], size);
+    BinarySwap(@values[left * size], @values[right * size], Cardinal(size));
     Inc(left);
     Dec(right);
   end;
@@ -12089,7 +12141,7 @@ begin
           Reverse_Int64(values, hi);
       end;
     tkString:
-      Reverse_Ref(values, hi, SizeOf(T));
+      Reverse_Ref(values, hi, Integer(SizeOf(T)));
     tkSet:
       case SizeOf(T) of
         1: Reverse_Int8(values, hi);
@@ -12097,7 +12149,7 @@ begin
         4: Reverse_Int32(values, hi);
         8: Reverse_Int64(values, hi);
       else
-        Reverse_Ref(values, hi, SizeOf(T));
+        Reverse_Ref(values, hi, Integer(SizeOf(T)));
       end;
     tkMethod:
       Reverse_Method(values, hi);
@@ -12114,7 +12166,7 @@ begin
           4: Reverse_Int32(values, hi);
           8: Reverse_Int64(values, hi);
         else
-          Reverse_Ref(values, hi, SizeOf(T))
+          Reverse_Ref(values, hi, Integer(SizeOf(T)))
         end
       else
         Reverse_Generic<T>(Slice(TSlice<T>(values^), hi+1));
@@ -12126,7 +12178,7 @@ begin
         4: Reverse_Int32(values, hi);
         8: Reverse_Int64(values, hi);
       else
-        Reverse_Ref(values, hi, SizeOf(T));
+        Reverse_Ref(values, hi, Integer(SizeOf(T)));
       end;
   else
   {$ELSE}
@@ -12302,7 +12354,7 @@ begin
   for i := hi downto 1 do
   begin
     randomIndex := Random(i + 1);
-    BinarySwap(@values[randomIndex * size], @values[i * size], size);
+    BinarySwap(@values[randomIndex * size], @values[i * size], Cardinal(size));
   end;
 end;
 
@@ -12346,7 +12398,7 @@ begin
           Shuffle_Int64(values, hi);
       end;
     tkString:
-      Shuffle_Ref(values, hi, SizeOf(T));
+      Shuffle_Ref(values, hi, Integer(SizeOf(T)));
     tkSet:
       case SizeOf(T) of
         1: Shuffle_Int8(values, hi);
@@ -12354,7 +12406,7 @@ begin
         4: Shuffle_Int32(values, hi);
         8: Shuffle_Int64(values, hi);
       else
-        Shuffle_Ref(values, hi, SizeOf(T));
+        Shuffle_Ref(values, hi, Integer(SizeOf(T)));
       end;
     tkMethod:
       Shuffle_Method(values, hi);
@@ -12371,7 +12423,7 @@ begin
           4: Shuffle_Int32(values, hi);
           8: Shuffle_Int64(values, hi);
         else
-          Shuffle_Ref(values, hi, SizeOf(T))
+          Shuffle_Ref(values, hi, Integer(SizeOf(T)))
         end
       else
         Shuffle_Generic<T>(Slice(TSlice<T>(values^), hi+1));
@@ -12383,7 +12435,7 @@ begin
         4: Shuffle_Int32(values, hi);
         8: Shuffle_Int64(values, hi);
       else
-        Shuffle_Ref(values, hi, SizeOf(T));
+        Shuffle_Ref(values, hi, Integer(SizeOf(T)));
       end;
   else
   {$ELSE}
@@ -12694,7 +12746,7 @@ begin
     if comparer.Compare(values[i*size], values[child*size]) >= 0 then
       Break;
 
-    BinarySwap(@values[i*size], @values[child*size], size);
+    BinarySwap(@values[i*size], @values[child*size], Cardinal(size));
     i := child;
   end;
 end;
@@ -12708,7 +12760,7 @@ begin
     DownHeap_Ref(values, hi, comparer, i, size);
   for i := hi downto 1 do
   begin
-    BinarySwap(@values[i*size], @values[0], size);
+    BinarySwap(@values[i*size], @values[0], Cardinal(size));
     DownHeap_Ref(values, i-1, comparer, 0, size);
   end;
 end;
@@ -12723,7 +12775,7 @@ begin
     j := i - 1;
     repeat
       if comparer.Compare(values[j*size], values[(j+1)*size]) <= 0 then Break;
-      BinarySwap(@values[j*size], @values[(j+1)*size], size);
+      BinarySwap(@values[j*size], @values[(j+1)*size], Cardinal(size));
       Dec(j);
     until j < 0;
   end;
@@ -12738,14 +12790,14 @@ begin
   middle := right shr 1;
 
   if comparer.Compare(values[0], values[middle*size]) > 0 then
-    BinarySwap(@values[0], @values[middle*size], size);
+    BinarySwap(@values[0], @values[middle*size], Cardinal(size));
   if comparer.Compare(values[0], values[right*size]) > 0 then
-    BinarySwap(@values[0], @values[right*size], size);
+    BinarySwap(@values[0], @values[right*size], Cardinal(size));
   if comparer.Compare(values[middle*size], values[right*size]) > 0 then
-    BinarySwap(@values[middle*size], @values[right*size], size);
+    BinarySwap(@values[middle*size], @values[right*size], Cardinal(size));
 
   Dec(right);
-  BinarySwap(@values[middle*size], @values[right*size], size);
+  BinarySwap(@values[middle*size], @values[right*size], Cardinal(size));
 
   pivotIndex := right;
   left := 0;
@@ -12762,11 +12814,11 @@ begin
     if left >= right then
       Break;
 
-    BinarySwap(@values[left*size], @values[right*size], size);
+    BinarySwap(@values[left*size], @values[right*size], Cardinal(size));
   end;
 
   if left <> pivotIndex then
-    BinarySwap(@values[left*size], @values[pivotIndex*size], size);
+    BinarySwap(@values[left*size], @values[pivotIndex*size], Cardinal(size));
 
   Result := left;
 end;

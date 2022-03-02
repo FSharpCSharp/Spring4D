@@ -157,7 +157,7 @@ end;
 
 function GetIndexFloat(const v: TValue): Integer;
 begin
-  Result := Trunc(v.AsExtended);
+  Result := Integer(Trunc(v.AsExtended));
 end;
 
 function GetIndexString(const v: TValue): Integer;
@@ -210,7 +210,7 @@ end;
 
 procedure SetIndexOrdinal(typeInfo: PTypeInfo; index: Integer; var Result); //FI:O804
 begin
-  PByte(@Result)^ := index;
+  PByte(@Result)^ := Byte(index);
 end;
 
 procedure SetIndexFloat(typeInfo: PTypeInfo; index: Integer; var Result);

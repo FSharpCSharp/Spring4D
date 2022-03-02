@@ -7931,48 +7931,39 @@ begin
 end;
 
 function TStringComparer.GetHashCode(const value: string): Integer;
-const
-  NotAsciiMask = $FF80FF80;
-  LowerCaseMask = $00200020;
-
-  // for inlining when compiled as package - System.Length does not in that case
-  function Length(const s: string): NativeInt; inline;
-  begin
-    Result := IntPtr(s);
-    if Result <> 0 then
-      Result := PInteger(@PByte(Result)[-4])^;
-  end;
 
   function GetHashCodeIgnoreCaseSlow(const value: string): Integer;
   var
     s: string;
-    len: NativeInt;
   begin
     s := AnsiLowerCase(value);
-    len := Length(s);
-    Result := DefaultHashFunction(Pointer(s)^, len * SizeOf(Char));
+    Result := DefaultHashFunction(Pointer(s)^, PCardinal(@PByte(s)[-4])^ * SizeOf(Char));
   end;
 
+const
+  NotAsciiMask = $FF80FF80;
+  LowerCaseMask = $00200020;
+  MaxBufferSize = 2048;
 label
   NotAscii;
 var
   i: NativeInt;
   c: Integer;
-  buffer: array[0..1023] of Integer;
-  len: record value: NativeInt; end;
+  buffer: array[0..MaxBufferSize-1] of Char;
+  len: record value: Cardinal; end;
 begin
   if value <> '' then
   begin
-    len.value := PInteger(@PByte(value)[-4])^;
+    len.value := PCardinal(@PByte(value)[-4])^;
     if fIgnoreCase then
     begin
-      if len.value <= 2048 then
+      if len.value <= MaxBufferSize then
       begin
-        for i := 0 to (len.value-1) shr 1 do
+        for i := 0 to Pred(len.value) div 2 do
         begin
           c := PIntegerArray(value)[i];
           if c and NotAsciiMask <> 0 then goto NotAscii;
-          buffer[i] := c or LowerCaseMask;
+          PIntegerArray(@buffer)[i] := c or LowerCaseMask;
         end;
         Result := DefaultHashFunction(buffer[0], len.value * SizeOf(Char));
       end

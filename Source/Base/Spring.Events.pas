@@ -272,12 +272,12 @@ procedure GetMethodTypeData(Method: TRttiMethod; var TypeData: PTypeData);
 
 var
   params: TArray<TRttiParameter>;
-  i: Integer;
+  i: NativeInt;
   p: PByte;
 begin
   TypeData.MethodKind := Method.MethodKind;
   params := Method.GetParameters;
-  TypeData.ParamCount := Length(params);
+  TypeData.ParamCount := Byte(Length(params));
   p := @TypeData.ParamList;
   for i := Low(params) to High(params) do
   begin
@@ -668,7 +668,7 @@ procedure TEvent.InternalInvoke(Params: Pointer; StackSize: Integer);
 var
   guard: GuardedPointer;
   handlers: PMethod;
-  i: Integer;
+  i: NativeInt;
 begin
   guard := AcquireGuard(fHandlers);
   handlers := guard;
@@ -737,7 +737,7 @@ procedure TNotifyEventImpl.Invoke(sender: TObject);
 var
   guard: GuardedPointer;
   handlers: PMethodArray;
-  i: Integer;
+  i: NativeInt;
 begin
   if Enabled then
   begin
@@ -782,7 +782,7 @@ procedure TNotifyEventImpl<T>.Invoke(sender: TObject; const item: T);
 var
   guard: GuardedPointer;
   handlers: PMethodArray;
-  i: Integer;
+  i: NativeInt;
 begin
   if Enabled then
   begin
@@ -828,7 +828,7 @@ procedure TPropertyChangedEventImpl.Invoke(Sender: TObject;
 var
   guard: GuardedPointer;
   handlers: PMethodArray;
-  i: Integer;
+  i: NativeInt;
 begin
   if Enabled then
   begin

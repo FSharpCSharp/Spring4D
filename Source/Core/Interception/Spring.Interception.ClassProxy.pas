@@ -235,7 +235,7 @@ begin
 
   SetLength(fAdditionalInterfaces, entryCount - 1);
 
-  offset := ProxyClassData.InstanceSize - hfFieldSize;
+  offset := NativeUInt(ProxyClassData.InstanceSize - hfFieldSize);
   Inc(ProxyClassData.InstanceSize, (entryCount - 1) * SizeOf(Pointer));
 
   // add other interfaces

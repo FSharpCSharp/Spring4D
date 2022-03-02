@@ -223,13 +223,13 @@ var
   year, month, day: Word;
   hour, minute, second, milliSecond: Word;
 
-  function ExtractElementDef(const element: string; const defaultValue: Integer = 0): Integer;
+  function ExtractElementDef(const element: string; const defaultValue: Word = 0): Word;
   var
     position: Integer;
   begin
     position := Pos(element, stringFormat);
     if position > 0 then
-      Result := StrToInt(Copy(localString, position, Length(element)))
+      Result := Word(StrToInt(Copy(localString, position, Length(element))))
     else
       Result := defaultValue;
   end;

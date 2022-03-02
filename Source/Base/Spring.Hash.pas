@@ -34,7 +34,7 @@ function MurmurHash3(const key; len: Cardinal; seed: Integer = 0): Integer;
 
 function MurmurHash3_Int32(const key: Integer): Integer; //inline;
 
-function xxHash32(const key; len: Cardinal; Seed: Integer = 0): Integer;
+function xxHash32(const key; len: Cardinal; seed: Integer = 0): Integer;
 
 implementation
 

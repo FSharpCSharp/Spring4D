@@ -165,6 +165,7 @@ const
   // use the MSB of the HashCode to note removed items
   RemovedFlag        = Integer($80000000);
   MinCapacity        = 6; // 75% load factor leads to min bucket count of 8
+  MaxCapacity        = $30000000; // 75% of highest 2^n Integer
   PerturbShift       = 5;
   EmptyBucket        = -1; // must be negative, note choice of BucketSentinelFlag
   UsedBucket         = -2; // likewise
@@ -218,7 +219,7 @@ end;
 
 function THashTable.GetCapacity: Integer;
 begin
-  Result := DynArrayLength(fItems);
+  Result := Integer(DynArrayLength(fItems));
 end;
 
 function THashTable.DeleteEntry(const entry: THashTableEntry): Pointer;
@@ -270,6 +271,8 @@ begin
   else if 2 * fCount >= DynArrayLength(fBuckets) then
     // only grow if load factor is greater than 0.5
     newCapacity := newCapacity * 2;
+  if Cardinal(newCapacity) > MaxCapacity then
+    SysUtils.OutOfMemoryError;
   Rehash(newCapacity);
 end;
 
@@ -292,7 +295,7 @@ begin
     end;
     Inc(sourceItem, fItemSize);
   end;
-  FinalizeArray(targetItem, itemType, fItemCount - fCount); // clear remaining items that were previously moved
+  FinalizeArray(targetItem, itemType, Cardinal(fItemCount - fCount)); // clear remaining items that were previously moved
 end;
 
 function THashTable.FindItem(const key): Pointer;
@@ -395,8 +398,8 @@ begin
 
   Assert(newCapacity >= fCount);
 
-  newBucketCount := NextPowerOf2(newCapacity * 4 div 3 - 1); // 75% load factor
-  newCapacity := newBucketCount * 3 div 4;
+  newBucketCount := NextPowerOf2(NativeInt(NativeUInt(newCapacity) * 4 div 3 - 1)); // 75% load factor
+  newCapacity := NativeInt(NativeUInt(newBucketCount) * 3 div 4);
 
   if (newCapacity = Capacity) and (fItemCount = fCount) then
     Exit;
@@ -435,22 +438,25 @@ procedure THashTable.SetCapacity(const value: Integer);
 var
   newCapacity: Integer;
 begin
-  if value >= fCount then
-  begin
-    newCapacity := value;
-    if (newCapacity > 0) and (newCapacity < MinCapacity) then
-      newCapacity := MinCapacity;
-    if newCapacity <> DynArrayLength(fItems) then
-      Rehash(newCapacity);
-  end
+  if value <= MaxCapacity then
+    if value >= fCount then
+    begin
+      newCapacity := value;
+      if (newCapacity > 0) and (newCapacity < MinCapacity) then
+        newCapacity := MinCapacity;
+      if newCapacity <> DynArrayLength(fItems) then
+        Rehash(newCapacity);
+    end
+    else
+      RaiseHelper.ArgumentOutOfRange(ExceptionArgument.value, ExceptionResource.ArgumentOutOfRange_Capacity)
   else
-    RaiseHelper.ArgumentOutOfRange(ExceptionArgument.value, ExceptionResource.ArgumentOutOfRange_Capacity);
+    SysUtils.OutOfMemoryError;
 end;
 
 procedure THashTable.SetItemsInfo(const value: PTypeInfo);
 begin
   fItemsInfo := value;
-  fItemSize := value.TypeData.elSize;
+  fItemSize := Word(value.TypeData.elSize);
 end;
 
 {$ENDREGION}
@@ -597,14 +603,14 @@ begin
         1: hashCode := PShortInt(@key)^ and not RemovedFlag;
         2: hashCode := PSmallInt(@key)^ and not RemovedFlag;
         4: hashCode := PInteger(@key)^ and not RemovedFlag;
-        8: hashCode := (PInt64Rec(@key).Cardinals[0] xor PInt64Rec(@key).Cardinals[1]) and not RemovedFlag;
+        8: hashCode := Integer(PInt64Rec(@key).Cardinals[0] xor PInt64Rec(@key).Cardinals[1]) and not RemovedFlag;
       end;
     tkUString:
     begin
       hashCode := 0;
       if PPointer(@key)^ <> nil then
       {$R-}
-        hashCode := DefaultHashFunction(PPointer(@key)^^, PInteger(PByte((@key)^) - 4)^ * SizeOf(Char)) and not RemovedFlag;
+        hashCode := DefaultHashFunction(PPointer(@key)^^, PCardinal(PByte((@key)^) - 4)^ * SizeOf(Char)) and not RemovedFlag;
       {$IFDEF RANGECHECKS_ON}{$R+}{$ENDIF}
     end;
     tkRecord:
@@ -667,8 +673,8 @@ deletedFound:
           {$ENDIF}
         end;
       tkUString:
-        if (TItem<Pointer>(item^).Key <> PPointer(@key)^) then
-          if (TItem<string>(item^).Key <> PString(@key)^) then Continue;
+        if TItem<Pointer>(item^).Key <> PPointer(@key)^ then
+          if TItem<string>(item^).Key <> PString(@key)^ then Continue;
       tkRecord:
         if TypeInfo(T) = TypeInfo(TGUID) then
           if not SameGuid(TItem<TGUID>(item^).Key, PGUID(@key)^) then Continue else

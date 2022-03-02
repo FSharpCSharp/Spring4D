@@ -91,7 +91,7 @@ type
     procedure SetCapacity(value: Integer);
     procedure SetItem(const key: TKey; const value: TValue);
   {$ENDREGION}
-    function TryInsert(const key: TKey; const value: TValue; behavior: Cardinal): Boolean;
+    function TryInsert(const key: TKey; const value: TValue; behavior: Byte): Boolean;
     function DoRemove(const entry: THashTableEntry; action: TCollectionChangedAction): Boolean;
   public
     constructor Create(capacity: Integer;
@@ -759,7 +759,7 @@ begin
 end;
 
 function TDictionary<TKey, TValue>.TryInsert(
-  const key: TKey; const value: TValue; behavior: Cardinal): Boolean;
+  const key: TKey; const value: TValue; behavior: Byte): Boolean;
 var
   temp: Pointer;
   item: PItem;
@@ -1203,7 +1203,7 @@ begin
       end;
       Inc(sourceItem);
     end;
-    FinalizeArray(targetItem, TypeInfo(TItem), fItemCount - fCount);
+    FinalizeArray(targetItem, TypeInfo(TItem), Cardinal(fItemCount - fCount));
   end;
 
   // resize the items array, safe now that we have compacted it

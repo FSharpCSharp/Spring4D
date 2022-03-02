@@ -192,7 +192,7 @@ class function TThreadBlockList.Acquire(isFirstAttempt: Boolean): PHazardEraThre
 
 var
   currentThreadId: TThreadID;
-  index: Integer;
+  index: NativeUInt;
 begin
   Result := activeBlock;
   if Assigned(Result) then
@@ -343,7 +343,7 @@ type
 procedure EraArraySetLength(var a; count: NativeInt; elemInfo: Pointer);
 var
   p: PEraArray;
-  oldSize, newSize: Integer;
+  oldSize, newSize: NativeInt;
 begin
   if count = 0 then
   begin
@@ -394,7 +394,7 @@ var
   p: PEraArray;
   dest: Pointer;
   elemSize: Integer;
-  tailCount: Integer;
+  tailCount: NativeInt;
 begin
   if Pointer(target) = nil then Exit;
   p := Pointer(UIntPtr(target) - SizeOf(TEraArray));

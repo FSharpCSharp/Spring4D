@@ -1042,11 +1042,11 @@ begin
   if targetTypeInfo = TypeInfo(Integer) then
     Result := TValue.From<Integer>(StrToInt(value.AsString))
   else if targetTypeInfo = TypeInfo(Cardinal) then
-    Result := TValue.From<Cardinal>(StrToInt64(value.AsString))
+    Result := TValue.From<Cardinal>(StrToUInt(value.AsString))
   else if targetTypeInfo = TypeInfo(Int64) then
     Result := TValue.From<Int64>(StrToInt64(value.AsString))
   else if targetTypeInfo = TypeInfo(UInt64) then
-    Result := TValue.From<UInt64>(StrToInt64(value.AsString))
+    Result := TValue.From<UInt64>(StrToUInt64(value.AsString))
   else if targetTypeInfo = TypeInfo(SmallInt) then
     Result := TValue.From<SmallInt>(StrToInt(value.AsString))
   else if targetTypeInfo = TypeInfo(Word) then
@@ -1101,19 +1101,19 @@ begin
   if targetTypeInfo = TypeInfo(Integer) then
     Result := TValue.From<Integer>(Integer(value.AsBoolean))
   else if targetTypeInfo = TypeInfo(Cardinal) then
-    Result := TValue.From<Cardinal>(Integer(value.AsBoolean))
+    Result := TValue.From<Cardinal>(Cardinal(value.AsBoolean))
   else if targetTypeInfo = TypeInfo(Int64) then
     Result := TValue.From<Int64>(Integer(value.AsBoolean))
   else if targetTypeInfo = TypeInfo(UInt64) then
-    Result := TValue.From<UInt64>(Integer(value.AsBoolean))
+    Result := TValue.From<UInt64>(UInt64(value.AsBoolean))
   else if targetTypeInfo = TypeInfo(SmallInt) then
-    Result := TValue.From<SmallInt>(Integer(value.AsBoolean))
+    Result := TValue.From<SmallInt>(SmallInt(value.AsBoolean))
   else if targetTypeInfo = TypeInfo(Word) then
-    Result := TValue.From<Word>(Integer(value.AsBoolean))
+    Result := TValue.From<Word>(Word(value.AsBoolean))
   else if targetTypeInfo = TypeInfo(ShortInt) then
-    Result := TValue.From<ShortInt>(Integer(value.AsBoolean))
+    Result := TValue.From<ShortInt>(ShortInt(value.AsBoolean))
   else if targetTypeInfo = TypeInfo(Byte) then
-    Result := TValue.From<Byte>(Integer(value.AsBoolean))
+    Result := TValue.From<Byte>(Byte(value.AsBoolean))
   else
     RaiseConvertError(value.TypeInfo, targetTypeInfo);
 end;

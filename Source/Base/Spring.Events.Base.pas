@@ -202,7 +202,7 @@ procedure TEventBase.Add(const handler: TMethod);
 var
   guard: GuardedPointer;
   handlers, new: PMethodArray;
-  count: Integer;
+  count: NativeInt;
 begin
   if not Assigned(handler.Code) then
     Exit;
@@ -232,7 +232,7 @@ procedure TEventBase.Clear;
 var
   guard: GuardedPointer;
   handlers: PMethodArray;
-  i: Integer;
+  i: NativeInt;
 begin
   if fHandlers = nil then Exit;
 
@@ -290,7 +290,7 @@ procedure TEventBase.Remove(const handler: TMethod);
 var
   guard: GuardedPointer;
   handlers, new: PMethodArray;
-  count, index, i: Integer;
+  count, index, i: NativeInt;
 begin
   if not Assigned(handler.Code) then
     Exit;
@@ -330,7 +330,7 @@ var
   guard: GuardedPointer;
   handlers, new: PMethodArray;
   oldItems: TArray<TMethod>;
-  count, i, index: Integer;
+  count, i, index: NativeInt;
 begin
   new := nil;
   repeat
