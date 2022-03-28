@@ -3252,8 +3252,11 @@ begin
     RefCount := 1;
     Parent := iterator;
     Source := iterator.fSource;
-    Predicate := iterator.fPredicate;
-    Items := iterator.fItems;
+    if iterator.fKind <> Memoize then
+    begin
+      Predicate := iterator.fPredicate;
+      Items := iterator.fItems;
+    end;
     Index := iterator.fIndex;
     Count := iterator.fCount;
     Kind := iterator.fKind;
@@ -3691,9 +3694,16 @@ begin
           Inc(Result, count);
           {$IFNDEF OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
       end;
+      Exit;
+    end;
+    TIteratorKind.Memoize:
+    begin
+      Result := fCount;
+      if (Result <> 0) and (fPredicate = nil) then
+        Exit(Result and CountMask)
     end;
     TIteratorKind.Ordered, TIteratorKind.Reversed, TIteratorKind.Shuffled:
-      Result := fSource.GetCountFast;
+      Exit(fSource.GetCountFast);
     TIteratorKind.Partition:
     begin
       Result := fCount;
@@ -3709,10 +3719,10 @@ begin
             Result := fCount;
         end;
       end;
+      Exit;
     end;
-  else
-    Result := -1;
   end;
+  Result := -1;
 end;
 
 {$ENDREGION}

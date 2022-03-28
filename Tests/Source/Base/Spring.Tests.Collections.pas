@@ -6941,7 +6941,10 @@ begin
     end);
   memoized := range.Memoize;
 
+  CheckEquals(5, memoized.Take(5).Count);
+  CheckEquals(5, count);
   CheckEquals(10, memoized.Count);
+  CheckEquals(0, count);
   CheckEquals(10, memoized.Count);
 end;
 
