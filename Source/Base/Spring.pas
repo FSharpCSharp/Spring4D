@@ -8625,12 +8625,22 @@ end;
 procedure Lazy.TLazy.CreateValue;
 var
   valueFactory: Pointer;
+  spinWait: TSpinWait;
 begin
-  valueFactory := AtomicExchange(Pointer(fValueFactory), nil);
-  if valueFactory <> nil then
+  valueFactory := Pointer(fValueFactory);
+  if valueFactory = nil then Exit;
+  valueFactory := AtomicCmpExchange(Pointer(fValueFactory), Pointer(1), valueFactory);
+  if valueFactory = Pointer(1) then
+  begin
+    spinWait := Default(TSpinWait);
+    while fValueFactory <> nil do
+      spinWait.SpinCycle;
+  end
+  else if valueFactory <> nil then
   try
     InvokeFactory(valueFactory);
   finally
+    AtomicExchange(Pointer(fValueFactory), nil);
     IInterface(valueFactory)._Release;
   end;
 end;
@@ -8929,12 +8939,22 @@ end;
 procedure Lazy.TObjectReference.CreateValue;
 var
   valueFactory: Pointer;
+  spinWait: TSpinWait;
 begin
-  valueFactory := AtomicExchange(Pointer(Factory), nil);
-  if valueFactory <> nil then
+  valueFactory := Pointer(Factory);
+  if valueFactory = nil then Exit;
+  valueFactory := AtomicCmpExchange(Pointer(Factory), Pointer(1), valueFactory);
+  if valueFactory = Pointer(1) then
+  begin
+    spinWait := Default(TSpinWait);
+    while Factory <> nil do
+      spinWait.SpinCycle;
+  end
+  else if valueFactory <> nil then
   try
     Value := Func<TObject>(valueFactory)();
   finally
+    AtomicExchange(Pointer(Factory), nil);
     IInterface(valueFactory)._Release;
   end;
 end;
@@ -8984,12 +9004,22 @@ end;
 procedure Lazy.TInterfaceReference.CreateValue;
 var
   valueFactory: Pointer;
+  spinWait: TSpinWait;
 begin
-  valueFactory := AtomicExchange(Pointer(Factory), nil);
-  if valueFactory <> nil then
+  valueFactory := Pointer(Factory);
+  if valueFactory = nil then Exit;
+  valueFactory := AtomicCmpExchange(Pointer(Factory), Pointer(1), valueFactory);
+  if valueFactory = Pointer(1) then
+  begin
+    spinWait := Default(TSpinWait);
+    while Factory <> nil do
+      spinWait.SpinCycle;
+  end
+  else if valueFactory <> nil then
   try
     Value := Func<IInterface>(valueFactory)();
   finally
+    AtomicExchange(Pointer(Factory), nil);
     IInterface(valueFactory)._Release;
   end;
 end;
