@@ -187,6 +187,7 @@ type
     function GetConstructorsInternal: IReadOnlyList<TRttiMethod>;
     function GetDefaultName: string;
     function GetAncestorCount: Integer;
+    function GetDeclaringUnitName: string;
   public
 
     /// <summary>
@@ -1044,6 +1045,17 @@ begin
   Result := TEnumerable.From<TRttiField>(GetFields);
 end;
 
+function TRttiTypeHelper.GetDeclaringUnitName: string;
+begin
+  case TypeKind of
+    tkClass: Result := TRttiInstanceType(Self).DeclaringUnitName;
+    tkInterface: Result := TRttiInterfaceType(Self).DeclaringUnitName;
+    tkDynArray: Result := TRttiDynamicArrayType(Self).DeclaringUnitName;
+  else
+    Result := '';
+  end;
+end;
+
 function TRttiTypeHelper.GetDefaultName: string;
 begin
   if IsPublicType then
@@ -1259,17 +1271,29 @@ end;
 
 function TRttiTypeHelper.IsGenericTypeOf(const genericType: string): Boolean;
 var
+  genericTypeDefinition, declaringUnitName: string;
+  declaringUnitNameLength: Integer;
   baseType: TRttiType;
 begin
   if not IsGenericType then
     Exit(False);
-  if SameText(GetGenericTypeDefinition, genericType)  then
-    Result := True
-  else
+  genericTypeDefinition := GetGenericTypeDefinition;
+  if SameText(genericTypeDefinition, genericType) then
+    Exit(True);
+
+  if TypeKind in [tkClass, tkInterface, tkDynArray] then
   begin
-    baseType := Self.BaseType;
-    Result := Assigned(baseType) and baseType.IsGenericTypeOf(genericType);
+    declaringUnitName := GetDeclaringUnitName;
+    declaringUnitNameLength := Length(declaringUnitName);
+    if (Length(genericType) - declaringUnitNameLength - Length(genericTypeDefinition) = 1)
+      and (genericType[declaringUnitNameLength + 1] = '.')
+      and StartsText(declaringUnitName, genericType)
+      and EndsText(genericTypeDefinition, genericType) then
+      Exit(True);
   end;
+
+  baseType := Self.BaseType;
+  Result := Assigned(baseType) and baseType.IsGenericTypeOf(genericType);
 end;
 
 function TRttiTypeHelper.IsType(typeInfo: PTypeInfo): Boolean;

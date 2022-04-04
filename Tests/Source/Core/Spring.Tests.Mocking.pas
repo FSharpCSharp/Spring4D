@@ -65,6 +65,7 @@ type
     procedure NotWhenExpectationWasDefined;
 
     procedure DependingOnInputArguments;
+    procedure EventTypeIsHandled;
   end;
 
   MockDynamicallySupportsOtherInterfaces = class(TTestCase)
@@ -107,6 +108,8 @@ type
     procedure TestEnum(const value: TTestEnum);
     procedure TestSet(const n: Integer; const value: TTestSet; const i: Integer = 0);
     function GetNext: Integer;
+
+    function GetEvent: IInvokableNotifyEvent<Integer>;
   end;
 
   IVarParamTest = interface
@@ -466,6 +469,23 @@ begin
   Mock.From(foo.Foo(2)).Setup.Returns('Two').When.Name;
   CheckEquals('One', foo.Foo(1).Name);
   CheckEquals('Two', foo.Foo(2).Name);
+end;
+
+procedure MockReturnsOtherMockInDynamicMode.EventTypeIsHandled;
+var
+  mock: Mock<IMockTest>;
+  event: IInvokableNotifyEvent<Integer>;
+begin
+  event := mock.Instance.GetEvent;
+  CheckNotNull(event);
+  event.Add(nil);
+  event.Remove(nil);
+  CheckFalse(event.CanInvoke);
+  CheckException(ENotSupportedException,
+    procedure
+    begin
+      event.Invoke(nil, 0);
+    end);
 end;
 
 procedure MockReturnsOtherMockInDynamicMode.NotWhenExpectationWasDefined;

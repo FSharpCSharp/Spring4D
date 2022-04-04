@@ -30,6 +30,7 @@ interface
 
 uses
   Rtti,
+  TypInfo,
   Spring.Collections,
   Spring.Interception,
   Spring.Mocking,
@@ -75,7 +76,8 @@ type
     class function CreateArgMatch(const arguments: TArray<TValue>;
       const parameters: TArray<TRttiParameter>): TArgMatch; static;
     function CreateMethodCalls(const method: TRttiMethod): TArray<TMethodCall>;
-    class function CreateMock(const invocation: IInvocation): TMockAction; static;
+    class function CreateEvent(const returnType: PTypeInfo): TMockAction; static;
+    class function CreateMock(const returnType: PTypeInfo): TMockAction; static;
     procedure InterceptArrange(const invocation: IInvocation);
     procedure InterceptAct(const invocation: IInvocation);
     procedure InterceptAssert(const invocation: IInvocation);
@@ -106,7 +108,6 @@ implementation
 
 uses
   SysUtils,
-  TypInfo,
   Spring,
   Spring.Mocking.Core,
   Spring.Reflection,
@@ -224,12 +225,80 @@ begin
   RefArgs.values := nil;
 end;
 
-class function TMockInterceptor.CreateMock(
-  const invocation: IInvocation): TMockAction;
+function GetBoolean(inst: Pointer): Boolean;
+begin
+  Result := False;
+end;
+
+function GetMethodPointer(inst: Pointer): TMethodPointer;
+begin
+  Result := nil;
+end;
+
+procedure SetBoolean(inst: Pointer; const value: Boolean);
+begin
+end;
+
+procedure SetMethodPointer(inst: Pointer; const value: TMethodPointer);
+begin
+end;
+
+procedure RemoveAll(inst: Pointer; instance: Pointer);
+begin
+end;
+
+procedure Clear(inst: Pointer);
+begin
+end;
+
+function GetInvoke(inst: Pointer): TMethodPointer;
+begin
+  RaiseHelper.NotSupported;
+end;
+
+class function TMockInterceptor.CreateEvent(const returnType: PTypeInfo): TMockAction;
+const
+  EventMock_Vtable: array[0..16] of Pointer =
+  (
+    @NopQueryInterface,
+    @NopAddref,
+    @NopRelease,
+    // IEvent
+    @GetBoolean,            // GetCanInvoke
+    @GetBoolean,            // GetEnabled
+    @GetMethodPointer,      // GetOnChanged
+    @GetBoolean,            // GetUseFreeNotification
+    @SetBoolean,            // SetEnabled
+    @SetMethodPointer,      // SetOnChanged
+    @SetBoolean,            // SetUseFreeNotification
+    @SetMethodPointer,      // Add
+    @SetMethodPointer,      // Remove
+    @RemoveAll,             // RemoveAll
+    @Clear,                 // Clear
+    // IEvent<T>
+    @SetMethodPointer,      // Add
+    @SetMethodPointer,      // Remove
+    // IInvokableEvent<T>
+    @GetInvoke              // GetInvoke
+  );
+
+  EventMock_Instance: Pointer = @EventMock_Vtable;
+
+const
+  event: Pointer = @EventMock_Instance;
+begin
+  Result :=
+    function(const callInfo: TCallInfo): TValue
+    begin
+      Result := TValue.From(@event, returnType);
+    end;
+end;
+
+class function TMockInterceptor.CreateMock(const returnType: PTypeInfo): TMockAction;
 var
   mock: IMock;
 begin
-  mock := TMock.Create(invocation.Method.ReturnType.Handle);
+  mock := TMock.Create(returnType);
   Result :=
     function(const callInfo: TCallInfo): TValue
     begin
@@ -279,6 +348,9 @@ end;
 procedure TMockInterceptor.InterceptAct(const invocation: IInvocation);
 var
   methodCall: TMethodCall;
+  method: TRttiMethod;
+  returnType: TRttiType;
+  action: TMockAction;
 begin
   methodCall := fExpectedCalls[invocation.Method].LastOrDefault(
     function(const m: TMethodCall): Boolean
@@ -299,15 +371,26 @@ begin
             ArgsToString(invocation.Arguments)]);
       end
       else
+      begin
+        method := invocation.Method;
         // create results for params
-        if invocation.Method.HasExtendedInfo
-          and (invocation.Method.MethodKind = mkFunction)
-          and HasMethodInfo(invocation.Method.ReturnType.Handle) then
+        if method.HasExtendedInfo and (method.MethodKind = mkFunction) then
         begin
-          methodCall := TMethodCall.Create(CreateMock(invocation),
-            CreateArgMatch(invocation.Arguments, invocation.Method.GetParameters), nil);
-          fExpectedCalls.Add(invocation.Method, methodCall);
+          returnType := method.ReturnType;
+          if HasMethodInfo(returnType.Handle) then
+            action := CreateMock(returnType.Handle)
+          else if returnType.IsGenericTypeOf('Spring.IEvent<>')
+            or Assigned(returnType.BaseType) and returnType.BaseType.IsGenericTypeOf('Spring.IEvent<>') then
+            action := CreateEvent(returnType.Handle);
+
+          if Assigned(action) then
+          begin
+            methodCall := TMethodCall.Create(action,
+              CreateArgMatch(invocation.Arguments, invocation.Method.GetParameters), nil);
+            fExpectedCalls.Add(invocation.Method, methodCall);
+          end;
         end;
+      end;
 
   fReceivedCalls.Add(invocation.Method, Copy(invocation.Arguments));
   if Assigned(methodCall) then
