@@ -187,7 +187,7 @@ var
   parameters: TArray<TRttiParameter>;
   i: Integer;
   value: TValue;
-  retType: TRttiType;
+  retType, paramType: TRttiType;
 begin
   parameters := GetParameters;
   for i := 0 to High(parameters) do
@@ -196,9 +196,13 @@ begin
       value := values[i]
     else
       value := TValue.Empty;
-    if value.IsString and not parameters[i].ParamType.IsString then
+    paramType := parameters[i].ParamType;
+    if value.IsString and not paramType.IsString then
       value := Trim(value.AsString);
-    value.TryConvert(parameters[i].ParamType.Handle, arguments[i], ISO8601FormatSettings);
+    if paramType.Handle <> TypeInfo(TValue) then
+      value.TryConvert(paramType.Handle, arguments[i], ISO8601FormatSettings)
+    else
+      arguments[i] := value;
   end;
   retType := ReturnType;
   if retType <> nil then
