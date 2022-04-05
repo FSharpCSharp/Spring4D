@@ -34,8 +34,8 @@ uses
   Rtti,
   Spring;
 
-const
-  DefaultDelimiter = ',';
+var
+  DefaultDelimiter: string = ',';
 
 type
   TValue = Rtti.TValue;
@@ -45,7 +45,7 @@ type
     function GetValue(index: Integer): TValue;
   protected
     fValues: TArray<TValue>;
-    constructor Create(const values: string; const delimiter: string = DefaultDelimiter);
+    constructor Create(const values: string; const delimiter: string);
     property Values[index: Integer]: TValue read GetValue;
   end;
 
@@ -62,7 +62,8 @@ type
   /// </summary>
   TestCaseAttribute = class(TTestingAttribute)
   public
-    constructor Create(const values: string; const delimiter: string = DefaultDelimiter);
+    constructor Create(const values: string); overload;
+    constructor Create(const values: string; const delimiter: string); overload;
   end;
 
   TestCaseSourceAttribute = class(TBaseAttribute)
@@ -83,7 +84,8 @@ type
   ValuesAttribute = class(TTestingAttribute)
   public
     constructor Create; overload;
-    constructor Create(const values: string; const delimiter: Char = DefaultDelimiter); overload;
+    constructor Create(const values: string); overload;
+    constructor Create(const values: string; const delimiter: string); overload;
   end;
 
   /// <summary>
@@ -301,6 +303,11 @@ end;
 
 {$REGION 'TestCaseAttribute'}
 
+constructor TestCaseAttribute.Create(const values: string);
+begin
+  inherited Create(values, DefaultDelimiter);
+end;
+
 constructor TestCaseAttribute.Create(const values: string; const delimiter: string);
 begin
   inherited Create(values, delimiter);
@@ -332,10 +339,15 @@ end;
 
 constructor ValuesAttribute.Create;
 begin
-  inherited Create('');
+  inherited Create('', DefaultDelimiter);
 end;
 
-constructor ValuesAttribute.Create(const values: string; const delimiter: Char);
+constructor ValuesAttribute.Create(const values: string);
+begin
+  inherited Create(values, DefaultDelimiter);
+end;
+
+constructor ValuesAttribute.Create(const values: string; const delimiter: string);
 begin
   inherited Create(values, delimiter);
 end;
