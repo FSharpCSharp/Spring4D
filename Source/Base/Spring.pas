@@ -2514,11 +2514,11 @@ type
     class function QuickSortPartition<T>(var values: array of T; {$IFDEF SUPPORTS_CONSTREF}[ref]{$ENDIF}const compare: TCompareMethod<T>): NativeInt; static;
     class procedure IntroSort<T>(var values: array of T; const comparer: IComparer<T>; depthLimit: Integer = -1); static;
 
-    class procedure DownHeap_Ref(values: PByte; hi: NativeInt; const comparer: IComparerRef; i: NativeInt; size: Integer); static;
-    class procedure HeapSort_Ref(values: PByte; hi: NativeInt; const comparer: IComparerRef; size: Integer); static;
-    class procedure InsertionSort_Ref(values: PByte; hi: NativeInt; const comparer: IComparerRef; size: Integer); static;
-    class function QuickSortPartition_Ref(values: PByte; hi: NativeInt; const comparer: IComparerRef; size: Integer): NativeInt; static;
-    class procedure IntroSort_Ref(values: PByte; hi: NativeInt; const comparer: IComparerRef; size: Integer; depthLimit: Integer = -1); static;
+    class procedure DownHeap_Ref(values: PByte; hi: NativeInt; const comparer: IComparerRef; i, size: NativeInt); static;
+    class procedure HeapSort_Ref(values: PByte; hi: NativeInt; const comparer: IComparerRef; size: NativeInt); static;
+    class procedure InsertionSort_Ref(values: PByte; hi: NativeInt; const comparer: IComparerRef; size: NativeInt); static;
+    class function QuickSortPartition_Ref(values: PByte; hi: NativeInt; const comparer: IComparerRef; size: NativeInt): NativeInt; static;
+    class procedure IntroSort_Ref(values: PByte; hi: NativeInt; const comparer: IComparerRef; size: NativeInt; depthLimit: Integer = -1); static;
 
     class procedure IntroSort_Int8(var values: array of Int8; const comparer: IComparer<Int8>); static;
     class procedure IntroSort_Int16(var values: array of Int16; const comparer: IComparer<Int16>); static;
@@ -2539,7 +2539,7 @@ type
     class procedure Reverse_Double(const values: PDouble; right: NativeInt); static;
     class procedure Reverse_Extended(const values: PExtended; right: NativeInt); static;
     class procedure Reverse_Method(const values: PMethodPointer; right: NativeInt); static;
-    class procedure Reverse_Ref(const values: PByte; right: NativeInt; size: Integer); static;
+    class procedure Reverse_Ref(const values: PByte; right, size: NativeInt); static;
     class procedure Reverse_Generic<T>(var values: array of T); static;
 
     class procedure Shuffle_Int8(const values: PInt8; hi: NativeInt); static;
@@ -2551,7 +2551,7 @@ type
     class procedure Shuffle_Double(const values: PDouble; hi: NativeInt); static;
     class procedure Shuffle_Extended(const values: PExtended; hi: NativeInt); static;
     class procedure Shuffle_Method(const values: PMethodPointer; hi: NativeInt); static;
-    class procedure Shuffle_Ref(const values: PByte; hi: NativeInt; size: Integer); static;
+    class procedure Shuffle_Ref(const values: PByte; hi, size: NativeInt); static;
     class procedure Shuffle_Generic<T>(var values: array of T); static;
 
     class function BinarySearchInternal<T>(const values: array of T;
@@ -2783,7 +2783,7 @@ type
     /// <summary>
     ///   Reverses the elements in the specified range in the array.
     /// </summary>
-    class procedure Reverse<T>(const values: Pointer; hi: Integer); overload; static; inline;
+    class procedure Reverse<T>(const values: Pointer; hi: NativeInt); overload; static; inline;
 
     /// <summary>
     ///   Shuffles the elements in the array using the Fisher-Yates algorithm.
@@ -2801,7 +2801,7 @@ type
     ///   Shuffles the elements in the specified range in the array using the
     ///   Fisher-Yates algorithm.
     /// </summary>
-    class procedure Shuffle<T>(const values: Pointer; hi: Integer); overload; static; inline;
+    class procedure Shuffle<T>(const values: Pointer; hi: NativeInt); overload; static; inline;
 
     /// <summary>
     ///   Sorts the elements in an array using the default comparer.
@@ -3204,7 +3204,7 @@ procedure MoveManaged(source, target, typeInfo: Pointer; count: NativeInt);
 procedure CheckIndex(index, size: Integer); inline;
 procedure CheckRange(index, count, size: Integer); inline;
 
-procedure BinarySwap(left, right: Pointer; size: Cardinal);
+procedure BinarySwap(left, right: Pointer; size: NativeInt);
 
 {$IFNDEF MSWINDOWS}
 function RegisterExpectedMemoryLeak(P: Pointer): Boolean;
@@ -11746,17 +11746,17 @@ begin
 {$POINTERMATH OFF}
 end;
 
-procedure BinarySwap(left, right: Pointer; size: Cardinal);
+procedure BinarySwap(left, right: Pointer; size: NativeInt);
 {$IFDEF ASSEMBLER}
 {$IFDEF CPUX64}
 asm
   mov       rax, rcx
-  mov       ecx, r8d
+  mov       rcx, r8
   mov       r8,  rsi
   mov       r9,  rbx
-  mov       esi, ecx
-  and       esi, 15
-  shr       ecx, 4
+  mov       rsi, rcx
+  and       rsi, 15
+  shr       rcx, 4
   jz        @@Swap8Byte
 
 @@Swap16Byte:
@@ -11766,43 +11766,43 @@ asm
   movdqu    [rdx], xmm0
   add       rax, 16
   add       rdx, 16
-  dec       ecx
+  dec       rcx
   jnz       @@Swap16Byte
 
 @@Swap8Byte:
-  test      esi, esi
+  test      rsi, rsi
   jz        @@End
-  test      esi, 8
+  test      rsi, 8
   jz        @@Swap4Byte
   mov       rbx, [rax]
   mov       rcx, [rdx]
   mov       [rax], rcx
   mov       [rdx], rbx
-  xor       esi, 8
+  xor       rsi, 8
   jz        @@End
   add       rax, 8
   add       rdx, 8
 
 @@Swap4Byte:
-  test      esi, 4
+  test      rsi, 4
   jz        @@Swap2Byte
   mov       ebx,  [rax]
   mov       ecx, [rdx]
   mov       [rax], ecx
   mov       [rdx], ebx
-  xor       esi, 4
+  xor       rsi, 4
   jz        @@End
   add       rax, 4
   add       rdx, 4
 
 @@Swap2Byte:
-  test      esi, 2
+  test      rsi, 2
   jz        @@Swap1Byte
   mov       bx, [rax]
   mov       cx, [rdx]
   mov       [rax], cx
   mov       [rdx], bx
-  xor       esi, 2
+  xor       rsi, 2
   jz        @@End
   add       rax, 2
   add       rdx, 2
@@ -11920,7 +11920,7 @@ begin
 {$IFDEF DELPHIXE7_UP}
   if not System.HasWeakRef(T) then
 {$ENDIF}
-    BinarySwap(left, right, Cardinal(SizeOf(T)))
+    BinarySwap(left, right, SizeOf(T))
 end;
 
 class procedure TArray.Reverse_Int8(const values: PInt8; right: NativeInt);
@@ -12085,14 +12085,14 @@ begin
   end;
 end;
 
-class procedure TArray.Reverse_Ref(const values: PByte; right: NativeInt; size: Integer);
+class procedure TArray.Reverse_Ref(const values: PByte; right, size: NativeInt);
 var
   left: NativeInt;
 begin
   left := 0;
   while left < right do
   begin
-    BinarySwap(@values[left * size], @values[right * size], Cardinal(size));
+    BinarySwap(@values[left * size], @values[right * size], size);
     Inc(left);
     Dec(right);
   end;
@@ -12117,7 +12117,7 @@ begin
   end;
 end;
 
-class procedure TArray.Reverse<T>(const values: Pointer; hi: Integer);
+class procedure TArray.Reverse<T>(const values: Pointer; hi: NativeInt);
 begin
   {$R-}
   {$IFDEF DELPHIXE7_UP}
@@ -12141,7 +12141,7 @@ begin
           Reverse_Int64(values, hi);
       end;
     tkString:
-      Reverse_Ref(values, hi, Integer(SizeOf(T)));
+      Reverse_Ref(values, hi, SizeOf(T));
     tkSet:
       case SizeOf(T) of
         1: Reverse_Int8(values, hi);
@@ -12149,7 +12149,7 @@ begin
         4: Reverse_Int32(values, hi);
         8: Reverse_Int64(values, hi);
       else
-        Reverse_Ref(values, hi, Integer(SizeOf(T)));
+        Reverse_Ref(values, hi, SizeOf(T));
       end;
     tkMethod:
       Reverse_Method(values, hi);
@@ -12166,7 +12166,7 @@ begin
           4: Reverse_Int32(values, hi);
           8: Reverse_Int64(values, hi);
         else
-          Reverse_Ref(values, hi, Integer(SizeOf(T)))
+          Reverse_Ref(values, hi, SizeOf(T))
         end
       else
         Reverse_Generic<T>(Slice(TSlice<T>(values^), hi+1));
@@ -12178,7 +12178,7 @@ begin
         4: Reverse_Int32(values, hi);
         8: Reverse_Int64(values, hi);
       else
-        Reverse_Ref(values, hi, Integer(SizeOf(T)));
+        Reverse_Ref(values, hi, SizeOf(T));
       end;
   else
   {$ELSE}
@@ -12347,14 +12347,14 @@ begin
   end;
 end;
 
-class procedure TArray.Shuffle_Ref(const values: PByte; hi: NativeInt; size: Integer);
+class procedure TArray.Shuffle_Ref(const values: PByte; hi, size: NativeInt);
 var
   i, randomIndex: NativeInt;
 begin
   for i := hi downto 1 do
   begin
     randomIndex := Random(i + 1);
-    BinarySwap(@values[randomIndex * size], @values[i * size], Cardinal(size));
+    BinarySwap(@values[randomIndex * size], @values[i * size], size);
   end;
 end;
 
@@ -12374,7 +12374,7 @@ begin
   end;
 end;
 
-class procedure TArray.Shuffle<T>(const values: Pointer; hi: Integer);
+class procedure TArray.Shuffle<T>(const values: Pointer; hi: NativeInt);
 begin
   {$R-}
   {$IFDEF DELPHIXE7_UP}
@@ -12398,7 +12398,7 @@ begin
           Shuffle_Int64(values, hi);
       end;
     tkString:
-      Shuffle_Ref(values, hi, Integer(SizeOf(T)));
+      Shuffle_Ref(values, hi, SizeOf(T));
     tkSet:
       case SizeOf(T) of
         1: Shuffle_Int8(values, hi);
@@ -12406,7 +12406,7 @@ begin
         4: Shuffle_Int32(values, hi);
         8: Shuffle_Int64(values, hi);
       else
-        Shuffle_Ref(values, hi, Integer(SizeOf(T)));
+        Shuffle_Ref(values, hi, SizeOf(T));
       end;
     tkMethod:
       Shuffle_Method(values, hi);
@@ -12423,7 +12423,7 @@ begin
           4: Shuffle_Int32(values, hi);
           8: Shuffle_Int64(values, hi);
         else
-          Shuffle_Ref(values, hi, Integer(SizeOf(T)))
+          Shuffle_Ref(values, hi, SizeOf(T))
         end
       else
         Shuffle_Generic<T>(Slice(TSlice<T>(values^), hi+1));
@@ -12435,7 +12435,7 @@ begin
         4: Shuffle_Int32(values, hi);
         8: Shuffle_Int64(values, hi);
       else
-        Shuffle_Ref(values, hi, Integer(SizeOf(T)));
+        Shuffle_Ref(values, hi, SizeOf(T));
       end;
   else
   {$ELSE}
@@ -12731,7 +12731,7 @@ begin
 end;
 
 class procedure TArray.DownHeap_Ref(values: PByte; hi: NativeInt;
-  const comparer: IComparerRef; i: NativeInt; size: Integer);
+  const comparer: IComparerRef; i, size: NativeInt);
 var
   child: NativeInt;
 begin
@@ -12746,13 +12746,13 @@ begin
     if comparer.Compare(values[i*size], values[child*size]) >= 0 then
       Break;
 
-    BinarySwap(@values[i*size], @values[child*size], Cardinal(size));
+    BinarySwap(@values[i*size], @values[child*size], size);
     i := child;
   end;
 end;
 
 class procedure TArray.HeapSort_Ref(values: PByte; hi: NativeInt;
-  const comparer: IComparerRef; size: Integer);
+  const comparer: IComparerRef; size: NativeInt);
 var
   i: NativeInt;
 begin
@@ -12760,13 +12760,13 @@ begin
     DownHeap_Ref(values, hi, comparer, i, size);
   for i := hi downto 1 do
   begin
-    BinarySwap(@values[i*size], @values[0], Cardinal(size));
+    BinarySwap(@values[i*size], @values[0], size);
     DownHeap_Ref(values, i-1, comparer, 0, size);
   end;
 end;
 
 class procedure TArray.InsertionSort_Ref(values: PByte; hi: NativeInt;
-  const comparer: IComparerRef; size: Integer);
+  const comparer: IComparerRef; size: NativeInt);
 var
   i, j: NativeInt;
 begin
@@ -12775,14 +12775,14 @@ begin
     j := i - 1;
     repeat
       if comparer.Compare(values[j*size], values[(j+1)*size]) <= 0 then Break;
-      BinarySwap(@values[j*size], @values[(j+1)*size], Cardinal(size));
+      BinarySwap(@values[j*size], @values[(j+1)*size], size);
       Dec(j);
     until j < 0;
   end;
 end;
 
 class function TArray.QuickSortPartition_Ref(values: PByte; hi: NativeInt;
-  const comparer: IComparerRef; size: Integer): NativeInt;
+  const comparer: IComparerRef; size: NativeInt): NativeInt;
 var
   left, right, middle, pivotIndex: NativeInt;
 begin
@@ -12790,14 +12790,14 @@ begin
   middle := right shr 1;
 
   if comparer.Compare(values[0], values[middle*size]) > 0 then
-    BinarySwap(@values[0], @values[middle*size], Cardinal(size));
+    BinarySwap(@values[0], @values[middle*size], size);
   if comparer.Compare(values[0], values[right*size]) > 0 then
-    BinarySwap(@values[0], @values[right*size], Cardinal(size));
+    BinarySwap(@values[0], @values[right*size], size);
   if comparer.Compare(values[middle*size], values[right*size]) > 0 then
-    BinarySwap(@values[middle*size], @values[right*size], Cardinal(size));
+    BinarySwap(@values[middle*size], @values[right*size], size);
 
   Dec(right);
-  BinarySwap(@values[middle*size], @values[right*size], Cardinal(size));
+  BinarySwap(@values[middle*size], @values[right*size], size);
 
   pivotIndex := right;
   left := 0;
@@ -12814,17 +12814,17 @@ begin
     if left >= right then
       Break;
 
-    BinarySwap(@values[left*size], @values[right*size], Cardinal(size));
+    BinarySwap(@values[left*size], @values[right*size], size);
   end;
 
   if left <> pivotIndex then
-    BinarySwap(@values[left*size], @values[pivotIndex*size], Cardinal(size));
+    BinarySwap(@values[left*size], @values[pivotIndex*size], size);
 
   Result := left;
 end;
 
 class procedure TArray.IntroSort_Ref(values: PByte; hi: NativeInt;
-  const comparer: IComparerRef; size: Integer; depthLimit: Integer);
+  const comparer: IComparerRef; size: NativeInt; depthLimit: Integer);
 var
   partitionSize, pivot: NativeInt;
 begin
