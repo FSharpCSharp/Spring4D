@@ -402,9 +402,26 @@ type
       predicate: Pointer; kind: TIteratorKind): IEnumerable<T>; overload; static;
   end;
 
-  TArrayIterator<T> = class(TIteratorBase<T>, IInterface,
+  TArrayIterator<T> = class(TEnumerableBase<T>, IInterface,
     IEnumerable<T>, IReadOnlyCollection<T>, IReadOnlyList<T>)
   private
+  {$REGION 'Nested Types'}
+    type
+      PEnumerator = ^TEnumerator;
+      TEnumerator = record
+        Vtable: Pointer;
+        RefCount: Integer;
+        TypeInfo: PTypeInfo;
+        Parent: TRefCountedObject;
+        fItems: TArray<T>;
+        fIndex, fCount: Integer;
+        function GetCurrent: T;
+        function MoveNext: Boolean;
+        class var Enumerator_Vtable: TEnumeratorVtable;
+      end;
+  {$ENDREGION}
+  private
+    fItems: TArray<T>;
   {$REGION 'Property Accessors'}
     function GetCount: Integer;
     function GetCountFast: Integer;
@@ -413,6 +430,10 @@ type
   public
     class function Create(const values: TArray<T>): IReadOnlyList<T>; overload; static;
     class function Create(const values: array of T): IReadOnlyList<T>; overload; static;
+
+  {$REGION 'Implements IEnumerable<T>'}
+    function GetEnumerator: IEnumerator<T>;
+  {$ENDREGION}
 
   {$REGION 'Implements IReadOnlyCollection<T>'}
     function CopyTo(var values: TArray<T>; index: Integer): Integer;
@@ -4031,8 +4052,6 @@ var
   iterator: TArrayIterator<T>;
 begin
   iterator := TArrayIterator<T>.Create;
-  iterator.fKind := TIteratorKind.Array;
-  iterator.fCount := DynArrayLength(values);
   iterator.fItems := values;
   Result := iterator;
 end;
@@ -4043,11 +4062,9 @@ var
   count: Integer;
 begin
   iterator := TArrayIterator<T>.Create;
-  iterator.fKind := TIteratorKind.Array;
   count := Length(values);
   if count > 0 then
   begin
-    iterator.fCount := count;
     SetLength(iterator.fItems, count);
     if TType.IsManaged<T> then
       MoveManaged(@values[0], @iterator.fItems[0], TypeInfo(T), count)
@@ -4069,29 +4086,39 @@ end;
 
 function TArrayIterator<T>.GetCount: Integer;
 begin
-  Result := fCount;
+  Result := DynArrayLength(fItems);
 end;
 
 function TArrayIterator<T>.GetCountFast: Integer;
 begin
-  Result := fCount;
+  Result := DynArrayLength(fItems);
+end;
+
+function TArrayIterator<T>.GetEnumerator: IEnumerator<T>;
+begin
+  with PEnumerator(TEnumeratorBlock.Create(@Result, @TEnumerator.Enumerator_Vtable,
+    TypeInfo(TEnumerator), @TEnumerator.GetCurrent, @TEnumerator.MoveNext))^ do
+  begin
+    fItems := Self.fItems;
+    fCount := DynArrayLength(fItems);
+  end;
 end;
 
 function TArrayIterator<T>.GetItem(index: Integer): T;
 begin
-  CheckIndex(index, fCount);
+  CheckIndex(index, DynArrayLength(fItems));
 
   Result := fItems[index];
 end;
 
 function TArrayIterator<T>.IndexOf(const item: T): Integer;
 begin
-  Result := IndexOf(item, 0, fCount);
+  Result := IndexOf(item, 0, DynArrayLength(fItems));
 end;
 
 function TArrayIterator<T>.IndexOf(const item: T; index: Integer): Integer;
 begin
-  Result := IndexOf(item, index, fCount - index);
+  Result := IndexOf(item, index, DynArrayLength(fItems) - index);
 end;
 
 function TArrayIterator<T>.IndexOf(const item: T; index, count: Integer): Integer;
@@ -4099,13 +4126,29 @@ var
   comparer: Pointer;
   i: Integer;
 begin
-  CheckRange(index, count, fCount);
+  CheckRange(index, count, DynArrayLength(fItems));
 
   comparer := _LookupVtableInfo(giEqualityComparer, GetElementType, SizeOf(T));
   for i := index to index + count - 1 do
     if IEqualityComparer<T>(comparer).Equals(fItems[i], item) then
       Exit(i);
   Result := -1;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TArrayIterator<T>.TEnumerator'}
+
+function TArrayIterator<T>.TEnumerator.GetCurrent: T;
+begin
+  Result := fItems[fIndex - 1];
+end;
+
+function TArrayIterator<T>.TEnumerator.MoveNext: Boolean;
+begin
+  Inc(fIndex);
+  Result := fIndex <= fCount;
 end;
 
 {$ENDREGION}
@@ -4119,8 +4162,6 @@ var
   iterator: TFoldedArrayIterator<T>;
 begin
   iterator := TFoldedArrayIterator<T>.Create;
-  iterator.fKind := TIteratorKind.Array;
-  iterator.fCount := DynArrayLength(values);
   iterator.fItems := values;
   iterator.fElementType := elementType;
   Result := iterator;
@@ -4132,10 +4173,8 @@ var
   iterator: TFoldedArrayIterator<T>;
 begin
   iterator := TFoldedArrayIterator<T>.Create;
-  iterator.fKind := TIteratorKind.Array;
   if count > 0 then
   begin
-    iterator.fCount := count;
     SetLength(iterator.fItems, count);
     if TType.IsManaged<T> then
       MoveManaged(values, @iterator.fItems[0], TypeInfo(T), count)
