@@ -899,8 +899,8 @@ type
     Vtable: array[0..6] of Pointer =
     (
       @NopQueryInterface,
-      @NopAddRef,
-      @NopRelease,
+      @NopRef,
+      @NopRef,
       @TDefaultConverter.ConvertTo,
       @TDefaultConverter.ConvertToParam,
       @TDefaultConverter.TryConvertTo,

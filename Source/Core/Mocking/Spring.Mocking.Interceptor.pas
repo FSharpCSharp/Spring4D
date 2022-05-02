@@ -261,8 +261,8 @@ const
   EventMock_Vtable: array[0..16] of Pointer =
   (
     @NopQueryInterface,
-    @NopAddref,
-    @NopRelease,
+    @NopRef,
+    @NopRef,
     // IEvent
     @GetBoolean,            // GetCanInvoke
     @GetBoolean,            // GetEnabled

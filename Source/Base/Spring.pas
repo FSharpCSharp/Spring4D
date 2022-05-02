@@ -56,8 +56,7 @@ uses
 
   {$REGION 'Interface helper routines'}
 
-function NopAddRef(inst: Pointer): Integer; stdcall;
-function NopRelease(inst: Pointer): Integer; stdcall;
+function NopRef(inst: Pointer): Integer; stdcall;
 function NopQueryInterface(inst: Pointer; const IID: TGUID; out Obj): HResult; stdcall;
 function RecAddRef(inst: Pointer): Integer; stdcall;
 procedure IntfAssign(const source: IInterface; var target: IInterface);
@@ -4369,22 +4368,17 @@ asm
 end;
 {$ENDIF}
 
-function NopAddRef(inst: Pointer): Integer; stdcall; //FI:O804
+function NopRef(inst: Pointer): Integer; //FI:O804
 begin
   Result := -1;
 end;
 
-function NopRelease(inst: Pointer): Integer; stdcall; //FI:O804
-begin
-  Result := -1;
-end;
-
-function NopQueryInterface(inst: Pointer; const IID: TGUID; out Obj): HResult; stdcall; //FI:O804
+function NopQueryInterface(inst: Pointer; const IID: TGUID; out Obj): HResult; //FI:O804
 begin
   Result := E_NOINTERFACE;
 end;
 
-function RecAddRef(inst: Pointer): Integer; stdcall;
+function RecAddRef(inst: Pointer): Integer;
 type
   PIntfRef = ^TIntfRef;
   TIntfRef = record

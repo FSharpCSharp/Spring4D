@@ -216,16 +216,6 @@ begin
   Result.Size := size;
 end;
 
-function NopQueryInterface(inst: Pointer; const IID: TGUID; out Obj): HResult; stdcall;
-begin
-  Result := E_NOINTERFACE;
-end;
-
-function NopRef(inst: Pointer): Integer; stdcall;
-begin
-  Result := -1;
-end;
-
 function TComparerInstance.AddRef: Integer; stdcall;
 begin
   Result := AtomicIncrement(RefCount);
