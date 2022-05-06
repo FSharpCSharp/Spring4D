@@ -111,11 +111,14 @@ type
       const serviceName: string = '');
     procedure RegisterDefault(const model: TComponentModel; serviceType: PTypeInfo);
 
+    procedure RegisterFactory(const model: TComponentModel); overload;
     procedure RegisterFactory(const model: TComponentModel;
-      paramResolution: TParamResolution = TParamResolution.ByName); overload;
+      paramResolution: TParamResolution); overload;
+    procedure RegisterFactory(const model: TComponentModel;
+      const resolvedServiceName: string); overload;
     procedure RegisterFactory(const model: TComponentModel;
       const resolvedServiceName: string;
-      paramResolution: TParamResolution = TParamResolution.ByName); overload;
+      paramResolution: TParamResolution); overload;
 
     procedure UnregisterAll;
 

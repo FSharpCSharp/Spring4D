@@ -81,13 +81,17 @@ type
     function RegisterDecorator<TService; TDecorator: TService>(
       const condition: Predicate<TComponentModel>): TRegistration; overload; inline;
 
+    function RegisterFactory<TFactoryType: IInterface>: TRegistration; overload;
     function RegisterFactory<TFactoryType: IInterface>(
-      paramResolution: TParamResolution = TParamResolution.ByName): TRegistration; overload;
+      paramResolution: TParamResolution): TRegistration; overload;
+    function RegisterFactory<TFactoryType: IInterface>(const serviceName: string): TRegistration; overload;
     function RegisterFactory<TFactoryType: IInterface>(const serviceName: string;
-      paramResolution: TParamResolution = TParamResolution.ByName): TRegistration; overload;
+      paramResolution: TParamResolution): TRegistration; overload;
+    function RegisterFactory<TFactoryType: IInterface>(const serviceName: string;
+      const resolvedServiceName: string): TRegistration; overload;
     function RegisterFactory<TFactoryType: IInterface>(const serviceName: string;
       const resolvedServiceName: string;
-      paramResolution: TParamResolution = TParamResolution.ByName): TRegistration; overload;
+      paramResolution: TParamResolution): TRegistration; overload;
 
     function RegisterInstance<TServiceType>(const instance: TServiceType;
       const serviceName: string = ''): TRegistration; overload; inline;
@@ -369,6 +373,12 @@ begin
   DecoratorResolver.AddDecorator(TypeInfo(TService), Result.Model, condition);
 end;
 
+function TContainer.RegisterFactory<TFactoryType>: TRegistration;
+begin
+  Result := RegisterType(TypeInfo(TFactoryType), TypeInfo(TFactoryType));
+  Result := Result.AsFactory;
+end;
+
 function TContainer.RegisterFactory<TFactoryType>(
   paramResolution: TParamResolution): TRegistration;
 begin
@@ -377,11 +387,25 @@ begin
 end;
 
 function TContainer.RegisterFactory<TFactoryType>(
+  const serviceName: string): TRegistration;
+begin
+  Result := RegisterType(TypeInfo(TFactoryType), TypeInfo(TFactoryType), serviceName);
+  Result := Result.AsFactory;
+end;
+
+function TContainer.RegisterFactory<TFactoryType>(
   const serviceName: string;
   paramResolution: TParamResolution): TRegistration;
 begin
   Result := RegisterType(TypeInfo(TFactoryType), TypeInfo(TFactoryType), serviceName);
   Result := Result.AsFactory(paramResolution);
+end;
+
+function TContainer.RegisterFactory<TFactoryType>(const serviceName,
+  resolvedServiceName: string): TRegistration;
+begin
+  Result := RegisterType(TypeInfo(TFactoryType), TypeInfo(TFactoryType), serviceName);
+  Result := Result.AsFactory(resolvedServiceName);
 end;
 
 function TContainer.RegisterFactory<TFactoryType>(const serviceName,
