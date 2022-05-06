@@ -2514,7 +2514,7 @@ begin
   CheckException(EArgumentNilException,
     procedure
     begin
-      source.SingleOrDefault(nil);;
+      source.SingleOrDefault(nil);
     end);
 end;
 

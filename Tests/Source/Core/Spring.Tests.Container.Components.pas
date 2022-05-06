@@ -1079,7 +1079,7 @@ end;
 
 constructor TCollectionServiceD.Create(const collectionItem: ICollectionItem);
 begin
-  inherited Create;;
+  inherited Create;
   SetLength(fCollectionItems, 1);
   fCollectionItems[0] := collectionItem;
 end;

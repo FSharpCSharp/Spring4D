@@ -8254,32 +8254,32 @@ end;
 
 class procedure RaiseHelper.MoreThanOneElement;
 begin
-  raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneElement) at ReturnAddress;;
+  raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneElement) at ReturnAddress;
 end;
 
 class procedure RaiseHelper.MoreThanOneMatch;
 begin
-  raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneMatchingElement) at ReturnAddress;;
+  raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneMatchingElement) at ReturnAddress;
 end;
 
 class procedure RaiseHelper.NoClassType(t: PTypeInfo);
 begin
-  raise EInvalidCast.CreateResFmt(@SNotClassType, [t.TypeName]) at ReturnAddress;;
+  raise EInvalidCast.CreateResFmt(@SNotClassType, [t.TypeName]) at ReturnAddress;
 end;
 
 class procedure RaiseHelper.NoElements;
 begin
-  raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements) at ReturnAddress;;
+  raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements) at ReturnAddress;
 end;
 
 class procedure RaiseHelper.NoMatch;
 begin
-  raise EInvalidOperationException.CreateRes(@SSequenceContainsNoMatchingElement) at ReturnAddress;;
+  raise EInvalidOperationException.CreateRes(@SSequenceContainsNoMatchingElement) at ReturnAddress;
 end;
 
 class procedure RaiseHelper.NotSupported;
 begin
-  raise ENotSupportedException.Create('') at ReturnAddress;;
+  raise ENotSupportedException.Create('') at ReturnAddress;
 end;
 
 class function RaiseHelper.EnumFailedVersion: Boolean;

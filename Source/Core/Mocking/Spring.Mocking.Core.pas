@@ -279,7 +279,7 @@ var
 begin
   action := TExceptMockAction.Create;
   action.ExceptionClass := exceptionClass;
-  action.Message := Format(msg, args);;
+  action.Message := Format(msg, args);
   fInterceptor.Executes(action);
   Result := Self;
 end;

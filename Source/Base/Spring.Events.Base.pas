@@ -167,7 +167,7 @@ begin
   if fNotificationHandler = nil then
   begin
     notificationHandler := TNotificationHandler.Create(nil);
-    notificationHandler.OnNotification := HandleNotification;;
+    notificationHandler.OnNotification := HandleNotification;
     if AtomicCmpExchange(Pointer(fNotificationHandler), Pointer(notificationHandler), nil) <> nil then
       notificationHandler.Free;
   end;
