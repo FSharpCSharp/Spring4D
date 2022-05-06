@@ -378,14 +378,12 @@ function TDependencyResolver.Resolve(const context: ICreationContext;
   const dependencies: TArray<TDependencyModel>;
   const arguments: TArray<TValue>): TArray<TValue>;
 var
-  hasArgument: Boolean;
   i: Integer;
 begin
-  hasArgument := Length(arguments) > 0;
-  if hasArgument and (Length(arguments) <> Length(dependencies)) then
+  if Assigned(arguments) and (Length(arguments) <> Length(dependencies)) then
     raise EResolveException.CreateRes(@SUnsatisfiedResolutionArgumentCount);
   SetLength(Result, Length(dependencies));
-  if hasArgument then
+  if Assigned(arguments) then
     for i := Low(dependencies) to High(dependencies) do
       Result[i] := Resolve(context, dependencies[i], arguments[i])
   else

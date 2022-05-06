@@ -276,23 +276,17 @@ var
   params: TArray<TRttiParameter>;
   i: Integer;
 begin
-  case paramResolution of
-    TParamResolution.ByName:
-    begin
-      SetLength(Result, Length(args) - 1);
-      params := method.GetParameters;
-      for i := 0 to High(params) do
+  SetLength(Result, Length(args) - 1);
+  params := method.GetParameters;
+  for i := 0 to High(params) do
+    case paramResolution of
+      TParamResolution.ByName:
         Result[i] := TNamedValue.Create(args[i + 1], params[i].Name);
+      TParamResolution.ByType:
+        Result[i] := TTypedValue.Create(args[i + 1], params[i].ParamType.Handle);
+    else
+      Result[i] := args[i + 1];
     end;
-    TParamResolution.ByType:
-    begin
-      SetLength(Result, Length(args) - 1);
-      for i := 1 to High(args) do
-        Result[i - 1] := TTypedValue.Create(args[i], args[i].TypeInfo);
-    end
-  else
-    Result := Copy(args, 1);
-  end;
 end;
 
 procedure TComponentRegistry.InternalRegisterFactory(
