@@ -253,7 +253,7 @@ end;
 
 function GetInvoke(inst: Pointer): TMethodPointer;
 begin
-  RaiseHelper.NotSupported;
+  raise ENotSupportedException.Create('');
 end;
 
 class function TMockInterceptor.CreateEvent(const returnType: PTypeInfo): TMockAction;
