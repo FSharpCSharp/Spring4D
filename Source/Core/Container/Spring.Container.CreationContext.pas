@@ -99,12 +99,14 @@ end;
 
 destructor TCreationContext.Destroy;
 var
-  instance: TValue;
+  instance: TPair<TComponentModel, TValue>;
   interfacedObject: TInterfacedObject;
 begin
-  for instance in fPerResolveInstances.Values do
-    if instance.TryAsType(TypeInfo(TInterfacedObject), interfacedObject) and Assigned(interfacedObject) then
-      AtomicDecrement(TInterfacedObjectAccess(interfacedObject).fRefCount);
+  for instance in fPerResolveInstances do
+    if (instance.Key.LifetimeType = TLifetimeType.PerResolve)
+      and instance.Value.TryAsType(TypeInfo(TInterfacedObject), interfacedObject)
+      and Assigned(interfacedObject) then
+      TInterfacedObjectAccess(interfacedObject)._Release;
   inherited Destroy;
 end;
 
@@ -131,8 +133,10 @@ begin
   fLock.BeginWrite;
   try
     fPerResolveInstances.Add(model, instance);
-    if instance.TryAsType(TypeInfo(TInterfacedObject), interfacedObject) and Assigned(interfacedObject) then
-      AtomicIncrement(TInterfacedObjectAccess(interfacedObject).fRefCount);
+    if (model.LifetimeType = TLifetimeType.PerResolve)
+      and instance.TryAsType(TypeInfo(TInterfacedObject), interfacedObject)
+      and Assigned(interfacedObject) then
+      TInterfacedObjectAccess(interfacedObject)._AddRef;
   finally
     fLock.EndWrite;
   end;
