@@ -1051,10 +1051,13 @@ var
   t: TEventHandler;
 begin
   t := TEventHandler.Create;
-  e.Add(t.HandleInt64);
-  e.Invoke(42);
-  CheckTrue(t.fClassHandlerInvoked);
-  t.Free;
+  try
+    e.Add(t.HandleInt64);
+    e.Invoke(42);
+    CheckTrue(t.fClassHandlerInvoked);
+  finally
+    t.Free;
+  end;
 end;
 
 procedure TTestMulticastEvent.TestInvoke;

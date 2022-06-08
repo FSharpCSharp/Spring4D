@@ -408,6 +408,7 @@ begin
   StackSize := 0;
 {$ELSE}
   StackSize := PointerSize; // Self in stack
+  RegisterFlag := 0;
 {$ENDIF}
 
   P := @typeData.ParamList;

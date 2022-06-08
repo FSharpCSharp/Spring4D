@@ -682,6 +682,7 @@ asm
 end;
 {$ELSE}
 asm
+  .params 2
   mov    rcx, rdx
   mov    rdx, r8
   call   System.@PStrCmp
