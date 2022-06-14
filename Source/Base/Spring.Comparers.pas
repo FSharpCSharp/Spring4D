@@ -46,6 +46,20 @@ type
     class function Default: IEqualityComparer<T>; static;
   end;
 
+  TStringComparer = record
+  private type
+    TIStringComparer = record
+      class operator Implicit(const value: TIStringComparer): IEqualityComparer<string>;
+      class operator Implicit(const value: TIStringComparer): IComparer<string>;
+    end;
+  public
+    class operator Implicit(const value: TStringComparer): IEqualityComparer<string>;
+    class operator Implicit(const value: TStringComparer): IComparer<string>;
+
+    class function Ordinal: TStringComparer; static; //inline;
+    class function OrdinalIgnoreCase: TIStringComparer; static; //inline;
+  end;
+
   THashFunction = function(const key; len: Cardinal; seed: Integer = 0): Integer;
 
 function _LookupVtableInfo(intf: TDefaultGenericInterface; info: PTypeInfo; size: Integer): Pointer;
@@ -62,6 +76,9 @@ uses
   SyncObjs,
   SysUtils,
   Variants,
+  {$IFDEF MSWINDOWS}
+  Windows,
+  {$ENDIF}
   Spring,
   Spring.HashTable;
 
@@ -717,6 +734,95 @@ end;
 function GetHashCode_String(const inst: Pointer; const value: Pointer): Integer;
 begin
   Result := DefaultHashFunction(PByte(value)[1], PByte(value)[0]);
+end;
+
+function Compare_String_CaseInsensitive(const inst: Pointer; const left, right: string): Integer;
+{$IFDEF MSWINDOWS}
+var
+  leftLen, rightLen: NativeInt;
+{$ENDIF}
+begin
+  Result := 0;
+  if Pointer(left) = Pointer(right) then Exit;
+  {$IFDEF MSWINDOWS}
+  leftLen := IntPtr(left);
+  if leftLen <> 0 then
+    leftLen := PCardinal(@PByte(left)[-4])^;
+  rightLen := IntPtr(right);
+  if rightLen <> 0 then
+    rightLen := PCardinal(@PByte(right)[-4])^;
+  Result := CompareString(LOCALE_USER_DEFAULT, NORM_IGNORECASE, Pointer(left), leftLen, Pointer(right), rightLen);
+  Result := Result - CSTR_EQUAL;
+  {$ELSE}
+  Result := AnsiCompareText(left, right);
+  {$ENDIF}
+end;
+
+function Equals_String_CaseInsensitive(const inst: Pointer; const left, right: string): Boolean;
+var
+{$IFDEF MSWINDOWS}
+  leftLen, rightLen: NativeInt;
+{$ENDIF}
+  res: Integer;
+begin
+  Result := True;
+  if Pointer(left) = Pointer(right) then Exit;
+  {$IFDEF MSWINDOWS}
+  leftLen := IntPtr(left);
+  if leftLen <> 0 then
+    leftLen := PCardinal(@PByte(left)[-4])^;
+  rightLen := IntPtr(right);
+  if rightLen <> 0 then
+    rightLen := PCardinal(@PByte(right)[-4])^;
+  res := CompareString(LOCALE_USER_DEFAULT, NORM_IGNORECASE, Pointer(left), leftLen, Pointer(right), rightLen);
+  Result := res = CSTR_EQUAL;
+  {$ELSE}
+  res := AnsiCompareText(left, right);
+  Result := res = 0;
+  {$ENDIF}
+end;
+
+function GetHashCode_String_CaseInsensitive(const inst: Pointer; const value: string): Integer;
+
+  function GetHashCodeIgnoreCaseSlow(const value: string): Integer;
+  var
+    s: string;
+  begin
+    s := AnsiLowerCase(value);
+    Result := DefaultHashFunction(Pointer(s)^, PCardinal(@PByte(s)[-4])^ * SizeOf(Char));
+  end;
+
+const
+  NotAsciiMask = $FF80FF80;
+  LowerCaseMask = $00200020;
+  MaxBufferSize = 2048;
+label
+  NotAscii;
+var
+  i: NativeInt;
+  c: Integer;
+  buffer: array[0..MaxBufferSize-1] of Char;
+  len: record value: Cardinal; end;
+begin
+  if value <> '' then
+  begin
+    len.value := PCardinal(@PByte(value)[-4])^;
+    if len.value <= MaxBufferSize then
+    begin
+      for i := 0 to Pred(len.value) div 2 do
+      begin
+        c := PIntegerArray(value)[i];
+        if c and NotAsciiMask <> 0 then goto NotAscii;
+        PIntegerArray(@buffer)[i] := c or LowerCaseMask;
+      end;
+      Result := DefaultHashFunction(buffer[0], len.value * SizeOf(Char));
+    end
+    else
+    NotAscii:
+      Result := GetHashCodeIgnoreCaseSlow(value);
+  end
+  else
+    Result := DefaultHashFunction(Pointer(value)^, 0);
 end;
 
 function Equals_Class(const inst: Pointer; const left, right: TObject): Boolean;
@@ -1400,6 +1506,23 @@ const
     GetHashCode: @GetHashCode_String
   );
 
+  Comparer_String_CaseInsensitive: IComparer = (
+    VTable: @Comparer_String_CaseInsensitive.QueryInterface;
+    QueryInterface: @NopQueryInterface;
+    AddRef: @NopRef;
+    Release: @NopRef;
+    Compare: @Compare_String_CaseInsensitive
+  );
+
+  EqualityComparer_String_CaseInsensitive: IEqualityComparer = (
+    VTable: @EqualityComparer_String_CaseInsensitive.QueryInterface;
+    QueryInterface: @NopQueryInterface;
+    AddRef: @NopRef;
+    Release: @NopRef;
+    Equals: @Equals_String_CaseInsensitive;
+    GetHashCode: @GetHashCode_String_CaseInsensitive
+  );
+
   Comparer_Class: IComparer = (
     VTable: @Comparer_Class.QueryInterface;
     QueryInterface: @NopQueryInterface;
@@ -1677,6 +1800,34 @@ begin
   end
   else
     Result := Selector_Binary(intf, info, size);
+end;
+
+class operator TStringComparer.TIStringComparer.Implicit(const value: TIStringComparer): IComparer<string>;
+begin
+  Result := IComparer<string>(@Comparer_String_CaseInsensitive);
+end;
+
+class operator TStringComparer.TIStringComparer.Implicit(const value: TIStringComparer): IEqualityComparer<string>;
+begin
+  Result := IEqualityComparer<string>(@EqualityComparer_String_CaseInsensitive);
+end;
+
+class operator TStringComparer.Implicit(const value: TStringComparer): IComparer<string>;
+begin
+  Result := IComparer<string>(_LookupVtableInfo(giComparer, TypeInfo(string), Integer(SizeOf(string))));
+end;
+
+class operator TStringComparer.Implicit(const value: TStringComparer): IEqualityComparer<string>;
+begin
+  Result := IEqualityComparer<string>(_LookupVtableInfo(giEqualityComparer, TypeInfo(string), Integer(SizeOf(string))));
+end;
+
+class function TStringComparer.Ordinal: TStringComparer;
+begin
+end;
+
+class function TStringComparer.OrdinalIgnoreCase: TIStringComparer;
+begin
 end;
 
 function Equals_TypeInfo(const inst: Pointer; const left, right: PPTypeInfo): Boolean;
