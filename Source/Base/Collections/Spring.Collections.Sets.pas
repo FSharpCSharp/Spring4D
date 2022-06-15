@@ -115,6 +115,7 @@ type
 
   {$REGION 'Implements ICollection<T>'}
     function Add(const item: T): Boolean;
+    procedure AddRange(const values: array of T); overload;
     function Remove(const item: T): Boolean;
     function Extract(const item: T): T;
     procedure Clear;
@@ -417,6 +418,22 @@ begin
   entry.Item := item;
   DoNotify(item, caAdded);
   Result := True;
+end;
+
+procedure THashSet<T>.AddRange(const values: array of T);
+var
+  i: NativeInt;
+  entry: PItem;
+begin
+  fHashTable.Capacity := fHashTable.Count + Length(values);
+  for i := 0 to High(values) do
+  begin
+    entry := IHashTable<T>(@fHashTable).Find(values[i], IgnoreExisting or InsertNonExisting);
+    if not Assigned(entry) then Continue;
+    entry.Item := values[i];
+    if Assigned(Notify) then
+      Notify(Self, entry.Item, caAdded);
+  end;
 end;
 
 procedure THashSet<T>.Clear;
