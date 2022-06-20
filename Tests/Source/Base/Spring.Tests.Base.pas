@@ -3914,7 +3914,7 @@ begin
     SetLength(values, i);
     for j := 0 to i - 1 do
     begin
-      values[j].HashCode := BobJenkinsHash(j, SizeOf(j), 666);
+      values[j].HashCode := DefaultHashFunction(j, SizeOf(j), 666);
       values[j].Value := j;
       values[j].DoubleValue :=j;
       PDouble(@values[j].Stuff[0])^ := 2 * j;
@@ -3924,7 +3924,7 @@ begin
     TArray.StableSort<TUnmanagedRec>(values, comparison);
     for j := 0 to i - 1 do
     begin
-      CheckEquals(BobJenkinsHash(j, SizeOf(j), 666), values[j].HashCode);
+      CheckEquals(DefaultHashFunction(j, SizeOf(j), 666), values[j].HashCode);
       CheckEquals(j, values[j].Value);
       CheckEquals(j, values[j].DoubleValue);
       CheckEquals(2 * j, PDouble(@values[j].Stuff[0])^);
@@ -3960,7 +3960,7 @@ begin
     SetLength(values, i);
     for j := 0 to i - 1 do
     begin
-      values[j].HashCode := BobJenkinsHash(j, SizeOf(j), 666);
+      values[j].HashCode := DefaultHashFunction(j, SizeOf(j), 666);
       values[j].Value := j;
       values[j].DoubleValue :=j;
       PDouble(@values[j].Stuff[0])^ := 2 * j;
@@ -3971,7 +3971,7 @@ begin
     TArray.StableSort<TManagedRec>(values, comparison);
     for j := 0 to i - 1 do
     begin
-      CheckEquals(BobJenkinsHash(j, SizeOf(j), 666), values[j].HashCode);
+      CheckEquals(DefaultHashFunction(j, SizeOf(j), 666), values[j].HashCode);
       CheckEquals(j, values[j].Value);
       CheckEquals(j, values[j].DoubleValue);
       CheckEquals(2 * j, PDouble(@values[j].Stuff[0])^);
@@ -4010,9 +4010,9 @@ const
      These conditions guarantee that TimSort merges all x_j's one by one
      (resulting in X) using only merges on the second-to-last element.
      @param X  The sum of the sequence that should be added to runs. *)
-  procedure GenerateJDKWrongElem(runs: IList<Int64>; minRun: Integer; X: Int64);
+  procedure GenerateJDKWrongElem(const runs: IList<Integer>; minRun, X: Integer);
   var
-    newTotal: Int64;
+    newTotal: Integer;
   begin
     while X >= 2 * minRun + 1 do
     begin
@@ -4047,9 +4047,9 @@ const
      but the x_{i,j}'s are merged (by TimSort.mergeCollapse)
      into an X_i that violates the invariant.
      @param X  The sum of all run lengths that will be added to runs. *)
-  procedure RunsJDKWorstCase(runs: IList<Int64>; minRun: Integer);
+  procedure RunsJDKWorstCase(const runs: IList<Integer>; minRun: Integer);
   var
-    runningTotal, Y, X: Int64;
+    runningTotal, Y, X: Integer;
   begin
     runningTotal := 0;
     Y := minRun + 4;
@@ -4076,10 +4076,9 @@ const
     runs.Add(len - runningTotal);
   end;
 
-  function CreateArray(runs: IList<Int64>): TArray<Int64>;
+  function CreateArray(const runs: IList<Integer>): TArray<Integer>;
   var
-    endRun: Integer;
-    runLen: Int64;
+    endRun, runLen: Integer;
   begin
     SetLength(Result, len);
     endRun := -1;
@@ -4093,14 +4092,14 @@ const
 
 var
   minRun: Integer;
-  runs: IList<Int64>;
-  values: TArray<Int64>;
+  runs: IList<Integer>;
+  values: TArray<Integer>;
 begin
   minRun := MinRunLength(len);
-  runs := TCollections.CreateList<Int64>;
+  runs := TCollections.CreateList<Integer>;
   RunsJDKWorstCase(runs, minRun);
   values := CreateArray(runs);
-  TArray.StableSort<Int64>(values);
+  TArray.StableSort<Integer>(values);
   Pass;
 end;
 {$ENDIF}

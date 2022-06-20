@@ -4748,7 +4748,7 @@ begin
     SetLength(input, inputLen);
     for i := 0 to inputLen - 1 do
       input[i] := Random(MAX_VALUE) + 1;
-    input := TEnumerable.Distinct<Integer>(TEnumerable.From<Integer>(input)).ToArray;
+    input := TCollections.CreateSet<Integer>(input).ToArray;
     Test(input);
   end;
 end;
@@ -4776,7 +4776,7 @@ end;
 procedure TTestRedBlackTreeIntegerString.CheckKeyValuePair(expectedKey: Integer; const pair: TKeyValuePair; const msg: string);
 begin
   CheckEquals(expectedKey, pair.Key, msg);
-  CheckEquals(IntToStr(expectedKey), pair.Value, msg);
+  CheckEquals(expectedKey, StrToInt(pair.Value), msg);
 end;
 
 procedure TTestRedBlackTreeIntegerString.CheckKeyValuePairs(const expectedKeys: IEnumerable<Integer>; const msg: string);
@@ -4952,7 +4952,7 @@ begin
     SetLength(input, inputLen);
     for i := 0 to inputLen - 1 do
       input[i] := Random(MAX_VALUE) + 1;
-    input := TEnumerable.Distinct<Integer>(TEnumerable.From<Integer>(input)).ToArray;
+    input := TCollections.CreateSet<Integer>(input).ToArray;
     Test(input);
   end;
 end;
