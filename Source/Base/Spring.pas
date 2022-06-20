@@ -2245,7 +2245,7 @@ type
   TPropertyChangedEvent = procedure(Sender: TObject;
     const EventArgs: IPropertyChangedEventArgs) of object;
 
-  IPropertyChangedEvent = IEvent<TPropertyChangedEvent>;
+  IPropertyChangedEvent = IInvokableEvent<TPropertyChangedEvent>;
 
   INotifyPropertyChanged = interface
     ['{A517EC98-C651-466B-8290-F7EE96877E03}']
