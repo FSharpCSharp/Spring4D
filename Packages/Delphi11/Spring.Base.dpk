@@ -41,6 +41,7 @@ requires
 contains
   Spring in '..\..\Source\Base\Spring.pas',
   Spring.Collections in '..\..\Source\Base\Collections\Spring.Collections.pas',
+  Spring.Collections.Adapters in '..\..\Source\Base\Collections\Spring.Collections.Adapters.pas',
   Spring.Collections.Base in '..\..\Source\Base\Collections\Spring.Collections.Base.pas',
   Spring.Collections.Dictionaries in '..\..\Source\Base\Collections\Spring.Collections.Dictionaries.pas',
   Spring.Collections.Events in '..\..\Source\Base\Collections\Spring.Collections.Events.pas',
