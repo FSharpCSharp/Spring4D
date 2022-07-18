@@ -11750,72 +11750,68 @@ procedure BinarySwap(left, right: Pointer; size: NativeInt);
 {$IFDEF ASSEMBLER}
 {$IFDEF CPUX64}
 asm
-  mov       rax, rcx
-  mov       rcx, r8
-  mov       r8,  rsi
-  mov       r9,  rbx
-  mov       rsi, rcx
-  and       rsi, 15
-  shr       rcx, 4
+  mov       rax, r8
+  and       r8, 15
+  and       rax, -16
   jz        @@Swap8Byte
+  add       rcx, rax
+  add       rdx, rax
+  neg       rax
 
+  .align 16
 @@Swap16Byte:
-  movdqu    xmm0, [rax]
-  movdqu    xmm1, [rdx]
-  movdqu    [rax], xmm1
-  movdqu    [rdx], xmm0
+  movdqu    xmm0, [rcx+rax]
+  movdqu    xmm1, [rdx+rax]
+  movdqu    [rcx+rax], xmm1
+  movdqu    [rdx+rax], xmm0
   add       rax, 16
-  add       rdx, 16
-  dec       rcx
-  jnz       @@Swap16Byte
+  jl        @@Swap16Byte
 
 @@Swap8Byte:
-  test      rsi, rsi
-  jz        @@End
-  test      rsi, 8
-  jz        @@Swap4Byte
-  mov       rbx, [rax]
-  mov       rcx, [rdx]
-  mov       [rax], rcx
-  mov       [rdx], rbx
-  xor       rsi, 8
-  jz        @@End
-  add       rax, 8
+  test      r8, r8
+  jz        @@Exit
+  cmp       r8, 8
+  jl        @@Swap4Byte
+  mov       rax, [rcx]
+  mov       r9, [rdx]
+  mov       [rcx], r9
+  mov       [rdx], rax
+  sub       r8, 8
+  jz        @@Exit
+  add       rcx, 8
   add       rdx, 8
 
 @@Swap4Byte:
-  test      rsi, 4
-  jz        @@Swap2Byte
-  mov       ebx,  [rax]
-  mov       ecx, [rdx]
-  mov       [rax], ecx
-  mov       [rdx], ebx
-  xor       rsi, 4
-  jz        @@End
-  add       rax, 4
+  cmp       r8, 4
+  jl        @@Swap2Byte
+  mov       eax, [rcx]
+  mov       r9d, [rdx]
+  mov       [rcx], r9d
+  mov       [rdx], eax
+  sub       r8, 4
+  jz        @@Exit
+  add       rcx, 4
   add       rdx, 4
 
 @@Swap2Byte:
-  test      rsi, 2
-  jz        @@Swap1Byte
-  mov       bx, [rax]
-  mov       cx, [rdx]
-  mov       [rax], cx
-  mov       [rdx], bx
-  xor       rsi, 2
-  jz        @@End
-  add       rax, 2
+  cmp       r8, 2
+  jl        @@Swap1Byte
+  movzx     eax, word ptr [rcx]
+  movzx     r9d, word ptr [rdx]
+  mov       [rcx], r9w
+  mov       [rdx], ax
+  sub       r8, 2
+  jz        @@Exit
+  add       rcx, 2
   add       rdx, 2
 
 @@Swap1Byte:
-  mov       bl, [rax]
-  mov       cl, [rdx]
-  mov       [rax], cl
-  mov       [rdx], bl
+  movzx     eax, byte ptr [rcx]
+  movzx     r9d, byte ptr [rdx]
+  mov       [rcx], r9b
+  mov       [rdx], al
 
-@@End:
-  mov       rbx, r9
-  mov       rsi, r8
+@@Exit:
 end;
 {$ELSE}
 asm
@@ -11823,64 +11819,66 @@ asm
   push      ebx
   mov       esi, ecx
   and       esi, 15
-  shr       ecx, 4
+  and       ecx, -16
   jz        @@Swap8Byte
+  add       eax, ecx
+  add       edx, ecx
+  neg       ecx
 
+  .align 16
 @@Swap16Byte:
-  movdqu    xmm0, [eax]
-  movdqu    xmm1, [edx]
-  movdqu    [eax], xmm1
-  movdqu    [edx], xmm0
-  add       eax, 16
-  add       edx, 16
-  dec       ecx
-  jnz       @@Swap16Byte
+  movdqu    xmm0, [eax+ecx]
+  movdqu    xmm1, [edx+ecx]
+  movdqu    [eax+ecx], xmm1
+  movdqu    [edx+ecx], xmm0
+  add       ecx, 16
+  jl        @@Swap16Byte
 
 @@Swap8Byte:
   test      esi, esi
-  jz        @@End
-  test      esi, 8
-  jz        @@Swap4Byte
+  jz        @@Exit
+  cmp       esi, 8
+  jl        @@Swap4Byte
   movq      xmm0, [eax]
   movq      xmm1, [edx]
   movq      [eax], xmm1
   movq      [edx], xmm0
-  xor       esi, 8
-  jz        @@End
+  sub       esi, 8
+  jz        @@Exit
   add       eax, 8
   add       edx, 8
 
 @@Swap4Byte:
-  test      esi, 4
-  jz        @@Swap2Byte
+  cmp       esi, 4
+  jl        @@Swap2Byte
   mov       ebx, [eax]
   mov       ecx, [edx]
   mov       [eax], ecx
   mov       [edx], ebx
-  xor       esi, 4
-  jz        @@End
+  sub       esi, 4
+  jz        @@Exit
   add       eax, 4
   add       edx, 4
 
 @@Swap2Byte:
-  test      esi, 2
-  jz        @@Swap1Byte
-  mov       bx, [eax]
-  mov       cx, [edx]
+  cmp       esi, 2
+  jl        @@Swap1Byte
+  movzx     ebx, word ptr [eax]
+  movzx     ecx, word ptr [edx]
   mov       [eax], cx
   mov       [edx], bx
-  xor       esi, 2
-  jz        @@End
+  sub       esi, 2
+  jz        @@Exit
   add       eax, 2
   add       edx, 2
 
 @@Swap1Byte:
-  mov       bl, [eax]
-  mov       cl, [edx]
+  movzx     ebx, byte ptr [eax]
+  movzx     ecx, byte ptr [edx]
   mov       [eax], cl
   mov       [edx], bl
 
-@@End:
+@@Exit:
   pop       ebx
   pop       esi
 end;

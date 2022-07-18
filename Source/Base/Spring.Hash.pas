@@ -213,8 +213,8 @@ end;
 asm
   // rcx = key, edx = len, r8d = seed
 
-  push    rsi
-  push    rbx
+  .pushnv rsi
+  .pushnv rbx
 
   mov     rbx, rcx                            // data := @key;
   lea     r10, [rcx+rdx-16]                   // limit := data + len - 16;
@@ -303,9 +303,6 @@ asm
   mov     ecx, eax                            // Result := Result xor (Result shr 16);
   shr     ecx, 16
   xor     eax, ecx
-
-  pop rbx
-  pop rsi
 end;
 {$IFEND}
 
@@ -516,8 +513,6 @@ asm
 end;
 {$ELSE}
 asm
-  .noframe
-
   mov   r9d, edx
   and   edx, not 3
   mov   eax, r8d

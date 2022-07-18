@@ -69,21 +69,29 @@ type
       PParameters = ^TParameters;
       TParameters = packed record
       public
-{$IFNDEF CPUX64}
-        Registers: array[paEDX..paECX] of Cardinal;
-        EAXRegister: Cardinal;
+{$IFDEF CPUX86}
+        EDXRegister,
+        ECXRegister,
+        EAXRegister,
         ReturnAddress: Pointer;
+{$ELSE}
+        XMM1Register,
+        XMM2Register,
+        XMM3Register,
+        FramePointer,
+        ReturnAddress,
+        RCXRegister,
+        RDXRegister,
+        R8Register,
+        R9Register: Pointer;
 {$ENDIF}
-        Stack: array[0..1023] of Byte;
+        StackArgs: record end;
       end;
 
       PMethodInfo = ^TMethodInfo;
       TMethodInfo = record
         ParamInfos: PParameterInfos;
         StackSize: Integer;
-{$IFDEF CPUX64}
-        RegisterFlag: Integer;
-{$ENDIF}
         constructor Create(typeData: PTypeData);
       end;
 
@@ -94,7 +102,7 @@ type
     class procedure InvokeMethod(const Method: TMethod; Parameters: PParameters; StackSize: Integer); static;
   protected
     procedure Invoke;
-    procedure InternalInvoke(Params: Pointer; StackSize: Integer); virtual;
+    procedure InternalInvoke(Params: PParameters; StackSize: Integer); virtual;
   {$ENDIF}
     procedure Notify(Sender: TObject; const Item: TMethod;
       Action: TEventBase.TCollectionNotification); override;
@@ -299,61 +307,59 @@ class procedure TEvent.InvokeMethod(const Method: TMethod;
   Parameters: PParameters; StackSize: Integer);
 {$IFNDEF CPUX64}
 asm
-  push ebx                        // preserve ebx
-  push esi                        // preserve esi
-  mov ebx,edx                     // ebx = Parameters
-  mov esi,eax                     // esi = Method
+  push ebx                            // preserve ebx
+  push esi                            // preserve esi
+  mov ebx,edx                         // ebx = Parameters
+  mov esi,eax                         // esi = Method
 
-  test ecx,ecx                    // if StackSize > 0
+  test ecx,ecx                        // if StackSize > 0
   jz @@call_method
 
-  sub esp,ecx                     // allocate stack space
-  lea eax,[ebx].TParameters.Stack // put stack buffer as first parameter
-  mov edx,esp                     // put stack address as second parameter
-  call Move                       // third parameter StackSize was already in place
+  sub esp,ecx                         // allocate stack space
+  lea eax,[ebx].TParameters.StackArgs // put stack buffer as first parameter
+  mov edx,esp                         // put stack address as second parameter
+  call Move                           // third parameter StackSize was already in place
 
 @@call_method:
-  mov ecx,[ebx].TParameters.Registers.dword[4]  // ecx = Parameters.Registers[paECX]
-  mov edx,[ebx].TParameters.Registers.dword[0]  // edx = Parameters.Registers[paEDX]
-  mov eax,[esi].TMethod.Data                    // eax = Method.Data
-  call [esi].TMethod.Code                       // call Method.Code
+  mov ecx,[ebx].TParameters.ECXRegister
+  mov edx,[ebx].TParameters.EDXRegister
+  mov eax,[esi].TMethod.Data          // eax = Method.Data
+  call [esi].TMethod.Code             // call Method.Code
 
   pop esi
   pop ebx
 end;
 {$ELSE}
 asm
-  push rbp                        // preserve rbp
-  mov rbp,rsp                     // set rbp to current stack pointer for fixed offset
-  sub rsp,r8                      // allocate stack space
-  mov [rbp+$10],Method            // preserve Method
-  mov [rbp+$18],Parameters        // preserve Parameters
+  .params 4
 
-  sub r8,32                       // if StackSize > 32
+  sub r8,32
+  sub rsp,r8                          // allocate additional stack space
+
+  mov [rbp+$30],Method                // preserve Method
+  mov [rbp+$38],Parameters            // preserve Parameters
+
+  test r8,r8                          // if StackSize > 32
   jz @@call_method
 
-  lea rcx,[rdx+32]                // put stack buffer after first 4 parameters as first parameter
-  lea rdx,[rsp+32]                // put stack address after first 4 parameters as second parameter
-  call Move
+  lea rcx,[rdx].TParameters.StackArgs // put stack buffer as first parameter
+  lea rdx,[rsp+$20]                   // put stack address as second parameter
+  call Move                           // third parameter StackSize was already in place
 
 @@call_method:
-  mov rax,[rbp+$18]
-  mov rcx,[rax].TParameters.Stack.qword[0]      // rcx = Parameters.Stack[0]
-  mov rdx,[rax].TParameters.Stack.qword[8]      // rdx = Parameters.Stack[8]
-  mov r8,[rax].TParameters.Stack.qword[16]      // r8 = Parameters.Stack[16]
-  mov r9,[rax].TParameters.Stack.qword[24]      // r9 = Parameters.Stack[24]
+  mov rax,[rbp+$38]
+  mov rcx,[rax].TParameters.RCXRegister
+  mov rdx,[rax].TParameters.RDXRegister
+  mov r8,[rax].TParameters.R8Register
+  mov r9,[rax].TParameters.R9Register
 
-  movsd xmm0,[rax].TParameters.Stack.qword[0]   // xmm0 = Parameters.Stack[0]
-  movsd xmm1,[rax].TParameters.Stack.qword[8]   // xmm1 = Parameters.Stack[8]
-  movsd xmm2,[rax].TParameters.Stack.qword[16]  // xmm2 = Parameters.Stack[16]
-  movsd xmm3,[rax].TParameters.Stack.qword[24]  // xmm3 = Parameters.Stack[24]
+  movq xmm1,[rax].TParameters.XMM1Register
+  movq xmm2,[rax].TParameters.XMM2Register
+  movq xmm3,[rax].TParameters.XMM3Register
 
-  mov rax,[rbp+$10]
-  mov rcx,[rax].TMethod.Data      // rcx = Method.Data
-  call [rax].TMethod.Code         // call Method.Data
-
-  lea rsp,[rbp]                   // restore rsp - deallocate stack space
-  pop rbp                         // restore
+  mov rax,[rbp+$30]
+  mov rcx,[rax].TMethod.Data          // rcx = Method.Data
+  call [rax].TMethod.Code             // call Method.Data
 end;
 {$ENDIF}
 
@@ -383,11 +389,14 @@ constructor TEvent.TMethodInfo.Create(typeData: PTypeData);
       and not (typeInfo.Kind in [tkFloat, tkMethod, tkInt64]);
   end;
 
-  function Align4(Value: Integer): Integer;
+  function Align4(value: Integer): Integer; inline;
   begin
-    {TODO -o##jwp -cOSX32/MACOS : Research 16-byte stack alignment: http://docwiki.embarcadero.com/RADStudio/XE5/en/Delphi_Considerations_for_Cross-Platform_Applications#Stack_Alignment_Issue_on_OS_X }
-    // http://docwiki.embarcadero.com/RADStudio/XE5/en/Conditional_compilation_(Delphi)
-    Result := (Value + 3) and not 3;
+    Result := (value + 3) and -4;
+  end;
+
+  function Align16(value: Integer): Integer; inline;
+  begin
+    Result := (value + 15) and -16;
   end;
 
 var
@@ -408,7 +417,6 @@ begin
   StackSize := 0;
 {$ELSE}
   StackSize := PointerSize; // Self in stack
-  RegisterFlag := 0;
 {$ENDIF}
 
   P := @typeData.ParamList;
@@ -434,9 +442,6 @@ begin
         Inc(StackSize, Align4(Size));
     end;
 {$ELSE}
-    // pass first 3 parameters in XMM1-XMM3 if floating point (Self was already passed before them in RCX)
-    if (i < 3) and (ParamInfos[i]^.Kind = tkFloat) then
-      RegisterFlag := RegisterFlag or (1 shl (i + 1));
     Inc(StackSize, PointerSize);
 {$ENDIF}
     Inc(P, 1 + P[1] + 1);
@@ -445,95 +450,69 @@ begin
 
 {$IFDEF CPUX64}
   if StackSize < 32 then
-    StackSize := 32;
+    StackSize := 32
+  else
+    StackSize := Align16(StackSize);
 {$ENDIF}
 end;
 
 procedure TEvent.InvokeEventHandlerStub;
 {$IFNDEF CPUX64}
 asm
+  bt [eax].fRefCount,30                 // if Enabled then
+  jc @@exit
+
   // push registers - order is important, they are part of the TParameters record
   push eax
   push ecx
   push edx
 
-  bt [eax].fRefCount,30                 // if Enabled then
-  jc @@return
-
   mov edx,esp                           // put address to stack into Params
   mov ecx,[eax].fMethodInfo.StackSize   // put StackSize
   call [eax].fMethodInvoke
 
-  pop edx                               // pop registers
-  pop ecx                               // don't care for preserving EAX
-  pop eax                               // as we don't support result
+  // pop registers - don't care for preserving EAX as we don't support result
+  pop edx
+  pop ecx
+  pop eax
 
   mov ecx,[eax].fMethodInfo.StackSize
   test ecx,ecx        // if StackSize > 0
-  jnz @@cleanup_stack
-  ret
+  jz @@exit
 
-@@cleanup_stack:
   // clean up the stack - like the "ret n" instruction does
   mov eax,[esp]       // load the return address
+  mov [esp+ecx],eax   // write return address for ret
   add esp,ecx         // pop from the stack
-  mov [esp],eax       // write return address for ret
-  ret
-@@return:
-  add esp,12
+
+@@exit:
 end;
 {$ELSE}
+
+procedure InternalInvokeEventHandlerStub;
+var
+  XMM3Register, XMM2Register, XMM1Register: Pointer;
 asm
-  // check DisabledFlag
-  bt [rcx].fRefCount,30
-  jc @@return
+  .params 2
 
-  // allocate stackframe
-  push rbp
-  sub rsp,$20
-  mov rbp,rsp
+  movq XMM1Register,xmm1
+  movq XMM2Register,xmm2
+  movq XMM3Register,xmm3
 
-  mov eax,[rcx].fMethodInfo.RegisterFlag
-
-  // first parameter is always pointer
-  mov [rsp+$30],rcx
-
-  // second parameter: save rdx or xmm1
-  test al,2
-  jnz @@save_xmm1
-  mov [rsp+$38],rdx
-  jmp @@third
-@@save_xmm1:
-  movsd [rsp+$38],xmm1
-
-  // third parameter: save r8 or xmm2
-@@third:
-  test al,4
-  jnz @@save_xmm2
-  mov [rsp+$40],r8
-  jmp @@fourth
-@@save_xmm2:
-  movsd [rsp+$40],xmm2
-
-  // fourth parameter: save r9 or xmm3
-@@fourth:
-  test al,8
-  jnz @@save_xmm3
-  mov [rsp+$48],r9
-  jmp @@call
-@@save_xmm3:
-  movsd [rsp+$48],xmm3
+  mov [rsp+$50],rcx
+  mov [rsp+$58],rdx
+  mov [rsp+$60],r8
+  mov [rsp+$68],r9
 
 @@call:
-  lea rdx,[rsp+$30]                     // put stack address into Params
+  lea rdx,[rsp+$28]                     // put stack address into Params
   mov r8d,[rcx].fMethodInfo.StackSize   // pass StackSize
   call [rcx].fMethodInvoke
+end;
 
-  // restore stack pointer
-  lea rsp,[rbp+$20]
-  pop rbp
-
-@@return:
+asm
+  bt [rcx].fRefCount,30                 // if Enabled then
+  jnc InternalInvokeEventHandlerStub
 end;
 {$ENDIF}
 {$ENDIF}
@@ -548,7 +527,7 @@ var
   method: TRttiMethod;
 {$IFNDEF USE_RTTI_FOR_PROXY}
   typeData: PTypeData;
-  invokeEvent: procedure(Params: Pointer; StackSize: Integer) of object;
+  invokeEvent: procedure(Params: PParameters; StackSize: Integer) of object;
 {$ENDIF}
 begin
   fTypeInfo := typeInfo;
@@ -665,7 +644,7 @@ begin
 end;
 {$ELSE}
 
-procedure TEvent.InternalInvoke(Params: Pointer; StackSize: Integer);
+procedure TEvent.InternalInvoke(Params: PParameters; StackSize: Integer);
 var
   guard: GuardedPointer;
   handlers: PMethod;

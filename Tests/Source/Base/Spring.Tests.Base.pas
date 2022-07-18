@@ -136,10 +136,15 @@ type
   TTestMulticastEvent = class(TTestCase)
   strict private
     type
+      TEventArgs = record i: Integer; s: string; v: Variant; end;
       TEventInt64 = procedure(const Value: Int64) of object;
       TEventSingle = procedure(const Value: Single) of object;
       TEventDouble = procedure(const Value: Double) of object;
       TEventExtended = procedure(const Value: Extended) of object;
+      TEventWithStackParams = procedure(const Value1: Int64; const Value2: Single;
+        const Value3: Double; const Value4: Extended; const Value5: TEventArgs) of object;
+      TEventWithRegisterParams = procedure(const Value1, Value2, Value3: NativeInt) of object;
+      TEventWithFloatParams = procedure(const Value1, Value2, Value3: Double) of object;
     const
       CNumber = 5;
       CText = 'test';
@@ -161,7 +166,10 @@ type
     procedure HandlerSingle(const value: Single);
     procedure HandlerDouble(const value: Double);
     procedure HandlerExtended(const value: Extended);
-
+    procedure HandlerWithStackParams(const value1: Int64; const value2: Single;
+      const value3: Double; const value4: Extended; const value5: TEventArgs);
+    procedure HandlerWithRegisterParams(const value1, value2, value3: NativeInt);
+    procedure HandlerWithFloatParams(const value1, value2, value3: Double);
     procedure HandleChanged(Sender: TObject);
   published
     procedure TestInvoke;
@@ -171,6 +179,9 @@ type
     procedure TestIssue58;
     procedure TestDelegate;
     procedure TestIssue60;
+    procedure TestStackParams;
+    procedure TestRegisterParams;
+    procedure TestFloatParams;
     procedure TestNotify;
     procedure TestNotifyDelegate;
     procedure TestRemove;
@@ -998,6 +1009,36 @@ begin
   Inc(fHandlerInvokeCount);
 end;
 
+procedure TTestMulticastEvent.HandlerWithRegisterParams(const value1, value2, value3: NativeInt);
+begin
+  CheckEquals(42, value1);
+  CheckEquals(43, value2);
+  CheckEquals(44, value3);
+  Inc(fHandlerInvokeCount);
+end;
+
+procedure TTestMulticastEvent.HandlerWithFloatParams(const value1, value2, value3: Double);
+begin
+  CheckEquals(42, value1);
+  CheckEquals(43, value2);
+  CheckEquals(44, value3);
+  Inc(fHandlerInvokeCount);
+end;
+
+procedure TTestMulticastEvent.HandlerWithStackParams(const value1: Int64;
+  const value2: Single; const value3: Double; const value4: Extended;
+  const value5: TEventArgs);
+begin
+  CheckEquals(42, value1);
+  CheckEquals(43, value2);
+  CheckEquals(44, value3);
+  CheckEquals(45, value4);
+  CheckEquals(46, value5.i);
+  CheckEquals('47', value5.s);
+  CheckEquals(48, value5.v);
+  Inc(fHandlerInvokeCount);
+end;
+
 procedure TTestMulticastEvent.TestAddNil;
 var
   e: Event<TNotifyEvent>;
@@ -1261,6 +1302,52 @@ begin
   CheckTrue(fEvent.UseFreeNotification);
   fEvent.UseFreeNotification := True;
   CheckTrue(fEvent.UseFreeNotification);
+end;
+
+procedure TTestMulticastEvent.TestStackParams;
+var
+  event: Event<TEventWithStackParams>;
+  expected: Integer;
+  args: TEventArgs;
+begin
+  expected := 1;
+  args.i := 46;
+  args.s := '47';
+  args.v := 48;
+
+  event.Add(HandlerWithStackParams);
+  HandlerWithStackParams(42, 43, 44, 45, args);
+  event.Invoke(42, 43, 44, 45, args); Inc(expected);
+
+  CheckEquals(expected, fHandlerInvokeCount);
+end;
+
+procedure TTestMulticastEvent.TestRegisterParams;
+var
+  event: Event<TEventWithRegisterParams>;
+  expected: Integer;
+begin
+  expected := 1;
+
+  event.Add(HandlerWithRegisterParams);
+  HandlerWithRegisterParams(42, 43, 44);
+  event.Invoke(42, 43, 44); Inc(expected);
+
+  CheckEquals(expected, fHandlerInvokeCount);
+end;
+
+procedure TTestMulticastEvent.TestFloatParams;
+var
+  event: Event<TEventWithFloatParams>;
+  expected: Integer;
+begin
+  expected := 1;
+
+  event.Add(HandlerWithFloatParams);
+  HandlerWithFloatParams(42, 43, 44);
+  event.Invoke(42, 43, 44); Inc(expected);
+
+  CheckEquals(expected, fHandlerInvokeCount);
 end;
 
 procedure TEventHandler.HandleInt64(const value: Int64);
