@@ -948,7 +948,7 @@ begin
   if fOnKeyChanged.CanInvoke then
     fOnKeyChanged.Invoke(Self, item, action);
   if (action = caRemoved) and (doOwnsKeys in fHashTable.Ownerships) then
-    FreeObject(item);
+    PObject(@item).Free;
 end;
 
 procedure TMultiMapBase<TKey, TValue>.ValueChanged(const item: TValue;
@@ -957,7 +957,7 @@ begin
   if fOnValueChanged.CanInvoke then
     fOnValueChanged.Invoke(Self, item, action);
   if (action = caRemoved) and (doOwnsValues in fHashTable.Ownerships) then
-    FreeObject(item);
+    PObject(@item).Free;
 end;
 
 function TMultiMapBase<TKey, TValue>.Add(const key: TKey;
@@ -1085,7 +1085,7 @@ begin
   if GetTypeKind(TValue) = tkClass then
 {$ENDIF}
   if (action = caRemoved) and (doOwnsValues in fHashTable.Ownerships) then
-    FreeObject(item);
+    PObject(@item).Free;
 end;
 
 function TMultiMapBase<TKey, TValue>.Extract(const key: TKey;
@@ -1370,7 +1370,7 @@ begin
   if fOnKeyChanged.CanInvoke then
     fOnKeyChanged.Invoke(Self, item, action);
   if (action = caRemoved) and (doOwnsKeys in fOwnerships) then
-    FreeObject(item);
+    PObject(@item).Free;
 end;
 
 procedure TSortedMultiMapBase<TKey, TValue>.ValueChanged(const item: TValue;
@@ -1379,7 +1379,7 @@ begin
   if fOnValueChanged.CanInvoke then
     fOnValueChanged.Invoke(Self, item, action);
   if (action = caRemoved) and (doOwnsValues in fOwnerships) then
-    FreeObject(item);
+    PObject(@item).Free;
 end;
 
 function TSortedMultiMapBase<TKey, TValue>.Add(const key: TKey;
@@ -1514,7 +1514,7 @@ begin
   if GetTypeKind(TValue) = tkClass then
 {$ENDIF}
   if (action = caRemoved) and (doOwnsValues in fOwnerships) then
-    FreeObject(item);
+    PObject(@item).Free;
 end;
 
 function TSortedMultiMapBase<TKey, TValue>.Extract(

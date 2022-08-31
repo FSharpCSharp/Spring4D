@@ -226,7 +226,7 @@ begin
         for i := stackCount - 1 downto 0 do
         begin
           fOnChanged.Invoke(Self, fItems[i], caRemoved);
-          FreeObject(fItems[i]);
+          TArray<TObject>(fItems)[i].Free;
         end
       else
         for i := stackCount - 1 downto 0 do
@@ -234,7 +234,7 @@ begin
     else
       if OwnsObjects then
         for i := stackCount - 1 downto 0 do
-          FreeObject(fItems[i]);
+          TArray<TObject>(fItems)[i].Free;
 
     if TType.IsManaged<T> then
       System.Finalize(fItems[0], stackCount)
@@ -261,7 +261,7 @@ begin
   if OwnsObjects then
     if action = caRemoved then
     begin
-      FreeObject(item);
+      PObject(@item).Free;
       item := Default(T);
     end;
 end;

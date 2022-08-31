@@ -2862,7 +2862,7 @@ begin
   if Assigned(fOnChanged) and fOnChanged.CanInvoke then
     fOnChanged.Invoke(Self, item^, action);
   if OwnsObjects and (action = caRemoved) then
-    FreeObject(item^);
+    PObject(item).Free;
   item^ := Default(T);
 end;
 
@@ -2886,7 +2886,7 @@ begin
   if Assigned(fOnChanged) and fOnChanged.CanInvoke then
     fOnChanged.Invoke(Self, item^, action);
   if OwnsObjects and (action = caRemoved) then
-    FreeObject(item^);
+    PObject(item).Free;
   item^ := Default(T);
 end;
 

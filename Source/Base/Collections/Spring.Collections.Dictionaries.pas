@@ -652,14 +652,14 @@ begin
   if GetTypeKind(TKey) = tkClass then
 {$ENDIF}
   if (action = caRemoved) and (doOwnsKeys in fHashTable.Ownerships) then
-    FreeObject(item.Key);
+    PObject(@item.Key).Free;
   with fOnValueChanged do if CanInvoke then
     Invoke(Self, item.Value, action);
 {$IFDEF DELPHIXE7_UP}
   if GetTypeKind(TValue) = tkClass then
 {$ENDIF}
   if (action = caRemoved) and (doOwnsValues in fHashTable.Ownerships) then
-    FreeObject(item.Value);
+    PObject(@item.Value).Free;
 
   item.Key := Default(TKey);
   item.Value := Default(TValue);
@@ -697,14 +697,14 @@ begin
       if GetTypeKind(TKey) = tkClass then
     {$ENDIF}
       if doOwnsKeys in fHashTable.Ownerships then
-        FreeObject(item.Key);
+        PObject(@item.Key).Free;
       with fOnValueChanged do if CanInvoke then
         Invoke(Self, item.Value, caRemoved);
     {$IFDEF DELPHIXE7_UP}
       if GetTypeKind(TValue) = tkClass then
     {$ENDIF}
       if doOwnsValues in fHashTable.Ownerships then
-        FreeObject(item.Value);
+        PObject(@item.Value).Free;
     end;
     Inc(item);
   end;
@@ -778,7 +778,7 @@ begin
     if GetTypeKind(TValue) = tkClass then
   {$ENDIF}
     if doOwnsValues in fHashTable.Ownerships then
-      FreeObject(item.Value);
+      PObject(@item.Value).Free;
   end;
 
   item.Key := key;
@@ -1130,7 +1130,7 @@ begin
   if fOnKeyChanged.CanInvoke then
     fOnKeyChanged.Invoke(Self, item, action);
   if (action = caRemoved) and (doOwnsKeys in fOwnerships) then
-    FreeObject(item);
+    PObject(@item).Free;
 end;
 
 procedure TBidiDictionary<TKey, TValue>.ValueChanged(const item: TValue;
@@ -1139,7 +1139,7 @@ begin
   if fOnValueChanged.CanInvoke then
     fOnValueChanged.Invoke(Self, item, action);
   if (action = caRemoved) and (doOwnsValues in fOwnerships) then
-    FreeObject(item);
+    PObject(@item).Free;
 end;
 
 function TBidiDictionary<TKey, TValue>.GetCapacity: Integer;
@@ -2508,14 +2508,14 @@ begin
   if GetTypeKind(TKey) = tkClass then
 {$ENDIF}
   if (action = caRemoved) and (doOwnsKeys in fOwnerships) then
-    FreeObject(node.Key);
+    PObject(@node.Key).Free;
   with fOnValueChanged do if CanInvoke then
     Invoke(Self, node.Value, action);
 {$IFDEF DELPHIXE7_UP}
   if GetTypeKind(TValue) = tkClass then
 {$ENDIF}
   if (action = caRemoved) and (doOwnsValues in fOwnerships) then
-    FreeObject(node.Value);
+    PObject(@node.Value).Free;
 
   fTree.DeleteNode(Pointer(node));
   Result := True;

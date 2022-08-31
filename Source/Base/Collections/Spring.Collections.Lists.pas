@@ -675,7 +675,7 @@ begin
       {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
 
       if OwnsObjects then
-        FreeObject(fItems[index]);
+        TArray<TObject>(fItems)[index].Free;
       fItems[index] := value;
       Exit;
     end;
@@ -698,7 +698,7 @@ begin
 
   Notify(Self, oldItem, caRemoved);
   if OwnsObjects then
-    FreeObject(oldItem);
+    PObject(@oldItem).Free;
   Notify(Self, value, caAdded);
 end;
 
@@ -986,7 +986,7 @@ begin
     Notify(Self, oldItem, action);
   if OwnsObjects then
     if action = caRemoved then
-      FreeObject(oldItem);
+      PObject(@oldItem).Free;
 end;
 
 procedure TAbstractArrayList<T>.Clear;
@@ -1047,7 +1047,7 @@ begin
       for i := 0 to count - 1 do
       begin
         Notify(Self, oldItems[i], action);
-        FreeObject(oldItems[i]);
+        TArray<TObject>(oldItems)[i].Free;
       end
     else
       for i := 0 to count - 1 do
@@ -1055,7 +1055,7 @@ begin
   else
     if OwnsObjects and (action = caRemoved) then
       for i := 0 to count - 1 do
-        FreeObject(oldItems[i]);
+        TArray<TObject>(oldItems)[i].Free;
 
   if Assigned(result) then
     TArray<T>(result^) := oldItems;
@@ -1447,7 +1447,7 @@ begin
       if action = caExtracted then
         TArray<T>(PPointer(@items)^)[i] := fItems[current]
       else if OwnsObjects then
-        FreeObject(fItems[current]);
+        TArray<TObject>(items)[current].Free;
       Inc(current);
       Inc(i);
     end;

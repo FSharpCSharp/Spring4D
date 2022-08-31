@@ -3183,8 +3183,6 @@ function NextPowerOf2(value: NativeInt): NativeInt;
 function DynArrayLength(const A: Pointer): NativeInt; inline;
 function DynArrayHigh(const A: Pointer): NativeInt; inline;
 
-procedure FreeObject(const item); inline;
-
 function GetEqualsOperator(const typeInfo: PTypeInfo): TRttiMethod;
 
 function GrowCapacity(oldCapacity: Integer): Integer; overload;
@@ -4289,11 +4287,6 @@ begin
 end;
 {$IFDEF RANGECHECKS_ON}{$R+}{$ENDIF}
 {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
-
-procedure FreeObject(const item);
-begin
-  TObject(item).Free;
-end;
 
 function GetEqualsOperator(const typeInfo: PTypeInfo): TRttiMethod;
 const
