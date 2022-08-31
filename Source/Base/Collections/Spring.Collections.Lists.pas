@@ -87,7 +87,7 @@ type
     procedure Grow(capacity: Integer);
     procedure DeleteInternal(index: Integer; action: TCollectionChangedAction);
     function DeleteAllInternal(const match: Predicate<T>;
-      action: TCollectionChangedAction; const items: TArray<T>): Integer;
+      action: TCollectionChangedAction; extractedItems: PPointer): Integer;
     procedure DeleteRangeInternal(index, count: Integer;
       action: TCollectionChangedAction; doClear: Boolean; result: PPointer);
     function InsertInternal(index: Integer; const item: T): Integer;
@@ -1305,8 +1305,7 @@ begin
   if not Assigned(collection) then RaiseHelper.ArgumentNil(ExceptionArgument.collection);
   if not Assigned(predicate) then RaiseHelper.ArgumentNil(ExceptionArgument.predicate);
 
-  SetLength(values, Self.Count);
-  Result := DeleteAllInternal(predicate, caExtracted, values);
+  Result := DeleteAllInternal(predicate, caExtracted, @values);
   // hardcast to solve compiler glitch in older Delphi versions due to AddRange overload
   ICollectionInternal(collection).AddRange(Slice(TSlice<T>((@values[0])^), Result));
 end;
@@ -1422,9 +1421,10 @@ begin
 end;
 
 function TAbstractArrayList<T>.DeleteAllInternal(const match: Predicate<T>;
-  action: TCollectionChangedAction; const items: TArray<T>): Integer;
+  action: TCollectionChangedAction; extractedItems: PPointer): Integer;
 var
   listCount, freeIndex, current, i: Integer;
+  items: Pointer;
 begin
   if not Assigned(match) then RaiseHelper.ArgumentNil(ExceptionArgument.match);
 
@@ -1432,10 +1432,11 @@ begin
   freeIndex := 0;
   current := 0;
   i := 0;
+  items := fItems;
   while current < listCount do
   begin
     // Find the next item that needs to be kept
-    while (current < listCount) and match(fItems[current]) do
+    while (current < listCount) and match(TArray<T>(items)[current]) do
     begin
       if i = 0 then
         {$Q-}
@@ -1443,9 +1444,15 @@ begin
         {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
 
       if Assigned(Notify) then
-        Notify(Self, fItems[current], action);
+        Notify(Self, TArray<T>(items)[current], action);
       if action = caExtracted then
-        TArray<T>(PPointer(@items)^)[i] := fItems[current]
+      begin
+        {$POINTERMATH ON}
+        if (extractedItems^ = nil) or (i >= PNativeInt(extractedItems^)[-1]) then
+        {$POINTERMATH OFF}
+          SetLength(TArray<T>(extractedItems^), GrowCapacity(i + 1));
+        TArray<T>(extractedItems^)[i] := TArray<T>(items)[current];
+      end
       else if OwnsObjects then
         TArray<TObject>(items)[current].Free;
       Inc(current);
@@ -1454,7 +1461,7 @@ begin
 
     if current < listCount then
     begin
-      fItems[freeIndex] := fItems[current];
+      TArray<T>(items)[freeIndex] := TArray<T>(items)[current];
       Inc(freeIndex);
       Inc(current);
     end;
@@ -1462,9 +1469,9 @@ begin
   Result := listCount - freeIndex;
   if Result > 0 then
     if ItemType.IsManaged then
-      System.Finalize(fItems[freeIndex], Result)
+      System.Finalize(TArray<T>(items)[freeIndex], Result)
     else
-      System.FillChar(fItems[freeIndex], SizeOf(T) * Result, 0);
+      System.FillChar(TArray<T>(items)[freeIndex], SizeOf(T) * Result, 0);
   Dec(fCount, Result);
 end;
 
@@ -1491,12 +1498,8 @@ begin
 end;
 
 function TAbstractArrayList<T>.ExtractAll(const match: Predicate<T>): TArray<T>;
-var
-  count: Integer;
 begin
-  SetLength(Result, Self.Count);
-  count := DeleteAllInternal(match, caExtracted, Result);
-  SetLength(Result, count);
+  SetLength(Result, DeleteAllInternal(match, caExtracted, @Result));
 end;
 
 function TAbstractArrayList<T>.ExtractRange(index, count: Integer): TArray<T>;

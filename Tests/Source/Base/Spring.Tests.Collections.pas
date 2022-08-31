@@ -149,6 +149,8 @@ type
     procedure TestListInsertRangeIEnumerableWithExtraCapacity;
     procedure TestListSimpleDelete;
     procedure TestListMultipleDelete;
+    procedure TestListExtractRange;
+    procedure TestListRemoveRange;
     procedure TestListRemoveAll;
     procedure TestListSimpleExchange;
     procedure TestListReverse;
@@ -1749,6 +1751,32 @@ begin
   SUT.AddRange(TEnumerable.Range(1, 9));
   CheckEquals(7, SUT.RemoveAll(function(const x: Integer): Boolean begin Result := (x <> 4) and (x <> 9) end));
   CheckTrue(SUT.EqualsTo([4, 9]));
+end;
+
+procedure TTestIntegerList.TestListExtractRange;
+begin
+  SUT.AddRange(TEnumerable.Range(1, 9));
+  SUT.ExtractRange(TEnumerable.Range(3, 5));
+  CheckTrue(SUT.EqualsTo([1, 2, 8, 9]));
+
+  SUT.Clear;
+
+  SUT.AddRange(TEnumerable.Range(1, 9));
+  SUT.ExtractRange(2, 5);
+  CheckTrue(SUT.EqualsTo([1, 2, 8, 9]));
+
+  SUT.Clear;
+
+  SUT.AddRange(TEnumerable.Range(1, 9));
+  SUT.ExtractAll(function(const x: Integer): Boolean begin Result := (x >= 3) and (x <= 7) end);
+  CheckTrue(SUT.EqualsTo([1, 2, 8, 9]));
+end;
+
+procedure TTestIntegerList.TestListRemoveRange;
+begin
+  SUT.AddRange(TEnumerable.Range(1, 9));
+  SUT.RemoveRange(TEnumerable.Range(3, 5));
+  CheckTrue(SUT.EqualsTo([1, 2, 8, 9]));
 end;
 
 procedure TTestIntegerList.TestListSimpleDelete;

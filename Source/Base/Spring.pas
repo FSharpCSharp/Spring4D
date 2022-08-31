@@ -4318,9 +4318,7 @@ end;
 
 function GrowCapacity(oldCapacity: Integer): Integer;
 begin
-  if oldCapacity = 0 then
-    Result := 4
-  else
+  if oldCapacity >= 4 then
   begin
     if oldCapacity < 1024 then
       Result := oldCapacity * 2
@@ -4330,7 +4328,9 @@ begin
       if Result < 0 then
         Exit(OutOfMemoryError);
     end;
-  end;
+  end
+  else
+    Result := 4;
 end;
 
 function GrowCapacity(oldCapacity, newCount: Integer): Integer;
