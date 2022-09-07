@@ -3366,21 +3366,29 @@ type
     class function CreateSet<T>(capacity: Integer; const comparer: IEqualityComparer<T>): ISet<T>; overload; static;
     class function CreateSet<T>(const values: array of T): ISet<T>; overload; static;
     class function CreateSet<T>(const values: IEnumerable<T>): ISet<T>; overload; static;
+    class function CreateSet<T>(const values: array of T; const comparer: IEqualityComparer<T>): ISet<T>; overload; static;
+    class function CreateSet<T>(const values: IEnumerable<T>; const comparer: IEqualityComparer<T>): ISet<T>; overload; static;
 
     class function CreateMultiSet<T>: IMultiSet<T>; overload; static;
     class function CreateMultiSet<T>(const comparer: IEqualityComparer<T>): IMultiSet<T>; overload; static;
     class function CreateMultiSet<T>(const values: array of T): IMultiSet<T>; overload; static;
     class function CreateMultiSet<T>(const values: IEnumerable<T>): IMultiSet<T>; overload; static;
+    class function CreateMultiSet<T>(const values: array of T; const comparer: IEqualityComparer<T>): IMultiSet<T>; overload; static;
+    class function CreateMultiSet<T>(const values: IEnumerable<T>; const comparer: IEqualityComparer<T>): IMultiSet<T>; overload; static;
 
     class function CreateSortedSet<T>: ISet<T>; overload; static;
     class function CreateSortedSet<T>(const comparer: IComparer<T>): ISet<T>; overload; static;
     class function CreateSortedSet<T>(const values: array of T): ISet<T>; overload; static;
     class function CreateSortedSet<T>(const values: IEnumerable<T>): ISet<T>; overload; static;
+    class function CreateSortedSet<T>(const values: array of T; const comparer: IComparer<T>): ISet<T>; overload; static;
+    class function CreateSortedSet<T>(const values: IEnumerable<T>; const comparer: IComparer<T>): ISet<T>; overload; static;
 
     class function CreateSortedMultiSet<T>: IMultiSet<T>; overload; static;
     class function CreateSortedMultiSet<T>(const comparer: IComparer<T>): IMultiSet<T>; overload; static;
     class function CreateSortedMultiSet<T>(const values: array of T): IMultiSet<T>; overload; static;
     class function CreateSortedMultiSet<T>(const values: IEnumerable<T>): IMultiSet<T>; overload; static;
+    class function CreateSortedMultiSet<T>(const values: array of T; const comparer: IComparer<T>): IMultiSet<T>; overload; static;
+    class function CreateSortedMultiSet<T>(const values: IEnumerable<T>; const comparer: IComparer<T>): IMultiSet<T>; overload; static;
 
     class function CreateSortedDictionary<TKey, TValue>: IDictionary<TKey, TValue>; overload; static;
     class function CreateSortedDictionary<TKey, TValue>(ownerships: TDictionaryOwnerships): IDictionary<TKey, TValue>; overload; static;
@@ -6095,6 +6103,20 @@ begin
   Result.AddRange(values);
 end;
 
+class function TCollections.CreateMultiSet<T>(const values: array of T;
+  const comparer: IEqualityComparer<T>): IMultiSet<T>;
+begin
+  Result := THashMultiSet<T>.Create(comparer);
+  Result.AddRange(values);
+end;
+
+class function TCollections.CreateMultiSet<T>(const values: IEnumerable<T>;
+  const comparer: IEqualityComparer<T>): IMultiSet<T>;
+begin
+  Result := THashMultiSet<T>.Create(comparer);
+  Result.AddRange(values);
+end;
+
 class function TCollections.CreateBidiDictionary<TKey, TValue>: IBidiDictionary<TKey, TValue>;
 begin
 {$IFDEF DELPHIXE7_UP}
@@ -7060,6 +7082,20 @@ begin
   Result.AddRange(values);
 end;
 
+class function TCollections.CreateSet<T>(const values: array of T;
+  const comparer: IEqualityComparer<T>): ISet<T>;
+begin
+  Result := CreateSet<T>(comparer);
+  Result.AddRange(values);
+end;
+
+class function TCollections.CreateSet<T>(const values: IEnumerable<T>;
+  const comparer: IEqualityComparer<T>): ISet<T>;
+begin
+  Result := CreateSet<T>(comparer);
+  Result.AddRange(values);
+end;
+
 class function TCollections.CreateSortedList<T>: IList<T>;
 begin
 {$IFDEF DELPHIXE7_UP}
@@ -7237,6 +7273,20 @@ begin
   Result.AddRange(values);
 end;
 
+class function TCollections.CreateSortedSet<T>(const values: array of T;
+  const comparer: IComparer<T>): ISet<T>;
+begin
+  Result := TSortedSet<T>.Create(comparer);
+  Result.AddRange(values);
+end;
+
+class function TCollections.CreateSortedSet<T>(const values: IEnumerable<T>;
+  const comparer: IComparer<T>): ISet<T>;
+begin
+  Result := TSortedSet<T>.Create(comparer);
+  Result.AddRange(values);
+end;
+
 class function TCollections.CreateSortedDictionary<TKey, TValue>: IDictionary<TKey, TValue>;
 begin
   Result := TSortedDictionary<TKey, TValue>.Create(nil, nil, []);
@@ -7349,6 +7399,21 @@ begin
   Result := TTreeMultiSet<T>.Create(nil);
   Result.AddRange(values);
 end;
+
+class function TCollections.CreateSortedMultiSet<T>(const values: array of T;
+  const comparer: IComparer<T>): IMultiSet<T>;
+begin
+  Result := TTreeMultiSet<T>.Create(comparer);
+  Result.AddRange(values);
+end;
+
+class function TCollections.CreateSortedMultiSet<T>(
+  const values: IEnumerable<T>; const comparer: IComparer<T>): IMultiSet<T>;
+begin
+  Result := TTreeMultiSet<T>.Create(comparer);
+  Result.AddRange(values);
+end;
+
 
 {$ENDREGION}
 
