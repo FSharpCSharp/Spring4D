@@ -1532,6 +1532,7 @@ begin
   fProductName := resource.ReadString('ProductName');
   fProductVersion := resource.ReadString('ProductVersion');
   fComments := resource.ReadString('Comments');
+  fSpecialBuild := resource.ReadString('SpecialBuild');
   fLanguage := Languages.NameFromLocaleID[resource.Language];
 end;
 
