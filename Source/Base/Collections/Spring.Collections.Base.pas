@@ -593,7 +593,7 @@ type
   private type
   {$REGION 'Nested Types'}
     PNode = ^TNode;
-    TNode = record // same layout as TRedBlackTreeBase<TKey>.TNode
+    TNode = packed record // same layout as TRedBlackTreeBase<TKey>.TNode
       Parent: Pointer;
       Childs: array[0..1] of Pointer;
       Key: T;

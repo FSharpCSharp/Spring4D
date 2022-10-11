@@ -87,7 +87,7 @@ type
       property Current: PNode read fCurrent;
     end;
 
-    TNode = record
+    TNode = packed record
     strict private
       fParent, fLeft, fRight: PNode;
       function GetParent: PNode; inline;
@@ -126,7 +126,7 @@ type
   private type
     PNode = ^TNode;
     TChildNodes = array[0..1] of PNode;
-    TNode = record
+    TNode = packed record
     strict private
       function GetColor: TNodeColor; inline;
       function GetParent: PNode; inline;
@@ -199,7 +199,7 @@ type
       property Keys: TKeyEnumerable read GetKeys;
     end;
 
-    TNode = record
+    TNode = packed record
     strict private
       function GetLeftMost: PNode; inline;
       function GetRightMost: PNode; inline;
@@ -300,7 +300,7 @@ type
       property Values: TValueEnumerable read GetValues;
     end;
 
-    TNode = record
+    TNode = packed record
     strict private
       function GetLeftMost: PNode; inline;
       function GetRightMost: PNode; inline;

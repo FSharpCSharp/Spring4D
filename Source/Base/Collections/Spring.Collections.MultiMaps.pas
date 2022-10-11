@@ -98,7 +98,7 @@ type
   private type
   {$REGION 'Nested Types'}
     PNode = ^TNode;
-    TNode = record
+    TNode = packed record
       Parent, Left, Right: Pointer;
       Key: array[0..0] of Byte;
     end;
